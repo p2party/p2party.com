@@ -20,3 +20,9 @@
     text-wrap: balance;
   }
 }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import QRCode from "qrcode";
 import clsx from "clsx";
 
-import { Avatar } from "./avatar"; // Adjust the import path
+import { Avatar } from "../avatar"; // Adjust the import path
 
 export interface Params {
   src: string;

@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 
 import { Button } from "../components/button";
+import CatAvatar from "../components/avatars/cat";
+import Footer from "../components/custom/footer";
 
-import generateRandomAlphanumeric from "../utils/generateRandomRoomUrl";
+import p2party from "p2party";
 
 const HomePage = () => {
   const [roomId, setRoomId] = useState("");
@@ -14,7 +16,7 @@ const HomePage = () => {
     const controller = new AbortController();
 
     const getRandomRoomId = async () => {
-      const random = await generateRandomAlphanumeric(64);
+      const random = await p2party.generateRandomRoomUrl(64);
       setRoomId(random);
     };
 
@@ -26,28 +28,29 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className='flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-darkOrange to-darkRed'>
-      {/* Hero Section */}
+    <div className='flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-darkOrange to-darkRed z-10'>
       <div className='px-4 text-center'>
-        <h1 className='mb-6 text-5xl font-bold text-white'>
-          P2Party creates instant WebRTC mesh networks
+        <CatAvatar className='w-1/2 border-0 outline-0' />
+
+        <h1 className='mb-4 text-5xl font-bold text-white'>
+          P2Party generates WebRTC meeting points
         </h1>
-        <p className='mb-10 text-lg text-gray-200'>
-          Send the room URL to your friends and make peer-to-peer connections
-          with them.
+        <p className='mb-6 text-lg text-gray-200'>
+          Send the room URL to your friends and connect with them peer-to-peer
         </p>
       </div>
 
-      {/* Call to Action Buttons */}
-      <div className='flex flex-col items-center space-y-4'>
+      <div className='flex flex-col items-center space-y-2 z-100'>
         <Button
-          href={`/room/${roomId}`}
+          href={`/${roomId}`}
           // onClick={handleCreateRandomRoom}
-          className='rounded-lg bg-darkOrange px-6 py-5 font-bold text-white transition hover:bg-orange-500'
+          className='rounded-lg bg-darkOrange px-6 py-5 font-bold text-white'
         >
-          Create Random Room
+          Generate Random Room
         </Button>
       </div>
+
+      <Footer />
     </div>
   );
 };

@@ -3,42 +3,30 @@
 import { useState, useEffect, useRef } from "react";
 import { PaperAirplaneIcon } from "@heroicons/react/16/solid";
 
-import { QRCodeAvatar } from "../components/qrcodeavatar";
+import { QRCodeAvatar } from "../components/custom/qrcodeavatar";
 import { Textarea } from "../components/textarea";
 import { Text } from "../components/text";
 import { Button } from "../components/button";
+import CatAvatar from "../components/avatars/cat";
 
-import { getRandomMessages } from "../utils/randomMessages";
-
-export interface Message {
-  id: number;
-  text: string;
-  sender: string;
-  avatarUrl: string;
-  replyTo: number | null;
-}
+// import { getRandomMessages } from "../utils/randomMessages";
+import { useRoom } from "../hooks/useRoom";
 
 const ChatPage = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { peerId, channels, messages, sendMessage } = useRoom();
+  // const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
-  useEffect(() => {
-    const randomMessages = getRandomMessages();
-    setMessages(randomMessages);
-  }, []);
+  // useEffect(() => {
+  //   const randomMessages = getRandomMessages();
+  //   setMessages(randomMessages);
+  // }, []);
 
   const handleSend = () => {
     if (newMessage.trim() === "") return;
 
-    const message = {
-      id: messages.length + 1,
-      text: newMessage,
-      sender: "user",
-      avatarUrl: "https://example.com/avatar2.png", // Replace with the current user's avatar URL
-      replyTo: null,
-    };
+    sendMessage(newMessage);
 
-    setMessages([...messages, message]);
     setNewMessage("");
   };
 
@@ -68,50 +56,67 @@ const ChatPage = () => {
   // }, [newMessage]);
 
   return (
-    <div className='flex h-full flex-col'>
-      <div className='flex-1 overflow-auto p-4 pb-24'>
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`relative mb-4 flex items-center ${
-              message.sender === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            {message.sender !== "user" && (
-              <QRCodeAvatar
-                src={message.avatarUrl}
-                className='mr-4 w-10 rounded-full'
-              />
-            )}
-            <div
-              className={`max-w-lg rounded-lg border border-2 border-darkOrange bg-darkRed p-3 font-bold shadow`}
-            >
-              <Text className='text-white dark:text-white'>{message.text}</Text>
-            </div>
-            {message.sender === "user" && (
-              <QRCodeAvatar
-                src={message.avatarUrl}
-                className='ml-4 w-10 rounded-full'
-              />
-            )}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+    <div className='relative flex min-h-0 flex-col'>
+      <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
+        <CatAvatar className='w-full outline-white md:w-5/6 lg:w-1/2 dark:outline-zinc-900' />
       </div>
-      <div className='fixed bottom-0 left-0 right-0 flex-1 bg-white pb-6 pl-4 pr-4 pt-3 lg:left-64 dark:bg-zinc-900'>
-        <div className='ml-4 mr-4 flex max-w-full items-center'>
-          <Textarea
-            ref={textareaRef}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder='Type your message...'
-            className='mr-2 flex-1 resize-none overflow-hidden rounded-lg font-bold focus:border-white'
-            rows={1}
-          />
-          <Button onClick={handleSend} className='flex-shrink-0'>
-            <PaperAirplaneIcon />
-          </Button>
-        </div>
+
+
+      <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
+        {/* Messages Container */}
+        {messages.length > 0 && (
+          <div
+            className="flex-1 overflow-y-auto overflow-x-hidden p-4 bg-white/70 dark:bg-zinc-900/90"
+          >
+            {/* Messages */}
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`mb-4 flex items-center ${
+                  message.fromPeerId === peerId ? "justify-end" : "justify-start"
+                }`}
+              >
+                {message.fromPeerId !== peerId && (
+                  <QRCodeAvatar
+                    src={message.fromPeerId}
+                    className='mr-4 w-10 flex-shrink-0 rounded-full'
+                  />
+                )}
+                <div className='w-auto max-w-full overflow-hidden rounded-lg border-2 border-darkOrange bg-darkRed p-3 font-bold shadow md:max-w-lg'>
+                  <Text className='break-words text-white dark:text-white'>
+                    {message.message}
+                  </Text>
+                </div>
+                {message.fromPeerId === peerId && (
+                  <QRCodeAvatar
+                    src={message.fromPeerId}
+                    className='ml-4 w-10 flex-shrink-0 rounded-full'
+                  />
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {channels.length > 0 && (
+          <div className='fixed bottom-0 left-0 lg:left-64 right-0 p-4 flex-shrink-0 bg-white pt-1 dark:bg-zinc-900'>
+            <div className='mx-4 flex max-w-full items-center'>
+              <Textarea
+                ref={textareaRef}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder='Type your message...'
+                className='mr-2 flex-1 resize-none overflow-hidden rounded-lg font-bold focus:border-white'
+                rows={1}
+              />
+              <Button onClick={handleSend} className='flex-shrink-0'>
+                <PaperAirplaneIcon />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

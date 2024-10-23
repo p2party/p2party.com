@@ -1,0 +1,61 @@
+import { Heading, Subheading } from "../components/heading";
+import { Strong, Text } from "../components/text";
+
+const TOSPage = () => {
+  return (
+    <div className='flex min-h-screen w-full flex-col justify-center bg-gradient-to-r from-darkOrange to-darkRed p-10'>
+      <Heading>Terms of Service</Heading>
+
+      <Subheading>Effective Date: 17 October 2024</Subheading>
+
+      <Text>
+        <Strong>1. Introduction</Strong>
+        These Terms of Service govern your use of our platform, which enables
+        peer-to-peer (P2P) text-based communication through a mesh network. By
+        accessing our platform, you agree to these terms.
+        <Strong>2. User Responsibilities</Strong>
+        WebRTC Connections: By using our platform, you initiate P2P WebRTC
+        connections for text-based communication. You are responsible for the
+        content you transmit and must comply with applicable laws. No Harmful
+        Content: You must not use the platform to transmit illegal, harmful,
+        offensive, or otherwise inappropriate content, including but not limited
+        to hate speech, defamation, harassment, or any other unlawful text-based
+        communication. We do not store or moderate the content exchanged in
+        real-time, but we reserve the right to take action if we are made aware
+        of the transmission of harmful or illegal content. You are solely
+        responsible for ensuring that the content you transmit complies with all
+        applicable laws and does not harm others.
+        <Strong>3. Connection Data Handling</Strong>
+        Signaling Server: Our signaling server processes session identifiers but
+        does not store any personally identifiable information (PII). These
+        identifiers are used solely for establishing connections between peers.
+        STUN and TURN Servers: Our STUN and TURN servers temporarily process
+        technical data, such as IP addresses, to facilitate connections. This
+        data is not stored or linked to PII and is processed only for the
+        duration of the session.
+        <Strong>4. Intellectual Property</Strong> All content and technology on
+        the platform are protected by intellectual property laws. You are
+        granted a limited, non-transferable right to use the platform as
+        intended.
+        <Strong>5. Limitation of Liability</Strong>
+        Content: We are not liable for the content of text messages transmitted
+        between users. The platform serves as a neutral conduit for peer-to-peer
+        communication. Connection Issues: We are not liable for any loss of
+        data, connection issues, or other technical problems during P2P
+        interactions. Harmful Content: While we do not monitor or store the
+        content exchanged, we are not responsible for any harm or legal issues
+        arising from users' transmission of illegal or harmful text content.
+        <Strong>6. Modifications to the Service</Strong> We may modify, suspend,
+        or discontinue the platform at any time without prior notice.
+        <Strong>7. Termination</Strong> We may terminate or suspend your access
+        to the platform for violations of these terms or applicable laws.
+        <Strong>8. Changes to the Terms of Service</Strong> We reserve the right
+        to update these terms. Any changes will be posted with an updated
+        effective date. Contact Us For any questions, please contact us at
+        [email].
+      </Text>
+    </div>
+  );
+};
+
+export default TOSPage;
