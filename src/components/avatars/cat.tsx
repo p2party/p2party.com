@@ -8,7 +8,10 @@ export interface CatAvatarProps {
 
 const CatAvatar = ({ className }: CatAvatarProps) => {
   return (
-    <Avatar src={"/logo-cat.svg"} className={clsx("outline-0", className)} />
+    <Avatar
+      src={"/logo-cat.svg"}
+      className={clsx("select-none border-0 outline-0", className)}
+    />
   );
 };
 

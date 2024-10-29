@@ -28,7 +28,7 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className='flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-darkOrange to-darkRed z-10'>
+    <div className='z-10 flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-darkOrange to-darkRed'>
       <div className='px-4 text-center'>
         <CatAvatar className='w-1/2 border-0 outline-0' />
 
@@ -40,7 +40,7 @@ const HomePage = () => {
         </p>
       </div>
 
-      <div className='flex flex-col items-center space-y-2 z-100'>
+      <div className='z-100 flex flex-col items-center space-y-2'>
         <Button
           href={`/${roomId}`}
           // onClick={handleCreateRandomRoom}

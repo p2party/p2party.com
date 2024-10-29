@@ -1,4 +1,4 @@
-// import { useEffect } from "react";
+import { useState } from "react";
 // import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import p2party from "p2party";
@@ -20,6 +20,8 @@ export const useRoom = () =>
     const signalingServerConnection = useSelector(
       p2party.signalingServerSelector,
     );
+
+    const [selectedChannel, setSelectedChannel] = useState("main");
 
     const openChannel = async (name: string) => {
       await p2party.openChannel(name, room.peers);
@@ -57,6 +59,8 @@ export const useRoom = () =>
       channels: room.channels,
       messages: room.messages,
       openChannel,
+      selectedChannel,
+      selectChannel: setSelectedChannel,
       sendMessage,
     };
   };

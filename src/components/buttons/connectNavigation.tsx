@@ -1,3 +1,4 @@
+import * as Headless from "@headlessui/react";
 import { lazy, useState, useEffect, Suspense } from "react";
 
 import { useRoom } from "../../hooks/useRoom";
@@ -16,13 +17,14 @@ const PeerDropdownNavigation = lazy(
 const ChannelDropdownNavigation = lazy(
   () => import("../dropdowns/channelDropdownNavigation"),
 );
+const ChannelListbox = lazy(() => import("../dropdowns/channelListbox"));
 
 export interface ConnectButtonNavigationProps {
   roomUrl: string;
 }
 
 const ConnectButtonNavigation = ({ roomUrl }: ConnectButtonNavigationProps) => {
-  const { signalingServerConnectionState, connect, peers, channels } =
+  const { signalingServerConnectionState, connect, peers, channels, messages } =
     useRoom();
 
   const [isConnecting, setIsConnecting] = useState(false);
@@ -55,6 +57,13 @@ const ConnectButtonNavigation = ({ roomUrl }: ConnectButtonNavigationProps) => {
         channels.length > 0) && (
         <>
           <Suspense fallback={<Spinner />}>
+            {messages.length > 0 && (
+              <Headless.Field className='hidden items-baseline justify-between gap-6 sm:flex lg:hidden'>
+                <Suspense fallback={<Spinner />}>
+                  <ChannelListbox />
+                </Suspense>
+              </Headless.Field>
+            )}
             <Suspense fallback={<Spinner />}>
               <SignalingDropdownNavigation />
             </Suspense>

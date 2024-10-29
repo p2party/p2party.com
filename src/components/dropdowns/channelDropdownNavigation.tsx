@@ -7,7 +7,7 @@ import { SidebarLabel } from "../sidebar";
 import { NavbarItem } from "../navbar";
 import ChannelDropdownMenu from "./channelDropdownMenu";
 
-import { UserGroupIcon } from "@heroicons/react/20/solid";
+import { ChatBubbleBottomCenterTextIcon } from "@heroicons/react/20/solid";
 
 const ChannelDropdownNavigation = () => {
   const { channels } = useRoom();
@@ -21,7 +21,7 @@ const ChannelDropdownNavigation = () => {
   return (
     <Dropdown>
       <DropdownButton as={NavbarItem}>
-        <UserGroupIcon />
+        <ChatBubbleBottomCenterTextIcon />
         <SidebarLabel>{channelsLen}</SidebarLabel>
       </DropdownButton>
 

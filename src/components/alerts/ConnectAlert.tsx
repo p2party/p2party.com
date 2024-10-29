@@ -28,13 +28,14 @@ const ConnectAlert = ({ roomUrl, isOpen, setIsOpen }: ConnectAlertProps) => {
 
   return (
     <Alert open={isOpen} onClose={setIsOpen} size='lg'>
-      <AlertTitle>Connect to a room</AlertTitle>
-      <AlertDescription className='text-zinc-950 dark:text-white'>
-        First you will need to connect to the p2party.com signaling servers in
-        order to be discoverable by other peers in the same room. In order to
-        establish WebRTC connections, information about the networking
-        capabilities of your browser will be relayed by the server to your
-        potential future peers, including your public IP address.
+      <AlertTitle>Connecting to a room</AlertTitle>
+      <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
+        You first need to connect to the p2party.com signaling servers in order
+        to discover other peers in the same room. In order to establish WebRTC
+        connections, information about your browser's networking capabilities
+        will be relayed to your potential future peers, including your IP
+        address. By default, you become a relay yourself through the "signaling"
+        data channel, which you can close anytime.
       </AlertDescription>
       <AlertBody>
         By continuing, you agree to the{" "}
@@ -61,7 +62,9 @@ const ConnectAlert = ({ roomUrl, isOpen, setIsOpen }: ConnectAlertProps) => {
         <Button plain onClick={() => setIsOpen(false)}>
           Cancel
         </Button>
-        <Button onClick={handleConnectNow}>Connect</Button>
+        <Button autoFocus onClick={handleConnectNow}>
+          Connect
+        </Button>
       </AlertActions>
     </Alert>
   );

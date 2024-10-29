@@ -34,7 +34,10 @@ export const QRCodeAvatar = ({ src, className }: Params) => {
       src={qrCodeDataUri}
       square={true} // Makes the avatar a rounded rectangle
       alt='QR Code Avatar'
-      className={clsx(className, "rounded-[15%] border border-2 border-light")} // Custom border and rounded corners
+      className={clsx(
+        className,
+        "select-none rounded-[15%] border border-2 border-light",
+      )} // Custom border and rounded corners
     />
   );
 };
