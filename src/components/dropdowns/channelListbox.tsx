@@ -12,17 +12,22 @@ import { useRoom } from "../../hooks/useRoom";
 const ChannelListbox = () => {
   const { channels, messages, selectedChannel, selectChannel } = useRoom();
 
-  const [messagesLen, setMessagesLen] = useState(0);
+  const [messagesLen, setMessagesLen] = useState<number[]>([]);
 
   useEffect(() => {
-    const len = messages.length;
-    let j = 0;
-    for (let i = 0; i < len; i++) {
-      if (messages[i].channelLabel === selectedChannel) j++;
-    }
+    const mlen = messages.length;
+    const clen = channels.length;
+    for (let i = 0; i < clen; i++) {
+      let k = 0;
+      for (let j = 0; j < mlen; j++) {
+        if (messages[j].channelLabel === channels[i].label) k++;
+      }
 
-    if (j !== messagesLen) setMessagesLen(j);
-  }, [messages, selectedChannel]);
+      const m = messagesLen;
+      m[i] = k;
+      setMessagesLen(m);
+    }
+  }, [messages, selectedChannel, channels]);
 
   return (
     <Listbox
@@ -31,11 +36,12 @@ const ChannelListbox = () => {
       defaultValue={selectedChannel}
       onChange={selectChannel}
     >
-      {channels.map((channel) => (
+      {channels.map((channel, i) => (
         <ListboxOption value={channel.label} key={channel.label}>
-          <ListboxLabel className='capitalize'>{channel.label}:</ListboxLabel>
+          <ListboxLabel className='capitalize'>{channel.label} :</ListboxLabel>
           <ListboxDescription>
-            {channel.peerIds.length} peers, {messagesLen} messages
+            {channel.peerIds.length} peers, {messagesLen[i]} messages,{" "}
+            {channels.length} channels
           </ListboxDescription>
         </ListboxOption>
       ))}

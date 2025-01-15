@@ -30,13 +30,14 @@ const HomePage = () => {
   return (
     <div className='z-10 flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-darkOrange to-darkRed'>
       <div className='px-4 text-center'>
-        <CatAvatar className='w-1/2 border-0 outline-0' />
+        <CatAvatar className='w-2/5 border-0 outline-0' />
 
         <h1 className='mb-4 text-5xl font-bold text-white'>
-          P2Party generates WebRTC meeting points
+          Generate throwaway rooms
         </h1>
         <p className='mb-6 text-lg text-gray-200'>
-          Send the room URL to your friends and connect with them peer-to-peer
+          Send the URL to your friends, connect peer-to-peer, enjoy text and
+          file sharing with secrecy.
         </p>
       </div>
 
@@ -44,9 +45,9 @@ const HomePage = () => {
         <Button
           href={`/${roomId}`}
           // onClick={handleCreateRandomRoom}
-          className='rounded-lg bg-darkOrange px-6 py-5 font-bold text-white'
+          className='rounded-lg bg-darkOrange px-12 py-8 font-bold text-white'
         >
-          Generate Random Room
+          Random Room
         </Button>
       </div>
 

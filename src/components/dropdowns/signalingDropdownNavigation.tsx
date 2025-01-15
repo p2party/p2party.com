@@ -12,7 +12,7 @@ import { useRoom } from "../../hooks/useRoom";
 import { CheckIcon, SignalSlashIcon } from "@heroicons/react/20/solid";
 
 const SignalingDropdownNavigation = () => {
-  const { signalingServerConnectionState, disconnectFromSignalingServer } =
+  const { signalingServerConnectionState, connectToSignalingServer, disconnectFromSignalingServer } =
     useRoom();
 
   return (
@@ -27,7 +27,7 @@ const SignalingDropdownNavigation = () => {
           <>
             <DropdownItem onClick={disconnectFromSignalingServer}>
               <XMarkIcon />
-              Disconnect from signaling server
+              Stop being discoverable
             </DropdownItem>
 
             {/*
@@ -40,9 +40,9 @@ const SignalingDropdownNavigation = () => {
         )}
 
         {!signalingServerConnectionState.isConnected && (
-          <DropdownItem>
+          <DropdownItem onClick={() => connectToSignalingServer()}>
             <CheckIcon />
-            Connect to signaling server
+            Become discoverable 
           </DropdownItem>
         )}
       </DropdownMenu>

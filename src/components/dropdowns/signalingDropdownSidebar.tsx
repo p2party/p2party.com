@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+// import { useParams } from "react-router-dom";
 
 import {
   Dropdown,
@@ -15,15 +15,15 @@ import {
   EllipsisHorizontalIcon,
   SignalSlashIcon,
   CheckIcon,
-} from "@heroicons/react/16/solid";
+} from "@heroicons/react/20/solid";
 
 import { useRoom } from "../../hooks/useRoom";
 
 const SignalingDropdownSidebar = () => {
-  const { roomUrl } = useParams();
+  // const { roomUrl } = useParams();
   const {
     signalingServerConnectionState,
-    connect,
+    connectToSignalingServer,
     disconnectFromSignalingServer,
   } = useRoom();
 
@@ -32,13 +32,13 @@ const SignalingDropdownSidebar = () => {
       <DropdownButton as={SidebarItem}>
         {signalingServerConnectionState.isConnected && (
           <span className='flex min-w-0 items-center gap-3'>
-            <SignalIcon className='size-7' />
+            <SignalIcon className='size-9' />
             <span className='min-w-0'>
               <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                Signaling server:
+                Discoverable
               </span>
               <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
-                Connected
+                Connected to signaling server
               </span>
             </span>
           </span>
@@ -55,7 +55,7 @@ const SignalingDropdownSidebar = () => {
             </div>
             <span className='min-w-0'>
               <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                Signaling server:
+                Signaling server
               </span>
               <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
                 {signalingServerConnectionState.isConnected
@@ -72,10 +72,10 @@ const SignalingDropdownSidebar = () => {
               <SignalSlashIcon className='size-7' />
               <span className='min-w-0'>
                 <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                  Signaling server:
+                  Non-discoverable
                 </span>
                 <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
-                  Disconnected
+                  Disconnected from signaling server
                 </span>
               </span>
             </span>
@@ -99,7 +99,7 @@ const SignalingDropdownSidebar = () => {
         )}
 
         {!signalingServerConnectionState.isConnected && (
-          <DropdownItem onClick={() => connect(roomUrl ?? "")}>
+          <DropdownItem onClick={() => connectToSignalingServer()}>
             <CheckIcon />
             Connect to signaling server
           </DropdownItem>

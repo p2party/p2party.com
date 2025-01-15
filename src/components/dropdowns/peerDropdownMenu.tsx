@@ -1,33 +1,46 @@
+import { useParams } from "react-router-dom";
+import { SignalIcon, SignalSlashIcon } from "@heroicons/react/20/solid";
+
+import { useRoom } from "../../hooks/useRoom";
 import { DropdownMenu, DropdownItem } from "../dropdown";
-import {
-  PlusIcon,
-  MagnifyingGlassIcon as MagnifyingGlassIcon16,
-  MinusIcon,
-  StopIcon,
-} from "@heroicons/react/16/solid";
 
 const PeerDropdownMenu = () => {
+  const { roomUrl } = useParams();
+  const { peers, signalingServerConnectionState, connect, disconnectFromPeer } =
+    useRoom();
+
+  const handleDisconnectFromPeers = () => {
+    const PEERS_LEN = peers.length;
+    for (let i = 0; i < PEERS_LEN; i++) {
+      console.log("DISCONNECT FROM PEER ID " + peers[i].peerId);
+      disconnectFromPeer(peers[i].peerId);
+    }
+  };
+
   return (
     <DropdownMenu className='min-w-64' anchor='bottom start'>
-      <DropdownItem>
-        <MagnifyingGlassIcon16 />
-        Search peers
-      </DropdownItem>
+      {peers.length > 0 && (
+        <>
+        {signalingServerConnectionState.isConnected && (
+          <DropdownItem onClick={() => connect(roomUrl ?? "")}>
+            <SignalIcon />
+            Connect with new peers 
+          </DropdownItem>
+        )}
 
-      <DropdownItem>
-        <PlusIcon />
-        Add peer
-      </DropdownItem>
-
-      <DropdownItem>
-        <MinusIcon />
-        Remove peer
-      </DropdownItem>
-
-      <DropdownItem>
-        <StopIcon />
-        Block peer
-      </DropdownItem>
+        <DropdownItem onClick={handleDisconnectFromPeers}>
+          <SignalSlashIcon />
+          Disconnect from peers
+        </DropdownItem>
+        </>
+      )}
+      
+      {peers.length === 0 && signalingServerConnectionState.isConnected && (
+        <DropdownItem onClick={() => connect(roomUrl ?? "")}>
+          <SignalIcon />
+          Connect to peers
+        </DropdownItem>
+      )}
     </DropdownMenu>
   );
 };

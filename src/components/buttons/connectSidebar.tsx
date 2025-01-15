@@ -34,6 +34,7 @@ const ConnectButtonSidebar = ({ roomUrl }: ConnectButtonSidebarParams) => {
     connect,
     peers,
     channels,
+    purge,
   } = useRoom();
 
   const [isConnecting, setIsConnecting] = useState(false);
@@ -112,7 +113,7 @@ const ConnectButtonSidebar = ({ roomUrl }: ConnectButtonSidebarParams) => {
 
           <SidebarSpacer />
 
-          <SidebarItem>
+          <SidebarItem onClick={purge}>
             <span className='flex min-w-0 items-center gap-3'>
               <TrashIcon className='size-7' />
               <span className='min-w-0 text-sm/5 font-medium text-zinc-950 dark:text-white'>

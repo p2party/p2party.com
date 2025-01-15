@@ -2,7 +2,8 @@ import { lazy, Suspense, useState } from "react";
 import { useParams } from "react-router-dom";
 // import { useLocalStorage } from "usehooks-ts";
 
-import { SidebarLayout } from "../sidebar-layout";
+// import { SidebarLayout } from "../sidebar-layout";
+import { StackedLayout } from "../stacked-layout";
 import ConnectAlert from "../alerts/ConnectAlert";
 import Spinner from "./spinner";
 
@@ -10,17 +11,19 @@ const NavBar = lazy(() => import("../navigation/navbar"));
 const SideBar = lazy(() => import("../navigation/sidebar"));
 
 import type { PropsWithChildren } from "react";
-import Footer from "./footer";
+// import Footer from "./footer";
 
 const Layout = ({ children }: PropsWithChildren) => {
   const { roomUrl } = useParams();
+
   let [alertIsOpen, setAlertIsOpen] = useState(true); // useLocalStorage(
   //   "show-privacy-alert",
   //   true,
   // );
 
   return (
-    <SidebarLayout
+    // <SidebarLayout
+    <StackedLayout
       navbar={
         <Suspense fallback={<Spinner />}>
           <NavBar roomUrl={roomUrl ?? ""} />
@@ -28,7 +31,8 @@ const Layout = ({ children }: PropsWithChildren) => {
       }
       sidebar={
         <Suspense fallback={<Spinner />}>
-          <SideBar roomUrl={roomUrl ?? ""} />
+          {/* <SideBar />  roomUrl={roomUrl ?? ""} /> */}
+          <SideBar />
         </Suspense>
       }
     >
@@ -40,8 +44,9 @@ const Layout = ({ children }: PropsWithChildren) => {
         setIsOpen={setAlertIsOpen}
       />
 
-      <Footer />
-    </SidebarLayout>
+      {/* <Footer /> */}
+      {/* </SidebarLayout> */}
+    </StackedLayout>
   );
 };
 

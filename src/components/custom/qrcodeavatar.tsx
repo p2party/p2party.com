@@ -18,7 +18,7 @@ export const QRCodeAvatar = ({ src, className }: Params) => {
     // Generate the QR code data URI from the parameter string
     QRCode.toDataURL(
       src,
-      { margin: 0, width: 100 }, // Adjust size as needed
+      { margin: 0, width: 100, errorCorrectionLevel: "H" }, // Adjust size as needed
       (err, url) => {
         if (err) {
           console.error(err);
@@ -34,10 +34,7 @@ export const QRCodeAvatar = ({ src, className }: Params) => {
       src={qrCodeDataUri}
       square={true} // Makes the avatar a rounded rectangle
       alt='QR Code Avatar'
-      className={clsx(
-        className,
-        "select-none rounded-[15%] border border-2 border-light",
-      )} // Custom border and rounded corners
+      className={clsx(className, "select-none border border-2 border-light")} // Custom border and rounded corners
     />
   );
 };

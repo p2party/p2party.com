@@ -1,5 +1,6 @@
 import { promises as fs, readFileSync } from "fs";
 import * as path from "path";
+import dotenv from "dotenv";
 import {
   S3Client,
   // This command supersedes the ListObjectsCommand and is the recommended way to list objects.
@@ -11,6 +12,8 @@ import {
 
 import { getMimeTypeFromExtension } from "./getMimeTypeFromExtension.mjs";
 
+dotenv.config({path: './.env'});
+
 const client = new S3Client({
   region: process.env.AWS_S3_REGION,
   credentials: {
@@ -18,6 +21,8 @@ const client = new S3Client({
     secretAccessKey: process.env.AWS_S3_SECRET_KEY,
   },
 });
+
+console.log("Updating " + process.env.AWS_S3_BUCKET);
 
 // Recursive getFiles from
 // https://stackoverflow.com/a/45130990/831465
@@ -52,8 +57,8 @@ async function getAllObjectsFromS3Bucket() {
       const contentsLen = Contents.length;
       for (let i = 0; i < contentsLen; i++) {
         if (
-          (process.env.NODE_ENV === "development" &&
-            Contents[i].Key?.includes("robots.txt")) ||
+          // (process.env.NODE_ENV === "development" &&
+          Contents[i].Key?.includes("robots.txt") || // )
           Contents[i].Key?.includes(".well-known") ||
           Contents[i].Key?.includes(
             "apple-developer-merchantid-domain-association",
@@ -93,7 +98,7 @@ if (existingFiles && existingFiles.length > 0) {
   }
 }
 
-const buildDir = "build";
+const buildDir = "dist";
 
 const files = await getDirFiles(buildDir);
 const filesLen = files.length;

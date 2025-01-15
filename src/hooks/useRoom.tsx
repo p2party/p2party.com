@@ -1,7 +1,13 @@
-import { useState } from "react";
-// import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import p2party from "p2party";
+
+import type { Message } from "p2party";
+
+export interface MessageWithData extends Message {
+  data: string | File;
+}
 
 export const useRoom = () =>
   // signalingServerUrl = "ws://localhost:3001/ws",
@@ -13,54 +19,88 @@ export const useRoom = () =>
   //   ],
   // },
   {
-    // const { roomUrl } = useParams();
+    const { roomUrl } = useParams();
 
     const keyPair = useSelector(p2party.keyPairSelector);
-    const room = useSelector(p2party.roomSelector);
+    const rooms = useSelector(p2party.roomSelector);
+    // const commonState = useSelector(p2party.commonStateSelector)
     const signalingServerConnection = useSelector(
       p2party.signalingServerSelector,
     );
 
+    const [roomIndex, setRoomIndex] = useState(-1);
     const [selectedChannel, setSelectedChannel] = useState("main");
 
     const openChannel = async (name: string) => {
-      await p2party.openChannel(name, room.peers);
+      if (roomIndex === -1) throw new Error("No room was selected")
+      
+      await p2party.openChannel(rooms[roomIndex].id, name, rooms[roomIndex].peers);
     };
 
-    const sendMessage = (message: string, channel?: string) => {
-      if (message.length > 0) p2party.sendMessage(message, channel);
+    const sendMessage = (message: string | File, channel: string) => {
+      if (roomIndex === -1) throw new Error("No room was selected");
+
+      p2party.sendMessage(message, channel, rooms[roomIndex].id);
     };
 
-    // useEffect(() => {
-    //   const abortController = new AbortController();
-    //
-    //   try {
-    //     if (roomUrl && roomUrl.length > 0) {
-    //       p2party.connect(roomUrl, signalingServerUrl, rtcConfig);
-    //     }
-    //   } catch (error) {
-    //     console.error(error);
-    //   }
-    //
-    //   return () => {
-    //     abortController.abort();
-    //   };
-    // }, [roomUrl]);
+    const readMessage = async (merkleRootHex: string) => {
+      return await p2party.readMessage(merkleRootHex);
+    };
+
+    const cancelMessage = async (
+      channelLabel: string,
+      merkleRootHex: string,
+    ) => {
+      return await p2party.cancelMessage(channelLabel, merkleRootHex);
+    };
+
+    const deleteMessage = async (merkleRootHex: string) => {
+      return await p2party.deleteMessage(merkleRootHex);
+    };
+
+    useEffect(() => {
+      // const abortController = new AbortController();
+    
+      // try {
+      //   if (roomUrl && roomUrl.length > 0) {
+      //     p2party.connect(roomUrl, signalingServerUrl, rtcConfig);
+      //   }
+      // } catch (error) {
+      //   console.error(error);
+      // }
+    
+      // return () => {
+      //   abortController.abort();
+      // };
+      const i = rooms.findIndex((r) => r.url === roomUrl);
+      if (i > -1 && rooms[i].id.length > 0) {
+        setRoomIndex(i);
+      }
+    }, [roomUrl, rooms]);
 
     return {
       keyPair,
+      peerId: keyPair.peerId,
+      roomId: roomIndex > -1 ? rooms[roomIndex].id : "",
+      signalingServerConnectionState: signalingServerConnection,
+      peers: roomIndex > -1 ? rooms[roomIndex].peers : [],
+      channels: roomIndex > -1 ? rooms[roomIndex].channels : [],
+      messages: roomIndex > -1 ? rooms[roomIndex].messages : [],
+      selectedChannel,
       connect: p2party.connect,
+      connectToSignalingServer: p2party.connectToSignalingServer,
       disconnect: p2party.disconnectFromRoom,
       disconnectFromSignalingServer: p2party.disconnectFromSignalingServer,
-      peerId: keyPair.peerId,
-      roomId: room.id,
-      signalingServerConnectionState: signalingServerConnection,
-      peers: room.peers,
-      channels: room.channels,
-      messages: room.messages,
+      disconnectFromRoom: p2party.disconnectFromRoom,
+      disconnectFromPeer: p2party.disconnectFromPeer,
       openChannel,
-      selectedChannel,
       selectChannel: setSelectedChannel,
       sendMessage,
+      readMessage,
+      cancelMessage,
+      deleteMessage,
+      purge: p2party.purge,
+      purgeRoom: p2party.purgeRoom,
+      purgeIdentity: p2party.purgeIdentity,
     };
   };
