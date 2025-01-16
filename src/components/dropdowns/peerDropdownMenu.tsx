@@ -21,20 +21,20 @@ const PeerDropdownMenu = () => {
     <DropdownMenu className='min-w-64' anchor='bottom start'>
       {peers.length > 0 && (
         <>
-        {signalingServerConnectionState.isConnected && (
-          <DropdownItem onClick={() => connect(roomUrl ?? "")}>
-            <SignalIcon />
-            Connect with new peers 
-          </DropdownItem>
-        )}
+          {signalingServerConnectionState.isConnected && (
+            <DropdownItem onClick={() => connect(roomUrl ?? "")}>
+              <SignalIcon />
+              Connect with new peers
+            </DropdownItem>
+          )}
 
-        <DropdownItem onClick={handleDisconnectFromPeers}>
-          <SignalSlashIcon />
-          Disconnect from peers
-        </DropdownItem>
+          <DropdownItem onClick={handleDisconnectFromPeers}>
+            <SignalSlashIcon />
+            Disconnect from peers
+          </DropdownItem>
         </>
       )}
-      
+
       {peers.length === 0 && signalingServerConnectionState.isConnected && (
         <DropdownItem onClick={() => connect(roomUrl ?? "")}>
           <SignalIcon />

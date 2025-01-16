@@ -7,7 +7,11 @@ import {
 } from "../dropdown";
 import { NavbarItem } from "../navbar";
 
-import { UserMinusIcon, ScissorsIcon, FireIcon} from "@heroicons/react/16/solid";
+import {
+  UserMinusIcon,
+  ScissorsIcon,
+  FireIcon,
+} from "@heroicons/react/16/solid";
 
 import { useRoom } from "../../hooks/useRoom";
 import { TrashIcon } from "@heroicons/react/20/solid";
@@ -25,20 +29,20 @@ const DeleteDropdownNavigation = () => {
         {keyPair.publicKey.length === 64 && (
           <DropdownItem onClick={purgeIdentity}>
             <UserMinusIcon />
-            Purge Identity 
+            Purge Identity
           </DropdownItem>
         )}
 
         {roomId.length > 0 && (
           <DropdownItem onClick={() => purgeRoom(roomUrl ?? "")}>
             <ScissorsIcon />
-            Purge Room Data 
+            Purge Room Data
           </DropdownItem>
         )}
 
         <DropdownItem onClick={purge}>
-            <FireIcon />
-            Purge All Data 
+          <FireIcon />
+          Purge All Data
         </DropdownItem>
       </DropdownMenu>
     </Dropdown>

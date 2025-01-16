@@ -28,26 +28,24 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className='z-10 flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-darkOrange to-darkRed'>
-      <div className='px-4 text-center'>
-        <CatAvatar className='w-2/5 border-0 outline-0' />
+    <div className='relative flex min-h-screen flex-col items-center justify-start md:justify-center pt-20 md:pt-0 bg-gradient-to-br from-darkOrange to-darkRed px-6'>
+      <div className='flex max-w-lg flex-col items-center text-center'>
+        <CatAvatar className='mb-2 w-2/3 drop-shadow-lg' />
 
-        <h1 className='mb-4 text-5xl font-bold text-white'>
-          Generate throwaway rooms
+        <h1 className='mb-4 text-4xl font-extrabold leading-tight text-white md:text-5xl'>
+          Instant, Secure Throwaway Rooms
         </h1>
-        <p className='mb-6 text-lg text-gray-200'>
-          Send the URL to your friends, connect peer-to-peer, enjoy text and
-          file sharing with secrecy.
-        </p>
-      </div>
 
-      <div className='z-100 flex flex-col items-center space-y-2'>
+        <p className='mb-8 max-w-xl text-lg text-gray-300'>
+          Share the link, wait for peers, connect, enjoy p2p text & file sharing
+          with privacy.
+        </p>
+
         <Button
           href={`/${roomId}`}
-          // onClick={handleCreateRandomRoom}
-          className='rounded-lg bg-darkOrange px-12 py-8 font-bold text-white'
+          className='rounded-lg bg-white/10 px-10 py-4 text-lg font-semibold text-white transition hover:bg-white/20'
         >
-          Random Room
+          Generate Random Room
         </Button>
       </div>
 

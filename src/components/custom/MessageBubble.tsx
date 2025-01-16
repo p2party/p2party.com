@@ -88,7 +88,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
       )}
       <div className='relative w-auto max-w-full overflow-hidden rounded-lg border-2 border-darkOrange bg-darkRed p-3 font-bold shadow md:max-w-lg'>
         {msgCategory === MessageCategory.Text && (
-          <Text className='break-words whitespace-pre-wrap text-white dark:text-white'>
+          <Text className='whitespace-pre-wrap break-words text-white dark:text-white'>
             {msg as string}
           </Text>
         )}

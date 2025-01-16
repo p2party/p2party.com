@@ -51,10 +51,11 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
     setNewMessage("");
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => { // (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // (e: KeyboardEvent<HTMLInputElement>) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       handleSend();
-    } 
+    }
     // else if (e.key === "Enter" || e.key === "Return") {
     //   setNewMessage(newMessage + "\n");
     // }
@@ -81,7 +82,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
               <PaperClipIcon />
             </Button>
             <Textarea
-            // <Input
+              // <Input
               ref={textareaRef}
               value={newMessage}
               disabled={channels.length === 0}

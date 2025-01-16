@@ -45,7 +45,9 @@ const ChatPage = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setDots((prev) =>
-        prev.length < 3 && signalingServerConnectionState.isConnected && (peers.length === 0 || messages.length === 0)
+        prev.length < 3 &&
+        signalingServerConnectionState.isConnected &&
+        (peers.length === 0 || messages.length === 0)
           ? prev + "."
           : "",
       );
@@ -146,7 +148,7 @@ const ChatPage = () => {
         <CatAvatar className='w-full outline-white md:w-5/6 lg:w-2/5 dark:outline-zinc-900' />
       </div>
 
-      <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
+      <div className='relative z-10 flex min-h-0 flex-1 flex-col pb-1'>
         {peers.length === 0 && signalingServerConnectionState.isConnected && (
           <div className='mx-auto flex w-36 items-center justify-center'>
             <Badge
@@ -174,31 +176,26 @@ const ChatPage = () => {
 
         {messages.length === 0 && peers.length > 0 && (
           <div className='mx-auto flex w-48 items-center justify-center pb-4'>
-            <Badge
-              color='orange'
-              className='w-full text-left text-center'
-            >
-              Waiting for messages{dots} 
+            <Badge color='orange' className='w-full text-left text-center'>
+              Waiting for messages{dots}
             </Badge>
           </div>
         )}
 
         {messages.length > 0 && (
-          // <>
-          //   <ChatHeading />
-
-          <div className='flex-1 overflow-y-auto overflow-x-hidden bg-white/70 px-1 pb-9 pt-1 lg:px-4 lg:pt-8 dark:bg-zinc-900/90'>
-            {/* Messages */}
-            {messages.map((message) => {
-              // console.log(message.channelLabel);
-              // console.log(selectedChannel);
-              if (message.channelLabel === selectedChannel)
-                // return <MessageBubble message={message} />;
-                return <MessageItem message={message} />;
-            })}
+          <>
+            <div className='flex-1 overflow-y-auto overflow-x-hidden bg-white/70 px-1 pb-9 pt-1 lg:px-4 lg:pt-8 dark:bg-zinc-900/90'>
+              {/* Messages */}
+              {messages.map((message) => {
+                // console.log(message.channelLabel);
+                // console.log(selectedChannel);
+                if (message.channelLabel === selectedChannel)
+                  // return <MessageBubble message={message} />;
+                  return <MessageItem message={message} />;
+              })}
+            </div>
             <div ref={messagesEndRef} />
-          </div>
-          // </>
+          </>
         )}
 
         <MessageInput handleFiles={handleFiles} />

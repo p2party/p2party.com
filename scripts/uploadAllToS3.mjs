@@ -12,7 +12,7 @@ import {
 
 import { getMimeTypeFromExtension } from "./getMimeTypeFromExtension.mjs";
 
-dotenv.config({path: './.env'});
+dotenv.config({ path: "./.env" });
 
 const client = new S3Client({
   region: process.env.AWS_S3_REGION,

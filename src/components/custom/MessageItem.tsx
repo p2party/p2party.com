@@ -134,8 +134,11 @@ const MessageItem = ({ message }: MessageItemProps) => {
       }`}
     >
       {message.fromPeerId !== peerId && (
-        <Avatar 
-          initials={message.fromPeerId.slice(message.fromPeerId.length - 2, message.fromPeerId.length)}
+        <Avatar
+          initials={message.fromPeerId.slice(
+            message.fromPeerId.length - 2,
+            message.fromPeerId.length,
+          )}
           className='mr-4 w-10 flex-shrink-0 rounded-full'
         />
       )}
@@ -143,7 +146,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
         <Dropdown>
           <DropdownButton plain>
             {msgCategory === MessageCategory.Text && (
-              <Text className='break-words whitespace-pre-wrap text-left text-white dark:text-white'>
+              <Text className='whitespace-pre-wrap break-words text-left text-white dark:text-white'>
                 {msg as string}
               </Text>
             )}
@@ -217,8 +220,11 @@ const MessageItem = ({ message }: MessageItemProps) => {
         )}
       </div>
       {message.fromPeerId === peerId && (
-        <Avatar 
-          initials={message.fromPeerId.slice(message.fromPeerId.length - 2, message.fromPeerId.length)}
+        <Avatar
+          initials={message.fromPeerId.slice(
+            message.fromPeerId.length - 2,
+            message.fromPeerId.length,
+          )}
           className='ml-4 w-10 flex-shrink-0 rounded-full'
         />
       )}

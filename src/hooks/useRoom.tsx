@@ -32,9 +32,13 @@ export const useRoom = () =>
     const [selectedChannel, setSelectedChannel] = useState("main");
 
     const openChannel = async (name: string) => {
-      if (roomIndex === -1) throw new Error("No room was selected")
-      
-      await p2party.openChannel(rooms[roomIndex].id, name, rooms[roomIndex].peers);
+      if (roomIndex === -1) throw new Error("No room was selected");
+
+      await p2party.openChannel(
+        rooms[roomIndex].id,
+        name,
+        rooms[roomIndex].peers,
+      );
     };
 
     const sendMessage = (message: string | File, channel: string) => {
@@ -60,7 +64,7 @@ export const useRoom = () =>
 
     useEffect(() => {
       // const abortController = new AbortController();
-    
+
       // try {
       //   if (roomUrl && roomUrl.length > 0) {
       //     p2party.connect(roomUrl, signalingServerUrl, rtcConfig);
@@ -68,7 +72,7 @@ export const useRoom = () =>
       // } catch (error) {
       //   console.error(error);
       // }
-    
+
       // return () => {
       //   abortController.abort();
       // };

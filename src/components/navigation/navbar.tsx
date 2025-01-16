@@ -24,7 +24,7 @@ const MessagesDropdownNavigation = lazy(
 );
 const DeleteDropdownNavigation = lazy(
   () => import("../dropdowns/deleteDropdownNavigation"),
-)
+);
 
 export interface NavBarProps {
   roomUrl: string;
@@ -43,7 +43,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
 
       {/* <ConnectButtonNavigation roomUrl={roomUrl ?? ""} /> */}
 
-      <NavbarSection className="gap-1">
+      <NavbarSection className='gap-1'>
         {/* {messages.length > 0 && (
           <Suspense fallback={<Spinner />}>
             <SignalingDropdownNavigation />
