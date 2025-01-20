@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import CatAvatar from "../components/avatars/cat";
 // import ChatHeading from "../components/custom/ChatHeader";
 // import MessageBubble from "../components/custom/MessageBubble";
-import MessageItem from "../components/custom/MessageItem";
+import MessageItem from "../components/MessageItem";
 import MessageInput from "../components/custom/MessageInput";
 
 import { useRoom } from "../hooks/useRoom";
@@ -37,8 +37,25 @@ const ChatPage = () => {
   // }, []);
 
   useEffect(() => {
+    const onFocus = () => {
+      if (!signalingServerConnectionState.isConnected && !signalingServerConnectionState.isEstablishingConnection && signalingServerConnectionState.serverUrl.length > 0) {
+        connectToSignalingServer();
+      }
+    }
+
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+    }
+  }, []);
+
+  useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      messagesEndRef.current.scrollIntoView({ 
+        block: "center",
+        behavior: "smooth" 
+      });
     }
   }, [messages]);
 
@@ -142,19 +159,18 @@ const ChatPage = () => {
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className='relative flex min-h-0 flex-col'
+      className='flex min-h-0 flex-col'
     >
-      <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center'>
-        <CatAvatar className='w-full outline-white md:w-5/6 lg:w-2/5 dark:outline-zinc-900' />
+      <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
+        <CatAvatar className='w-full outline-white w-2/3 md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
       </div>
 
-      <div className='relative z-10 flex min-h-0 flex-1 flex-col pb-1'>
         {peers.length === 0 && signalingServerConnectionState.isConnected && (
           <div className='mx-auto flex w-36 items-center justify-center'>
             <Badge
               color='orange'
               className='w-full text-center'
-              onClick={() => disconnectFromSignalingServer()}
+              onClick={disconnectFromSignalingServer}
             >
               Waiting for peers{dots}
             </Badge>
@@ -162,14 +178,13 @@ const ChatPage = () => {
         )}
 
         {peers.length === 0 && !signalingServerConnectionState.isConnected && (
-          <div className='mx-auto flex w-48 items-center justify-center pb-4'>
+          <div className='z-10 mx-auto flex w-64 items-center justify-center pb-4'>
             <Badge
               color='red'
               className='w-full text-left text-center'
               onClick={() => connectToSignalingServer()}
             >
-              Connect to the signaling server to discover and be discoverred by
-              peers
+              Press to connect to the signaling server and discover new peers
             </Badge>
           </div>
         )}
@@ -182,21 +197,24 @@ const ChatPage = () => {
           </div>
         )}
 
+
+      <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
         {messages.length > 0 && (
           <>
-            <div className='flex-1 overflow-y-auto overflow-x-hidden bg-white/70 px-1 pb-9 pt-1 lg:px-4 lg:pt-8 dark:bg-zinc-900/90'>
+            <div className='flex-1 overflow-y-auto overflow-x-hidden bg-white/70 pb-6 dark:bg-zinc-900/90'>
               {/* Messages */}
-              {messages.map((message) => {
+              {messages.map((message, i) => {
                 // console.log(message.channelLabel);
                 // console.log(selectedChannel);
                 if (message.channelLabel === selectedChannel)
                   // return <MessageBubble message={message} />;
-                  return <MessageItem message={message} />;
+                  return <MessageItem key={i} message={message} />;
               })}
             </div>
-            <div ref={messagesEndRef} />
           </>
         )}
+
+        <div ref={messagesEndRef} />
 
         <MessageInput handleFiles={handleFiles} />
       </div>

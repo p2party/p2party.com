@@ -16,7 +16,7 @@ import {
 import { useRoom } from "../../hooks/useRoom";
 import { TrashIcon } from "@heroicons/react/20/solid";
 
-const DeleteDropdownNavigation = () => {
+const DeleteDropdown = () => {
   const { keyPair, roomId, purge, purgeIdentity, purgeRoom } = useRoom();
   const { roomUrl } = useParams();
 
@@ -49,4 +49,4 @@ const DeleteDropdownNavigation = () => {
   );
 };
 
-export default DeleteDropdownNavigation;
+export default DeleteDropdown;

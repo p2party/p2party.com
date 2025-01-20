@@ -1,13 +1,15 @@
 import { lazy, Suspense } from "react";
-
-import { HomeIcon, TrashIcon, UserIcon } from "@heroicons/react/20/solid";
+import { HomeIcon, UserIcon } from "@heroicons/react/20/solid";
 
 import {
   Sidebar,
   SidebarBody,
   SidebarHeader,
+  SidebarHeading,
   SidebarItem,
   SidebarLabel,
+  SidebarSection,
+  SidebarSpacer,
 } from "../sidebar";
 import { Link } from "../link";
 
@@ -15,17 +17,16 @@ import CatAvatar from "../avatars/cat";
 
 import { useRoom } from "../../hooks/useRoom";
 
-const SignalingDropdownSidebar = lazy(
-  () => import("../dropdowns/signalingDropdownSidebar"),
-);
+const SignalingDropdown = lazy(() => import("./SignalingDropdown"));
+const PeerDropdown = lazy(() => import("./PeerDropdown"));
+const DeleteDropdown = lazy(() => import("./DeleteDropdown"));
 
 export interface SideBarProps {
   roomUrl: string;
 }
 
 const SideBar = () => {
-  // { roomUrl }: SideBarProps) => {
-  const { roomId, peerId, purge } = useRoom();
+  const { roomId, peerId } = useRoom();
 
   return (
     <Sidebar>
@@ -40,7 +41,7 @@ const SideBar = () => {
 
       <SidebarBody>
         <Suspense>
-          <SignalingDropdownSidebar />
+          <PeerDropdown />
         </Suspense>
 
         <SidebarItem>
@@ -71,16 +72,17 @@ const SideBar = () => {
           </span>
         </SidebarItem>
 
-        <SidebarItem onClick={purge}>
-          <span className='flex min-w-0 items-center gap-3'>
-            <TrashIcon className='size-9' />
-            <span className='min-w-0'>
-              <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                Delete all
-              </span>
-            </span>
-          </span>
-        </SidebarItem>
+        <Suspense>
+          <DeleteDropdown />
+        </Suspense>
+
+        <SidebarSpacer />
+
+        <SidebarSection>
+          <SidebarHeading>Servers</SidebarHeading>
+
+          <SignalingDropdown />
+        </SidebarSection>
       </SidebarBody>
     </Sidebar>
   );

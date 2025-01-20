@@ -1,30 +1,15 @@
 import { useState, lazy, Suspense } from "react";
 import { QrCodeIcon } from "@heroicons/react/20/solid";
 
-import {
-  Navbar,
-  NavbarItem,
-  NavbarSection,
-  //  NavbarItem, NavbarLabel,
-  NavbarSpacer,
-} from "../navbar";
-// import ConnectButtonNavigation from "../buttons/connectNavigation";
+import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from "../navbar";
 import Spinner from "../custom/spinner";
 
 import QRCodeAlert from "../alerts/QRCodeAlert";
 
-// const SignalingDropdownNavigation = lazy(
-//   () => import("../dropdowns/signalingDropdownNavigation"),
-// );
-const PeerDropdownNavigation = lazy(
-  () => import("../dropdowns/peerDropdownNavigation"),
-);
-const MessagesDropdownNavigation = lazy(
-  () => import("../dropdowns/messagesDropdownNavigation"),
-);
-const DeleteDropdownNavigation = lazy(
-  () => import("../dropdowns/deleteDropdownNavigation"),
-);
+const SignalingDropdown = lazy(() => import("./SignalingDropdown"));
+const PeerDropdown = lazy(() => import("./PeerDropdown"));
+// const MessagesDropdown = lazy(() => import("./MessagesDropdown"));
+const DeleteDropdown = lazy(() => import("./DeleteDropdown"));
 
 export interface NavBarProps {
   roomUrl: string;
@@ -44,19 +29,17 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
       {/* <ConnectButtonNavigation roomUrl={roomUrl ?? ""} /> */}
 
       <NavbarSection className='gap-1'>
-        {/* {messages.length > 0 && (
-          <Suspense fallback={<Spinner />}>
-            <SignalingDropdownNavigation />
-          </Suspense>
-        )} */}
-
         <Suspense fallback={<Spinner />}>
-          <PeerDropdownNavigation />
+          <SignalingDropdown />
         </Suspense>
 
         <Suspense fallback={<Spinner />}>
-          <MessagesDropdownNavigation />
+          <PeerDropdown />
         </Suspense>
+
+        {/* <Suspense fallback={<Spinner />}>
+          <MessagesDropdown />
+        </Suspense> */}
 
         <NavbarItem aria-label='qr' onClick={() => setShowQRCode(true)}>
           <QrCodeIcon />
@@ -68,7 +51,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
         </NavbarItem>
 
         <Suspense fallback={<Spinner />}>
-          <DeleteDropdownNavigation />
+          <DeleteDropdown />
         </Suspense>
       </NavbarSection>
     </Navbar>

@@ -11,7 +11,7 @@ import { SignalIcon, XMarkIcon } from "@heroicons/react/16/solid";
 import { useRoom } from "../../hooks/useRoom";
 import { CheckIcon, SignalSlashIcon } from "@heroicons/react/20/solid";
 
-const SignalingDropdownNavigation = () => {
+const SignalingDropdown = () => {
   const {
     signalingServerConnectionState,
     connectToSignalingServer,
@@ -53,4 +53,4 @@ const SignalingDropdownNavigation = () => {
   );
 };
 
-export default SignalingDropdownNavigation;
+export default SignalingDropdown;

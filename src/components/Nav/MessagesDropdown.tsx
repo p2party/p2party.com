@@ -16,7 +16,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/20/solid";
 
-const MessagesDropdownNavigation = () => {
+const MessagesDropdown = () => {
   const { messages, deleteMessage } = useRoom();
 
   const [messagesLen, setMessagesLen] = useState(0);
@@ -51,4 +51,4 @@ const MessagesDropdownNavigation = () => {
   );
 };
 
-export default MessagesDropdownNavigation;
+export default MessagesDropdown;

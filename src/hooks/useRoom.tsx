@@ -30,6 +30,7 @@ export const useRoom = () =>
 
     const [roomIndex, setRoomIndex] = useState(-1);
     const [selectedChannel, setSelectedChannel] = useState("main");
+    const [iceServers, setIceServers] = useState<string[]>([]);
 
     const openChannel = async (name: string) => {
       if (roomIndex === -1) throw new Error("No room was selected");
@@ -79,6 +80,12 @@ export const useRoom = () =>
       const i = rooms.findIndex((r) => r.url === roomUrl);
       if (i > -1 && rooms[i].id.length > 0) {
         setRoomIndex(i);
+
+        setIceServers(
+          rooms[i].rtcConfig.iceServers?.flatMap((server) =>
+            Array.isArray(server.urls) ? server.urls : [server.urls],
+          ) ?? [],
+        );
       }
     }, [roomUrl, rooms]);
 
@@ -86,6 +93,8 @@ export const useRoom = () =>
       keyPair,
       peerId: keyPair.peerId,
       roomId: roomIndex > -1 ? rooms[roomIndex].id : "",
+      iceServers,
+      signalingServerURL: signalingServerConnection.serverUrl,
       signalingServerConnectionState: signalingServerConnection,
       peers: roomIndex > -1 ? rooms[roomIndex].peers : [],
       channels: roomIndex > -1 ? rooms[roomIndex].channels : [],

@@ -14,7 +14,7 @@ export function Sidebar({
   return (
     <nav
       {...props}
-      className={clsx(className, "flex h-full min-h-0 flex-col")}
+      className={clsx(className, "h-full flex min-h-0 flex-col")}
     />
   );
 }

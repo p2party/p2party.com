@@ -28,12 +28,12 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className='relative flex min-h-screen flex-col items-center justify-start md:justify-center pt-20 md:pt-0 bg-gradient-to-br from-darkOrange to-darkRed px-6'>
+    <div className='relative flex min-h-screen flex-col items-center justify-start bg-gradient-to-br from-darkOrange to-darkRed px-6 pt-20 md:justify-center md:pt-0'>
       <div className='flex max-w-lg flex-col items-center text-center'>
         <CatAvatar className='mb-2 w-2/3 drop-shadow-lg' />
 
         <h1 className='mb-4 text-4xl font-extrabold leading-tight text-white md:text-5xl'>
-          Instant, Secure Throwaway Rooms
+          Instant, Secure Rooms
         </h1>
 
         <p className='mb-8 max-w-xl text-lg text-gray-300'>

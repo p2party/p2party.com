@@ -64,7 +64,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
   return (
     <>
       {channels.length > 0 && (
-        <div className='fixed bottom-0 left-0 right-0 flex-shrink-0 bg-white p-2 pb-4 pt-1 lg:px-12 dark:bg-zinc-900'>
+        <div className='fixed bottom-0 left-0 right-0 flex-shrink-0 bg-white pb-6 pt-1 lg:ml-64 lg:px-20 dark:bg-zinc-900'>
           <div className='mx-4 flex max-w-full items-center'>
             <input
               type='file'
@@ -77,7 +77,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
             <Button
               plain
               onClick={handleFileClick}
-              className='fixed inset-y-0 left-0 cursor-pointer rounded-l-lg pl-2'
+              className='fixed inset-y-0 left-0 cursor-pointer rounded-l-lg'
             >
               <PaperClipIcon />
             </Button>

@@ -1,14 +1,13 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 // import { useLocalStorage } from "usehooks-ts";
 
-// import { SidebarLayout } from "../sidebar-layout";
-import { StackedLayout } from "../stacked-layout";
+import { SidebarLayout } from "../sidebar-layout";
+// import { StackedLayout } from "../stacked-layout";
 import ConnectAlert from "../alerts/ConnectAlert";
-import Spinner from "./spinner";
 
-const NavBar = lazy(() => import("../navigation/navbar"));
-const SideBar = lazy(() => import("../navigation/sidebar"));
+import NavBar from "../Nav";
+import SideBar from "../Side";
 
 import type { PropsWithChildren } from "react";
 // import Footer from "./footer";
@@ -22,19 +21,10 @@ const Layout = ({ children }: PropsWithChildren) => {
   // );
 
   return (
-    // <SidebarLayout
-    <StackedLayout
-      navbar={
-        <Suspense fallback={<Spinner />}>
-          <NavBar roomUrl={roomUrl ?? ""} />
-        </Suspense>
-      }
-      sidebar={
-        <Suspense fallback={<Spinner />}>
-          {/* <SideBar />  roomUrl={roomUrl ?? ""} /> */}
-          <SideBar />
-        </Suspense>
-      }
+    <SidebarLayout
+      // <StackedLayout
+      navbar={<NavBar roomUrl={roomUrl ?? ""} />}
+      sidebar={<SideBar />}
     >
       {children}
 
@@ -45,8 +35,8 @@ const Layout = ({ children }: PropsWithChildren) => {
       />
 
       {/* <Footer /> */}
-      {/* </SidebarLayout> */}
-    </StackedLayout>
+    </SidebarLayout>
+    // </StackedLayout>
   );
 };
 
