@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-darkOrange: #eb5e28;
+  --color-darkRed: #252422;
+  --color-light: #dfe0df;
+  --color-lightOrange: #fffcd2;
+}
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;

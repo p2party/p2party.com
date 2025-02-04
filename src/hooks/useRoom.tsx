@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useSelector } from "react-redux";
+import { useLocalStorage } from "usehooks-ts";
+
 import p2party from "p2party";
 
 import type { Message } from "p2party";
@@ -20,6 +22,7 @@ export const useRoom = () =>
   // },
   {
     const { roomUrl } = useParams();
+    const [chunks] = useLocalStorage("chunksToSplitMessage", 3);
 
     const keyPair = useSelector(p2party.keyPairSelector);
     const rooms = useSelector(p2party.roomSelector);
@@ -45,7 +48,7 @@ export const useRoom = () =>
     const sendMessage = (message: string | File, channel: string) => {
       if (roomIndex === -1) throw new Error("No room was selected");
 
-      p2party.sendMessage(message, channel, rooms[roomIndex].id);
+      p2party.sendMessage(message, channel, rooms[roomIndex].id, chunks);
     };
 
     const readMessage = async (merkleRootHex: string) => {
@@ -93,6 +96,8 @@ export const useRoom = () =>
       keyPair,
       peerId: keyPair.peerId,
       roomId: roomIndex > -1 ? rooms[roomIndex].id : "",
+      onlyConnectWithKnownPeers:
+        roomIndex > -1 ? rooms[roomIndex].onlyConnectWithKnownAddresses : false,
       iceServers,
       signalingServerURL: signalingServerConnection.serverUrl,
       signalingServerConnectionState: signalingServerConnection,
@@ -106,6 +111,12 @@ export const useRoom = () =>
       disconnectFromSignalingServer: p2party.disconnectFromSignalingServer,
       disconnectFromRoom: p2party.disconnectFromRoom,
       disconnectFromPeer: p2party.disconnectFromPeer,
+      setOnlyConnectToKnownPeers: p2party.onlyAllowConnectionsFromAddressBook,
+      addPeerToAddressBook: p2party.addPeerToAddressBook,
+      getPeerFromAddressBook: p2party.getPeerAddressBookEntry,
+      removePeerFromAddressBook: p2party.deletePeerFromAddressBook,
+      blacklistPeer: p2party.blacklistPeer,
+      peerIsBlacklisted: p2party.getPeerIsBlacklisted,
       openChannel,
       selectChannel: setSelectedChannel,
       sendMessage,

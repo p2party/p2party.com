@@ -99,7 +99,7 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
   return (
     <div
       key={message.merkleRootHex}
-      className={`flex items-center mb-6 ${
+      className={`mb-6 flex items-center ${
         message.fromPeerId === peerId ? "justify-end" : "justify-start"
       }`}
     >

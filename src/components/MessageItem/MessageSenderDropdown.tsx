@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 import { Avatar } from "../avatar";
 import {
   Dropdown,
@@ -22,7 +24,62 @@ export interface MessageSenderDropdownProps {
 }
 
 const MessageSenderDropdown = ({ message }: MessageSenderDropdownProps) => {
-  const { peerId } = useRoom();
+  const {
+    peerId,
+    peers,
+    addPeerToAddressBook,
+    getPeerFromAddressBook,
+    removePeerFromAddressBook,
+    blacklistPeer,
+    peerIsBlacklisted,
+  } = useRoom();
+
+  const [userInAddressBook, setUserInAddressBook] = useState(false);
+  const [userInBlacklist, setUserInBlacklist] = useState(false);
+
+  useEffect(() => {
+    const checkIfSenderInLists = async () => {
+      const peerInAddressBook = await getPeerFromAddressBook(
+        message.fromPeerId,
+      );
+
+      if (peerInAddressBook) {
+        setUserInAddressBook(true);
+      } else {
+        const peerInBlacklist = await peerIsBlacklisted(message.fromPeerId);
+
+        if (peerInBlacklist) {
+          setUserInBlacklist(true);
+        }
+      }
+    };
+
+    checkIfSenderInLists();
+  }, [peers]);
+
+  const handleAddPeerToAddressBook = async () => {
+    const peerIndex = peers.findIndex((p) => p.peerId === message.fromPeerId);
+    if (peerIndex > -1) {
+      await addPeerToAddressBook(
+        "No username found",
+        peers[peerIndex].peerId,
+        peers[peerIndex].peerPublicKey,
+      );
+    }
+  };
+
+  const handleBlacklisting = async () => {
+    const peerIndex = peers.findIndex((p) => p.peerId === message.fromPeerId);
+    if (peerIndex > -1) {
+      await blacklistPeer(
+        peers[peerIndex].peerId,
+        peers[peerIndex].peerPublicKey,
+      );
+    } else {
+      await blacklistPeer(message.fromPeerId, "");
+    }
+  };
+
   return (
     <Dropdown>
       <DropdownButton plain>
@@ -55,27 +112,38 @@ const MessageSenderDropdown = ({ message }: MessageSenderDropdownProps) => {
       >
         <DropdownHeader>
           <div className='pr-6'>
-            {/* <div className="text-xs text-zinc-500 dark:text-zinc-400">Signed in as Tom Cook</div> */}
+            <div className='text-xs text-zinc-500 dark:text-zinc-400'>
+              Username:
+            </div>
             <div className='text-sm/7 font-semibold text-zinc-800 dark:text-white'>
-              No username found
+              {message.fromPeerId.slice(0, 8)}
             </div>
           </div>
         </DropdownHeader>
         <DropdownDivider />
-        <DropdownItem>
-          <UserPlusIcon />
-          Add Contact
-        </DropdownItem>
 
-        <DropdownItem>
-          <UserMinusIcon />
-          Delete Contact
-        </DropdownItem>
+        {!userInAddressBook && message.fromPeerId !== peerId && (
+          <DropdownItem onClick={handleAddPeerToAddressBook}>
+            <UserPlusIcon />
+            Add Contact
+          </DropdownItem>
+        )}
 
-        <DropdownItem>
-          <XMarkIcon />
-          Blacklist Contact
-        </DropdownItem>
+        {userInAddressBook && (
+          <DropdownItem
+            onClick={async () => await removePeerFromAddressBook("", "", "")}
+          >
+            <UserMinusIcon />
+            Delete Contact
+          </DropdownItem>
+        )}
+
+        {!userInBlacklist && message.fromPeerId !== peerId && (
+          <DropdownItem onClick={handleBlacklisting}>
+            <XMarkIcon />
+            Blacklist Contact
+          </DropdownItem>
+        )}
       </DropdownMenu>
     </Dropdown>
   );

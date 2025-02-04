@@ -64,7 +64,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
   return (
     <>
       {channels.length > 0 && (
-        <div className='fixed bottom-0 left-0 right-0 flex-shrink-0 bg-white pb-6 pt-1 lg:ml-64 lg:px-20 dark:bg-zinc-900'>
+        <div className='fixed right-0 bottom-0 left-0 flex-shrink-0 bg-white pt-1 pb-6 lg:ml-64 lg:px-20 dark:bg-zinc-900'>
           <div className='mx-4 flex max-w-full items-center'>
             <input
               type='file'

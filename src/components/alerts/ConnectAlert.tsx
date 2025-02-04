@@ -2,7 +2,7 @@ import {
   Alert,
   AlertActions,
   AlertDescription,
-  AlertTitle,
+  // AlertTitle,
   AlertBody,
 } from "../alert";
 import { Link } from "../link";
@@ -27,15 +27,15 @@ const ConnectAlert = ({ roomUrl, isOpen, setIsOpen }: ConnectAlertProps) => {
   };
 
   return (
-    <Alert open={isOpen} onClose={setIsOpen} size='lg'>
-      <AlertTitle>Connecting to a room</AlertTitle>
+    <Alert open={isOpen} onClose={setIsOpen} size='md'>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
-        You first need to connect to the p2party.com signaling servers in order
-        to discover other peers in the same room. In order to establish WebRTC
-        connections, information about your browser's networking capabilities
-        will be relayed to your potential future peers, including your IP
-        address. By default, you become a relay yourself through the "signaling"
-        data channel, which you can close anytime.
+        You are about to connect to the p2party.com signaling server to discover
+        other peers in the same URL. To establish a WebRTC connection,
+        information about your browser's networking capabilities need to be
+        relayed to your future peers, including your IP address. You can
+        blacklist users or only allow connections from your address book. If you
+        wish to connect to your own signaling server or another STUN/TURN
+        service, click cancel and go to the related sidebar section.
       </AlertDescription>
       <AlertBody>
         By continuing, you agree to the{" "}

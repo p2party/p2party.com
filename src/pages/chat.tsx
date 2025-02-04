@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 
 import CatAvatar from "../components/avatars/cat";
-// import ChatHeading from "../components/custom/ChatHeader";
-// import MessageBubble from "../components/custom/MessageBubble";
 import MessageItem from "../components/MessageItem";
 import MessageInput from "../components/custom/MessageInput";
 
@@ -22,6 +21,8 @@ const ChatPage = () => {
     disconnectFromSignalingServer,
     // purgeRoom,
   } = useRoom();
+  const { roomUrl } = useParams();
+
   // const [messages, setMessages] = useState<Message[]>([]);
 
   const [_isDragging, setIsDragging] = useState(false);
@@ -29,32 +30,31 @@ const ChatPage = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   window.addEventListener("beforeunload", purgeRoom);
-  //   return () => {
-  //     window.removeEventListener("beforeunload", purgeRoom);
-  //   };
-  // }, []);
-
   useEffect(() => {
     const onFocus = () => {
-      if (!signalingServerConnectionState.isConnected && !signalingServerConnectionState.isEstablishingConnection && signalingServerConnectionState.serverUrl.length > 0) {
-        connectToSignalingServer();
+      if (
+        !signalingServerConnectionState.isConnected &&
+        !signalingServerConnectionState.isEstablishingConnection &&
+        signalingServerConnectionState.serverUrl.length > 0
+      ) {
+        connectToSignalingServer(roomUrl ?? "");
       }
-    }
+    };
 
     window.addEventListener("focus", onFocus);
+    window.addEventListener("beforeunload", disconnectFromSignalingServer);
 
     return () => {
       window.removeEventListener("focus", onFocus);
-    }
+      window.removeEventListener("beforeunload", disconnectFromSignalingServer);
+    };
   }, []);
 
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
+      messagesEndRef.current.scrollIntoView({
         block: "center",
-        behavior: "smooth" 
+        behavior: "smooth",
       });
     }
   }, [messages]);
@@ -162,46 +162,53 @@ const ChatPage = () => {
       className='flex min-h-0 flex-col'
     >
       <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
-        <CatAvatar className='w-full outline-white w-2/3 md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
+        <CatAvatar className='w-2/3 w-full outline-white md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
       </div>
 
-        {peers.length === 0 && signalingServerConnectionState.isConnected && (
-          <div className='mx-auto flex w-36 items-center justify-center'>
-            <Badge
-              color='orange'
-              className='w-full text-center'
-              onClick={disconnectFromSignalingServer}
-            >
-              Waiting for peers{dots}
-            </Badge>
-          </div>
-        )}
+      {peers.length === 0 && signalingServerConnectionState.isConnected && (
+        <div className='mx-auto flex w-36 items-center justify-center'>
+          <Badge
+            color='orange'
+            className='w-full text-center'
+            onClick={disconnectFromSignalingServer}
+          >
+            Waiting for peers{dots}
+          </Badge>
+        </div>
+      )}
 
-        {peers.length === 0 && !signalingServerConnectionState.isConnected && (
-          <div className='z-10 mx-auto flex w-64 items-center justify-center pb-4'>
-            <Badge
-              color='red'
-              className='w-full text-left text-center'
-              onClick={() => connectToSignalingServer()}
-            >
-              Press to connect to the signaling server and discover new peers
-            </Badge>
-          </div>
-        )}
+      {peers.length === 0 && !signalingServerConnectionState.isConnected && (
+        <div className='z-10 mx-auto flex w-64 items-center justify-center pb-4'>
+          <Badge
+            color='red'
+            className='w-full text-center text-left'
+            onClick={() => connectToSignalingServer(roomUrl ?? "")}
+          >
+            Press to connect to the signaling server and discover new peers
+          </Badge>
+        </div>
+      )}
 
-        {messages.length === 0 && peers.length > 0 && (
-          <div className='mx-auto flex w-48 items-center justify-center pb-4'>
-            <Badge color='orange' className='w-full text-left text-center'>
-              Waiting for messages{dots}
-            </Badge>
-          </div>
-        )}
-
+      {messages.length === 0 && peers.length > 0 && (
+        <div className='mx-auto flex w-48 items-center justify-center pb-4'>
+          <Badge
+            color='orange'
+            className='w-full text-center text-left'
+            onClick={() => {
+              signalingServerConnectionState.isConnected
+                ? disconnectFromSignalingServer()
+                : connectToSignalingServer(roomUrl ?? "");
+            }}
+          >
+            Waiting for messages{dots}
+          </Badge>
+        </div>
+      )}
 
       <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
         {messages.length > 0 && (
           <>
-            <div className='flex-1 overflow-y-auto overflow-x-hidden bg-white/70 pb-6 dark:bg-zinc-900/90'>
+            <div className='flex-1 overflow-x-hidden overflow-y-auto bg-white/70 pb-6 dark:bg-zinc-900/90'>
               {/* Messages */}
               {messages.map((message, i) => {
                 // console.log(message.channelLabel);

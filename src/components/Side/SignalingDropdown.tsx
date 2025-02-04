@@ -1,3 +1,5 @@
+import { useParams } from "react-router";
+
 import {
   Dropdown,
   DropdownButton,
@@ -18,6 +20,7 @@ const SignalingDropdown = () => {
     connectToSignalingServer,
     disconnectFromSignalingServer,
   } = useRoom();
+  const { roomUrl } = useParams();
 
   return (
     <Dropdown>
@@ -56,7 +59,7 @@ const SignalingDropdown = () => {
         )}
 
         {!signalingServerConnectionState.isConnected && (
-          <DropdownItem onClick={() => connectToSignalingServer()}>
+          <DropdownItem onClick={() => connectToSignalingServer(roomUrl ?? "")}>
             <CheckIcon />
             Become discoverable
           </DropdownItem>

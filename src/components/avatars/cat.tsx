@@ -10,7 +10,7 @@ const CatAvatar = ({ className }: CatAvatarProps) => {
   return (
     <Avatar
       src={"/logo-cat.svg"}
-      className={clsx("select-none !border-none !outline-none", className)}
+      className={clsx("!border-none !outline-none select-none", className)}
     />
   );
 };

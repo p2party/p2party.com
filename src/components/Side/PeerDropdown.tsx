@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { SignalIcon, SignalSlashIcon } from "@heroicons/react/20/solid";
 
 import { useRoom } from "../../hooks/useRoom";

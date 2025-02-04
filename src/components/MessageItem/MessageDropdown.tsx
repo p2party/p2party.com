@@ -69,7 +69,7 @@ const MessageDropdown = ({
         <DropdownButton plain>
           {msgCategory === MessageCategory.Text && (
             <Text
-              className={`whitespace-pre-wrap break-words text-left text-white dark:text-white`}
+              className={`text-left break-words whitespace-pre-wrap text-white dark:text-white`}
             >
               {msg as string}
             </Text>

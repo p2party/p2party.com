@@ -3,7 +3,7 @@ import { Strong, Text } from "../components/text";
 
 const TOSPage = () => {
   return (
-    <div className='flex min-h-screen w-full flex-col justify-center bg-gradient-to-r from-darkOrange to-darkRed p-10'>
+    <div className='from-darkOrange to-darkRed flex min-h-screen w-full flex-col justify-center bg-gradient-to-r p-10'>
       <Heading>Terms of Service</Heading>
 
       <Subheading>Effective Date: 17 October 2024</Subheading>
