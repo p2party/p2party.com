@@ -38,7 +38,6 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
   const handleDisconnectFromPeers = () => {
     const PEERS_LEN = peers.length;
     for (let i = 0; i < PEERS_LEN; i++) {
-      console.log("DISCONNECT FROM PEER ID " + peers[i].peerId);
       disconnectFromPeer(peers[i].peerId);
     }
   };

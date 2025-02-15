@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
 
 import { Alert, AlertActions, AlertTitle, AlertBody } from "../alert";
 import { Button } from "../button";
@@ -15,6 +17,7 @@ export interface QRCodeAlertProps {
 }
 
 const urlBase = "https://p2party.com/";
+const urlPath = "room/";
 
 const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -69,7 +72,7 @@ const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
 
       try {
         // 1️⃣ Generate QR Code
-        const qrDataUrl = await QRCode.toDataURL(urlBase + roomUrl, {
+        const qrDataUrl = await QRCode.toDataURL(urlBase + urlPath + roomUrl, {
           margin: 0.4,
           width: 1024,
           errorCorrectionLevel: "H",
@@ -103,22 +106,36 @@ const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
 
   const handleDownload = async () => {
     if (canvasRef.current) {
-      // Create an anchor element for the download
-      const link = document.createElement("a");
-      link.href = canvasRef.current.toDataURL("image/png"); // qrCodeDataUri;
-      link.download = "qr-" + roomUrl + ".png"; // Replace with your desired file name and extension
+      if (Capacitor.getPlatform() === "web") {
+        // Create an anchor element for the download
+        const link = document.createElement("a");
+        link.href = canvasRef.current.toDataURL("image/png"); // qrCodeDataUri;
+        console.log(link.href);
+        link.download = "qr-" + roomUrl + ".png"; // Replace with your desired file name and extension
 
-      // Append the anchor to the body, trigger click, then remove it
-      document.body.appendChild(link);
-      link.addEventListener("click", async () => {
-        document.body.removeChild(link);
-        link.removeEventListener("click", () => {});
-      });
+        // Append the anchor to the body, trigger click, then remove it
+        document.body.appendChild(link);
+        link.addEventListener("click", () => {
+          document.body.removeChild(link);
+          link.removeEventListener("click", () => {});
+        });
 
-      link.click();
-
-      setIsOpen(false);
+        link.click();
+      } else {
+        const data = canvasRef.current
+          .toDataURL("image/png")
+          .split(";base64,")[1];
+        const path = `p2party/${roomUrl}/roomQR.png`;
+        return await Filesystem.writeFile({
+          path,
+          data,
+          directory: Directory.Documents,
+          recursive: true,
+        });
+      }
     }
+
+    setIsOpen(false);
   };
 
   return (

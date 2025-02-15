@@ -1,0 +1,1 @@
+import{j as s}from"./index-D6BSlYZN.js";import{d as r}from"./link-C3exRyYb.js";function o({className:t,...e}){return s.jsx("p",{"data-slot":"text",...e,className:r("text-base/6 text-white sm:text-sm/6 dark:text-white",t)})}function m({className:t,...e}){return s.jsx("strong",{...e,className:r(t,"font-medium text-zinc-950 dark:text-white")})}export{m as S,o as T};

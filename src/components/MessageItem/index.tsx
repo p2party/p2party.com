@@ -1,12 +1,13 @@
-import { useState, useEffect, FC } from "react";
+import { useState, useEffect } from "react";
 import { MessageCategory } from "p2party";
 
 import { useRoom } from "../../hooks/useRoom";
 
+import MessageSenderDropdown from "./MessageSenderDropdown";
 import MessageDropdown from "./MessageDropdown";
 
+import type { FC } from "react";
 import type { Message, FileExtension } from "p2party";
-import MessageSenderDropdown from "./MessageSenderDropdown";
 
 export interface MessageItemProps {
   message: Message;
@@ -109,13 +110,13 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
 
       <div className='flex flex-col'>
         {message.fromPeerId !== peerId && (
-          <span className='ml-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-300'>
+          <span className='ml-1 text-left text-xs font-semibold text-gray-500 dark:text-gray-300'>
             {message.fromPeerId.slice(0, 8)}
           </span>
         )}
 
         {message.fromPeerId === peerId && (
-          <span className='mr-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-300'>
+          <span className='mr-1 text-right text-xs font-semibold text-gray-500 dark:text-gray-300'>
             {message.fromPeerId.slice(0, 8)}
           </span>
         )}
@@ -131,13 +132,13 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
         />
 
         {message.fromPeerId !== peerId && (
-          <span className='ml-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-300'>
+          <span className='ml-1 text-left text-xs font-semibold text-gray-500 dark:text-gray-300'>
             {new Date(message.timestamp).toLocaleString()}
           </span>
         )}
 
         {message.fromPeerId === peerId && (
-          <span className='mr-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-300'>
+          <span className='mr-1 text-right text-xs font-semibold text-gray-500 dark:text-gray-300'>
             {new Date(message.timestamp).toLocaleString()}
           </span>
         )}

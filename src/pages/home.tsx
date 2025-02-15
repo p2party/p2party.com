@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect, lazy, Suspense } from "react";
+import p2party from "p2party";
 
 import { Button } from "../components/button";
-
-import Footer from "../components/custom/footer";
+import { Link } from "../components/link";
 
 const CatAvatar = lazy(() => import("../components/avatars/cat"));
-
-import p2party from "p2party";
 
 const HomePage = () => {
   const [roomId, setRoomId] = useState("");
@@ -30,30 +28,41 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className='from-darkOrange to-darkRed relative flex min-h-screen flex-col items-center justify-start bg-gradient-to-br px-6 pt-20 md:justify-center md:pt-0'>
-      <div className='flex max-w-lg flex-col items-center text-center'>
+    <div className='relative isolate flex min-h-[calc(100dvh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col content-center items-center justify-center bg-white bg-gradient-to-b px-6 dark:bg-black'>
+      <div className='flex flex-col items-center space-y-6'>
         <Suspense>
-          <CatAvatar className='mb-2 w-2/3 drop-shadow-lg' />
+          <CatAvatar className='m-0 w-3/4 p-0 drop-shadow-lg' />
         </Suspense>
 
-        <h1 className='mb-4 text-4xl leading-tight font-extrabold text-white md:text-5xl'>
+        <h1 className='text-center text-4xl leading-tight font-extrabold text-black md:text-5xl dark:text-white'>
           Instant, Secure Rooms
         </h1>
 
-        <p className='mb-8 max-w-xl text-lg text-gray-300'>
+        <p className='max-w-xl text-center text-lg text-gray-800 dark:text-gray-200'>
           Share the link, wait for peers, connect using WebRTC, enjoy p2p text &
           file sharing with privacy.
         </p>
 
         <Button
-          href={`/${roomId}`}
-          className='rounded-lg bg-white/10 px-10 py-4 text-lg font-semibold text-white transition hover:bg-white/20'
+          href={`/room/${roomId}`}
+          className='rounded-lg text-lg font-semibold text-white transition hover:bg-white/20'
         >
-          Generate Random Room
+          Generate Room
         </Button>
       </div>
 
-      <Footer />
+      <footer className='absolute bottom-0 sm:right-3'>
+        <div className='md:order-1'>
+          <Link
+            href={"https://github.com/p2party"}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='text-center text-xs leading-5 text-gray-500'
+          >
+            &copy; 2025 Deliberative Technologies. All rights reserved.
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 };

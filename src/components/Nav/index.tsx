@@ -1,17 +1,19 @@
 import { useState, lazy, Suspense } from "react";
-import { Cog8ToothIcon, QrCodeIcon } from "@heroicons/react/20/solid";
+import { Cog8ToothIcon } from "@heroicons/react/20/solid";
 
 import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from "../navbar";
+
 import Spinner from "../custom/spinner";
 
-import QRCodeAlert from "../alerts/QRCodeAlert";
 import SettingsAlert from "../alerts/SettingsAlert";
 import AddressBookAlert from "../alerts/AddressBookAlert";
 import BlacklistAlert from "../alerts/BlacklistAlert";
+import QRCodeAlert from "../alerts/QRCodeAlert";
 
 // const SignalingDropdown = lazy(() => import("./SignalingDropdown"));
 const PeerDropdown = lazy(() => import("./PeerDropdown"));
 // const MessagesDropdown = lazy(() => import("./MessagesDropdown"));
+const Share = lazy(() => import("./ShareDropdown"));
 const DeleteDropdown = lazy(() => import("./DeleteDropdown"));
 
 export interface NavBarProps {
@@ -19,10 +21,10 @@ export interface NavBarProps {
 }
 
 const NavBar = ({ roomUrl }: NavBarProps) => {
-  const [showQRCode, setShowQRCode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(false);
   const [showBlacklist, setShowBlacklist] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
 
   return (
     <Navbar>
@@ -56,14 +58,14 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
           <MessagesDropdown />
         </Suspense> */}
 
-        <NavbarItem aria-label='qr' onClick={() => setShowQRCode(true)}>
-          <QrCodeIcon />
+        <Suspense fallback={<Spinner />}>
+          <Share roomUrl={roomUrl} setShowQRCode={setShowQRCode} />
           <QRCodeAlert
             roomUrl={roomUrl}
             isOpen={showQRCode}
             setIsOpen={setShowQRCode}
           />
-        </NavbarItem>
+        </Suspense>
 
         <Suspense fallback={<Spinner />}>
           <DeleteDropdown />

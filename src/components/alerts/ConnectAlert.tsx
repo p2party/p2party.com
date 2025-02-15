@@ -29,13 +29,13 @@ const ConnectAlert = ({ roomUrl, isOpen, setIsOpen }: ConnectAlertProps) => {
   return (
     <Alert open={isOpen} onClose={setIsOpen} size='md'>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
-        You are about to connect to the p2party.com signaling server to discover
-        other peers in the same URL. To establish a WebRTC connection,
-        information about your browser's networking capabilities need to be
-        relayed to your future peers, including your IP address. You can
-        blacklist users or only allow connections from your address book. If you
-        wish to connect to your own signaling server or another STUN/TURN
-        service, click cancel and go to the related sidebar section.
+        You are about to connect to signaling.p2party.com to discover peers in
+        the same URL. To establish a WebRTC connection, information about your
+        device's networking capabilities, such as your IP address, need to be
+        relayed to your peers. You can blacklist users or only allow connections
+        from your address book. If you wish to connect to your own signaling
+        server or another STUN/TURN service, click Cancel and go to the related
+        sidebar section.
       </AlertDescription>
       <AlertBody>
         By continuing, you agree to the{" "}

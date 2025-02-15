@@ -1,3 +1,6 @@
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+
 import { Text } from "../text";
 import {
   Dropdown,
@@ -12,6 +15,7 @@ import {
   StopIcon,
   TrashIcon,
 } from "@heroicons/react/24/solid";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
 import { MessageCategory } from "p2party";
 
 import { useRoom } from "../../hooks/useRoom";
@@ -44,26 +48,44 @@ const MessageDropdown = ({
 }: MessageDropdownProps) => {
   const { peerId, cancelMessage, deleteMessage } = useRoom();
 
+  const handleOpen = async () => {
+    window.open(msg, "_blank");
+  };
+
   const handleDownload = async () => {
-    // Create an anchor element for the download
-    const link = document.createElement("a");
-    link.href = msg;
-    link.download = msgFilename; // Replace with your desired file name and extension
+    if (Capacitor.getPlatform() === "web") {
+      console.log("WE ARE HERE");
 
-    // Append the anchor to the body, trigger click, then remove it
-    document.body.appendChild(link);
-    link.addEventListener("click", async () => {
-      document.body.removeChild(link);
-      // await deleteMessage(message.merkleRootHex);
-      link.removeEventListener("click", () => {});
-    });
+      // Create an anchor element for the download
+      const link = document.createElement("a");
+      link.href = msg;
+      link.download = msgFilename; // Replace with your desired file name and extension
 
-    link.click();
+      // Append the anchor to the body, trigger click, then remove it
+      document.body.appendChild(link);
+      link.addEventListener("click", async () => {
+        document.body.removeChild(link);
+        // await deleteMessage(message.merkleRootHex);
+        link.removeEventListener("click", () => {});
+      });
+
+      link.click();
+    } else {
+      const blob = await fetch(msg).then((r) => r.blob());
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      const base64 = reader.result as string;
+      await Filesystem.writeFile({
+        path: `Files/P2Party/${new Date().getTime()}-${msgFilename.replace("." + msgExtension, "")}.${msgExtension}`,
+        data: base64,
+        directory: Directory.External,
+      });
+    }
   };
 
   return (
     <div
-      className={`relative m-1 w-auto max-w-full overflow-hidden rounded-lg border-2 p-1 font-bold shadow md:max-w-lg ${message.fromPeerId === peerId ? "border-darkOrange bg-orange-950" : "border-darkOrange bg-darkRed"}`}
+      className={`relative my-1 w-auto max-w-full overflow-hidden rounded-lg border-2 p-1 font-bold shadow md:max-w-lg ${message.fromPeerId === peerId ? "border-darkOrange bg-orange-950" : "border-darkOrange bg-black"}`}
     >
       <Dropdown>
         <DropdownButton plain>
@@ -91,10 +113,16 @@ const MessageDropdown = ({
           {msgPercentage === 100 && msgCategory !== MessageCategory.Text && (
             <>
               {message.fromPeerId !== peerId && (
-                <DropdownItem onClick={handleDownload}>
-                  <ArrowDownOnSquareIcon />
-                  Download file
-                </DropdownItem>
+                <>
+                  <DropdownItem onClick={handleOpen}>
+                    <ArrowTopRightOnSquareIcon />
+                    Open file
+                  </DropdownItem>
+                  <DropdownItem onClick={handleDownload}>
+                    <ArrowDownOnSquareIcon />
+                    Download file
+                  </DropdownItem>
+                </>
               )}
             </>
           )}

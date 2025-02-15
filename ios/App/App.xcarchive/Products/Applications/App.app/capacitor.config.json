@@ -1,0 +1,13 @@
+{
+	"appId": "com.p2party.app",
+	"appName": "P2Party",
+	"webDir": "dist",
+	"ios": {
+		"contentInset": "always"
+	},
+	"packageClassList": [
+		"FilesystemPlugin",
+		"PushNotificationsPlugin",
+		"StatusBarPlugin"
+	]
+}

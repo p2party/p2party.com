@@ -2,15 +2,18 @@
 
 @theme {
   --color-darkOrange: #eb5e28;
-  --color-darkRed: #252422;
+  --color-darkRed: #411a0b;
   --color-light: #dfe0df;
   --color-lightOrange: #fffcd2;
+
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* --font-body: Inter, sans-serif; */
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; */
+  /* line-height: 1.5; */
+  /* font-weight: 400; */
 
   color-scheme: light dark;
 

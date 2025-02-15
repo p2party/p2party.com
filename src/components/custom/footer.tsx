@@ -2,7 +2,7 @@ import { Link } from "../link";
 
 const Footer = () => {
   return (
-    <footer className='fixed bottom-0 z-10 sm:right-3'>
+    <footer className='fixed bottom-5 z-10 sm:right-3'>
       <div className='md:order-1'>
         <Link
           href={"https://github.com/p2party"}
@@ -10,7 +10,7 @@ const Footer = () => {
           rel='noopener noreferrer'
           className='text-center text-xs leading-5 text-gray-500'
         >
-          &copy; 2024 Deliberative Technologies. All rights reserved.
+          &copy; 2025 Deliberative Technologies. All rights reserved.
         </Link>
       </div>
     </footer>

@@ -4,8 +4,7 @@ import { Textarea } from "../textarea";
 // import { Input } from "../input";
 import { Button } from "../button";
 
-import { PaperAirplaneIcon } from "@heroicons/react/20/solid";
-import { PaperClipIcon } from "@heroicons/react/24/solid";
+import { PaperClipIcon, PaperAirplaneIcon } from "@heroicons/react/24/solid";
 
 import { useRoom } from "../../hooks/useRoom";
 
@@ -16,7 +15,8 @@ export interface MessageInputProps {
 }
 
 const MessageInput = ({ handleFiles }: MessageInputProps) => {
-  const { channels, messages, selectedChannel, sendMessage } = useRoom();
+  const { peerId, channels, messages, selectedChannel, sendMessage } =
+    useRoom();
 
   const [newMessage, setNewMessage] = useState("");
 
@@ -29,9 +29,13 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+      // textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-      textareaRef.current.focus();
+
+      const messagesLen = messages.length;
+      if (messages[messagesLen - 1].fromPeerId === peerId) {
+        textareaRef.current.focus();
+      }
     }
   }, [messages]);
 
@@ -64,8 +68,8 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
   return (
     <>
       {channels.length > 0 && (
-        <div className='fixed right-0 bottom-0 left-0 flex-shrink-0 bg-white pt-1 pb-6 lg:ml-64 lg:px-20 dark:bg-zinc-900'>
-          <div className='mx-4 flex max-w-full items-center'>
+        <div className='fixed right-0 bottom-0 left-0 z-50 flex-shrink-0 bg-white px-4 py-4 lg:mb-2 lg:ml-64 lg:px-16 dark:bg-black'>
+          <div className='flex max-w-full items-center'>
             <input
               type='file'
               ref={fileInputRef}
@@ -77,7 +81,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
             <Button
               plain
               onClick={handleFileClick}
-              className='fixed inset-y-0 left-0 cursor-pointer rounded-l-lg'
+              className='flex-shrink-0 cursor-pointer'
             >
               <PaperClipIcon />
             </Button>

@@ -53,8 +53,9 @@ const ChatPage = () => {
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({
-        block: "center",
+        block: "nearest",
         behavior: "smooth",
+        inline: "start",
       });
     }
   }, [messages]);
@@ -159,72 +160,70 @@ const ChatPage = () => {
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className='flex min-h-0 flex-col'
+      className='flex max-h-[calc(94svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] min-h-0 flex-col overflow-y-auto scroll-smooth pt-14 lg:my-2 lg:pt-0'
     >
       <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
         <CatAvatar className='w-2/3 w-full outline-white md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
       </div>
 
-      {peers.length === 0 && signalingServerConnectionState.isConnected && (
-        <div className='mx-auto flex w-36 items-center justify-center'>
-          <Badge
-            color='orange'
-            className='w-full text-center'
-            onClick={disconnectFromSignalingServer}
-          >
-            Waiting for peers{dots}
-          </Badge>
-        </div>
-      )}
+      <div className='relative flex flex-1 flex-col'>
+        {peers.length === 0 && signalingServerConnectionState.isConnected && (
+          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-36 items-center justify-center pb-4 lg:left-40'>
+            <Badge
+              color='orange'
+              className='w-full text-center'
+              onClick={disconnectFromSignalingServer}
+            >
+              Waiting for peers{dots}
+            </Badge>
+          </div>
+        )}
 
-      {peers.length === 0 && !signalingServerConnectionState.isConnected && (
-        <div className='z-10 mx-auto flex w-64 items-center justify-center pb-4'>
-          <Badge
-            color='red'
-            className='w-full text-center text-left'
-            onClick={() => connectToSignalingServer(roomUrl ?? "")}
-          >
-            Press to connect to the signaling server and discover new peers
-          </Badge>
-        </div>
-      )}
+        {!signalingServerConnectionState.isConnected && (
+          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-64 items-center justify-center pb-4 lg:left-40'>
+            <Badge
+              color='red'
+              className='w-full text-center text-left'
+              onClick={() => connectToSignalingServer(roomUrl ?? "")}
+            >
+              Press to connect to the signaling server and discover new peers
+            </Badge>
+          </div>
+        )}
 
-      {messages.length === 0 && peers.length > 0 && (
-        <div className='mx-auto flex w-48 items-center justify-center pb-4'>
-          <Badge
-            color='orange'
-            className='w-full text-center text-left'
-            onClick={() => {
-              signalingServerConnectionState.isConnected
-                ? disconnectFromSignalingServer()
-                : connectToSignalingServer(roomUrl ?? "");
-            }}
-          >
-            Waiting for messages{dots}
-          </Badge>
-        </div>
-      )}
+        {messages.length === 0 && peers.length > 0 && (
+          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-48 items-center justify-center pb-4 lg:left-40'>
+            <Badge
+              color='orange'
+              className='w-full text-center text-left'
+              onClick={() => {
+                signalingServerConnectionState.isConnected
+                  ? disconnectFromSignalingServer()
+                  : connectToSignalingServer(roomUrl ?? "");
+              }}
+            >
+              Waiting for messages{dots}
+            </Badge>
+          </div>
+        )}
 
-      <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
         {messages.length > 0 && (
           <>
-            <div className='flex-1 overflow-x-hidden overflow-y-auto bg-white/70 pb-6 dark:bg-zinc-900/90'>
+            <div className='mb-10 overflow-x-hidden overflow-y-auto overscroll-contain bg-white/70 dark:bg-black/60'>
               {/* Messages */}
               {messages.map((message, i) => {
-                // console.log(message.channelLabel);
-                // console.log(selectedChannel);
-                if (message.channelLabel === selectedChannel)
-                  // return <MessageBubble message={message} />;
+                if (message.channelLabel === selectedChannel) {
                   return <MessageItem key={i} message={message} />;
+                }
               })}
             </div>
           </>
         )}
-
-        <div ref={messagesEndRef} />
-
-        <MessageInput handleFiles={handleFiles} />
       </div>
+
+      <div ref={messagesEndRef} />
+
+      <MessageInput handleFiles={handleFiles} />
     </div>
   );
 };

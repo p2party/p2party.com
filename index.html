@@ -1,12 +1,26 @@
 <!doctype html>
 <html
   lang="en"
-  class="h-full bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950"
+  class="h-full bg-white lg:bg-zinc-100 dark:bg-black dark:lg:bg-zinc-950"
 >
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo-cat.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#fff"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#000"
+    />
 
     <meta
       name="description"
@@ -38,9 +52,9 @@
     />
     <meta name="twitter:image" content="https://p2party.com/logo-cat.svg" />
 
-    <title>p2party</title>
+    <title>P2Party is an encrypted WebRTC mesh network generator</title>
   </head>
-  <body class="h-full">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
