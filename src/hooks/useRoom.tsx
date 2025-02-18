@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useSelector } from "react-redux";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -22,6 +22,7 @@ export const useRoom = () =>
   // },
   {
     const { roomUrl } = useParams();
+    const navigate = useNavigate();
     const [chunks] = useLocalStorage("chunksToSplitMessage", 3);
 
     const keyPair = useSelector(p2party.keyPairSelector);
@@ -34,6 +35,11 @@ export const useRoom = () =>
     const [roomIndex, setRoomIndex] = useState(-1);
     const [selectedChannel, setSelectedChannel] = useState("main");
     const [iceServers, setIceServers] = useState<string[]>([]);
+
+    const goToRandomRoom = async (replace = false) => {
+      const random = await p2party.generateRandomRoomUrl();
+      navigate("/rooms/" + random, { replace });
+    };
 
     const openChannel = async (name: string) => {
       if (roomIndex === -1) throw new Error("No room was selected");
@@ -105,6 +111,7 @@ export const useRoom = () =>
       channels: roomIndex > -1 ? rooms[roomIndex].channels : [],
       messages: roomIndex > -1 ? rooms[roomIndex].messages : [],
       selectedChannel,
+      goToRandomRoom,
       connect: p2party.connect,
       connectToSignalingServer: p2party.connectToSignalingServer,
       disconnect: p2party.disconnectFromRoom,

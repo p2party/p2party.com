@@ -12,12 +12,12 @@ import { useRoom } from "../../hooks/useRoom";
 
 import {
   Dropdown,
+  DropdownHeader,
   DropdownButton,
   DropdownDivider,
   DropdownItem,
   DropdownMenu,
 } from "../dropdown";
-import { SidebarLabel } from "../sidebar";
 import { NavbarItem } from "../navbar";
 
 import type { Dispatch, SetStateAction } from "react";
@@ -46,10 +46,22 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
     <Dropdown>
       <DropdownButton as={NavbarItem}>
         <UserGroupIcon />
-        <SidebarLabel>{peers.length + 1}</SidebarLabel>
       </DropdownButton>
 
       <DropdownMenu className='min-w-64' anchor='bottom start'>
+        <DropdownHeader>
+          <div className='pr-6'>
+            <div className='text-xs text-zinc-500 dark:text-zinc-400'>
+              Peers:
+            </div>
+            <div className='text-sm/7 font-semibold text-zinc-800 dark:text-white'>
+              {peers.length + 1}
+            </div>
+          </div>
+        </DropdownHeader>
+
+        <DropdownDivider />
+
         {peers.length > 0 && (
           <>
             {signalingServerConnectionState.isConnected && (

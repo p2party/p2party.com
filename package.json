@@ -15,7 +15,7 @@
     "@heroicons/react": "^2.2.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
-    "p2party": "file:../p2party-js/p2party-0.5.3.tgz",
+    "p2party": "file:../p2party-js/p2party-0.5.4.tgz",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,7 +26,8 @@
     "wavesurfer.js": "^7.9.1"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.744.0",
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@capacitor-community/safe-area": "^7.0.0-alpha.1",
     "@capacitor/android": "^7.0.1",
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^7.0.1",
@@ -35,8 +36,8 @@
     "@capacitor/ios": "^7.0.1",
     "@capacitor/push-notifications": "^7.0.0",
     "@capacitor/screen-orientation": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
     "@capacitor/status-bar": "^7.0.0",
-    "@capacitor-community/safe-area": "^7.0.0-alpha.1",
     "@eslint/js": "^9.11.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/vite": "^4.0.6",
@@ -54,7 +55,7 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.0.3",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.24.0",
+    "typescript-eslint": "^8.24.1",
     "vite": "^5.4.14"
   }
 }

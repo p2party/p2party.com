@@ -61,27 +61,37 @@ const SideBar = () => {
       </SidebarHeader>
 
       <SidebarBody>
-        <Suspense>
-          <PeerDropdown />
-        </Suspense>
+        {roomUrl && roomUrl.length === 64 && (
+          <Suspense>
+            <PeerDropdown />
+          </Suspense>
+        )}
 
-        <SidebarItem>
-          <span className='flex min-w-0 items-center gap-3'>
-            <HomeIcon className='size-10' />
-            <span className='min-w-0'>
-              <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                Room ID:
-              </span>
-              <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
-                {roomId.length > 0 ? roomId : '""'}
+        {roomUrl && roomUrl.length === 64 && (
+          <SidebarItem>
+            <span className='flex min-w-0 items-center gap-3'>
+              {roomId.length > 0 && <HomeIcon className='size-10' />}
+
+              {roomId.length === 0 && <HomeIcon className='size-7' />}
+
+              <span className='min-w-0'>
+                <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+                  Room ID:
+                </span>
+                <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
+                  {roomId.length > 0 ? roomId : '""'}
+                </span>
               </span>
             </span>
-          </span>
-        </SidebarItem>
+          </SidebarItem>
+        )}
 
         <SidebarItem>
           <span className='flex min-w-0 items-center gap-3'>
-            <UserIcon className='size-10' />
+            {peerId.length > 0 && <UserIcon className='size-10' />}
+
+            {peerId.length === 0 && <UserIcon className='size-7' />}
+
             <span className='min-w-0'>
               <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
                 My Peer ID:
@@ -120,21 +130,23 @@ const SideBar = () => {
           />
         </SidebarItem>
 
-        <SidebarItem onClick={() => setShowQRCode(true)}>
-          <span className='flex min-w-0 items-center gap-3'>
-            <QrCodeIcon className='size-9 lg:size-7' />
-            <span className='min-w-0'>
-              <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                Show room QR code
+        {roomUrl && roomUrl.length === 64 && (
+          <SidebarItem onClick={() => setShowQRCode(true)}>
+            <span className='flex min-w-0 items-center gap-3'>
+              <QrCodeIcon className='size-9 lg:size-7' />
+              <span className='min-w-0'>
+                <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+                  Show room QR code
+                </span>
               </span>
             </span>
-          </span>
-          <QRCodeAlert
-            roomUrl={roomUrl ?? ""}
-            isOpen={showQRCode}
-            setIsOpen={setShowQRCode}
-          />
-        </SidebarItem>
+            <QRCodeAlert
+              roomUrl={roomUrl ?? ""}
+              isOpen={showQRCode}
+              setIsOpen={setShowQRCode}
+            />
+          </SidebarItem>
+        )}
 
         <SidebarItem onClick={() => setShowBlacklist(true)}>
           <span className='flex min-w-0 items-center gap-3'>

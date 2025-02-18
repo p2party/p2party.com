@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useParams } from "react-router-dom";
-
-import CatAvatar from "../components/avatars/cat";
-import MessageItem from "../components/MessageItem";
-import MessageInput from "../components/custom/MessageInput";
 
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
+
+const CatAvatar = lazy(() => import("../components/avatars/cat"));
+const MessageItem = lazy(() => import("../components/MessageItem"));
+const MessageInput = lazy(() => import("../components/custom/MessageInput"));
 
 const ChatPage = () => {
   const {
@@ -29,26 +29,6 @@ const ChatPage = () => {
   const [dots, setDots] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onFocus = () => {
-      if (
-        !signalingServerConnectionState.isConnected &&
-        !signalingServerConnectionState.isEstablishingConnection &&
-        signalingServerConnectionState.serverUrl.length > 0
-      ) {
-        connectToSignalingServer(roomUrl ?? "");
-      }
-    };
-
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("beforeunload", disconnectFromSignalingServer);
-
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("beforeunload", disconnectFromSignalingServer);
-    };
-  }, []);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -74,8 +54,9 @@ const ChatPage = () => {
   }, [signalingServerConnectionState.isConnected]);
 
   useEffect(() => {
+    const p = peers.length + 1;
     document.title =
-      "P2Party:" + peers.length + " peers, " + messages.length + " messages";
+      "P2Party:" + p + " peers, " + messages.length + " messages";
   }, [peers, messages]);
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
@@ -163,12 +144,14 @@ const ChatPage = () => {
       className='flex max-h-[calc(94svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] min-h-0 flex-col overflow-y-auto scroll-smooth pt-14 lg:my-2 lg:pt-0'
     >
       <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
-        <CatAvatar className='w-2/3 w-full outline-white md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
+        <Suspense>
+          <CatAvatar className='w-2/3 w-full outline-white md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
+        </Suspense>
       </div>
 
       <div className='relative flex flex-1 flex-col'>
         {peers.length === 0 && signalingServerConnectionState.isConnected && (
-          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-36 items-center justify-center pb-4 lg:left-40'>
+          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-36 items-center justify-center pb-4 lg:left-64'>
             <Badge
               color='orange'
               className='w-full text-center'
@@ -180,7 +163,7 @@ const ChatPage = () => {
         )}
 
         {!signalingServerConnectionState.isConnected && (
-          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-64 items-center justify-center pb-4 lg:left-40'>
+          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-64 items-center justify-center pb-4 lg:left-64'>
             <Badge
               color='red'
               className='w-full text-center text-left'
@@ -192,7 +175,7 @@ const ChatPage = () => {
         )}
 
         {messages.length === 0 && peers.length > 0 && (
-          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-48 items-center justify-center pb-4 lg:left-40'>
+          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-48 items-center justify-center pb-4 lg:left-64'>
             <Badge
               color='orange'
               className='w-full text-center text-left'
@@ -213,7 +196,11 @@ const ChatPage = () => {
               {/* Messages */}
               {messages.map((message, i) => {
                 if (message.channelLabel === selectedChannel) {
-                  return <MessageItem key={i} message={message} />;
+                  return (
+                    <Suspense key={i}>
+                      <MessageItem message={message} />
+                    </Suspense>
+                  );
                 }
               })}
             </div>
@@ -223,7 +210,9 @@ const ChatPage = () => {
 
       <div ref={messagesEndRef} />
 
-      <MessageInput handleFiles={handleFiles} />
+      <Suspense>
+        <MessageInput handleFiles={handleFiles} />
+      </Suspense>
     </div>
   );
 };

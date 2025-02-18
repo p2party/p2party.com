@@ -6,8 +6,10 @@ import { StatusBar } from "@capacitor/status-bar";
 import { ScreenOrientation } from "@capacitor/screen-orientation";
 import p2party from "p2party";
 
-const Layout = lazy(() => import("./components/custom/layout"));
+const ChatLayout = lazy(() => import("./components/custom/ChatLayout"));
+
 const HomePage = lazy(() => import("./pages/home"));
+const RoomsPage = lazy(() => import("./pages/rooms"));
 const ChatPage = lazy(() => import("./pages/chat"));
 const TOSPage = lazy(() => import("./pages/tos"));
 const PrivacyPage = lazy(() => import("./pages/privacy"));
@@ -34,19 +36,24 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route index element={<HomePage />} />
         <Route path='/privacy-policy' element={<PrivacyPage />} />
         <Route path='/terms-of-service' element={<TOSPage />} />
+
         <Route
-          path='/room/:roomUrl'
+          path='rooms'
           element={
             <Provider store={p2party.store}>
-              <Layout>
-                <ChatPage />
-              </Layout>
+              <ChatLayout />
             </Provider>
           }
-        />
-        <Route path='/' element={<HomePage />} />
+        >
+          <Route index element={<RoomsPage />} />
+
+          <Route path=':roomUrl' element={<ChatPage />} />
+        </Route>
+
+        <Route path='*' element={<HomePage />} />
       </Routes>
     </BrowserRouter>
   );

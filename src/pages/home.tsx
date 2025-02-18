@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import p2party from "p2party";
 
 import { Button } from "../components/button";
@@ -9,26 +10,15 @@ import { Link } from "../components/link";
 const CatAvatar = lazy(() => import("../components/avatars/cat"));
 
 const HomePage = () => {
-  const [roomId, setRoomId] = useState("");
-  // const router = useRouter();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const getRandomRoomId = async () => {
-      const random = await p2party.generateRandomRoomUrl();
-      setRoomId(random);
-    };
-
-    getRandomRoomId();
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
+  const handleNewRoom = async () => {
+    const random = await p2party.generateRandomRoomUrl();
+    navigate("/rooms/" + random);
+  };
 
   return (
-    <div className='relative isolate flex min-h-[calc(100dvh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col content-center items-center justify-center bg-white bg-gradient-to-b px-6 dark:bg-black'>
+    <div className='relative isolate flex min-h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col content-center items-center justify-center bg-white px-6 dark:bg-black'>
       <div className='flex flex-col items-center space-y-6'>
         <Suspense>
           <CatAvatar className='m-0 w-3/4 p-0 drop-shadow-lg' />
@@ -44,7 +34,7 @@ const HomePage = () => {
         </p>
 
         <Button
-          href={`/room/${roomId}`}
+          onClick={handleNewRoom}
           className='rounded-lg text-lg font-semibold text-white transition hover:bg-white/20'
         >
           Generate Room

@@ -94,7 +94,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
               onKeyDown={(e) => handleKeyDown(e)}
               placeholder='Type your message...'
               resizable={false}
-              className='mr-2 flex-1 overflow-hidden font-bold focus:border-white'
+              className='mr-2 flex-1 overflow-hidden font-bold'
               rows={1}
             />
             <Button

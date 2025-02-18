@@ -16,18 +16,30 @@ export interface ConnectAlertProps {
   roomUrl: string;
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
+  setPressedCancel: Dispatch<SetStateAction<boolean>>;
 }
 
-const ConnectAlert = ({ roomUrl, isOpen, setIsOpen }: ConnectAlertProps) => {
+const ConnectAlert = ({
+  roomUrl,
+  isOpen,
+  setIsOpen,
+  setPressedCancel,
+}: ConnectAlertProps) => {
   const { connect } = useRoom();
 
   const handleConnectNow = () => {
     connect(roomUrl);
     setIsOpen(false);
+    setPressedCancel(false);
+  };
+
+  const handleCancelConnect = () => {
+    setIsOpen(false);
+    setPressedCancel(true);
   };
 
   return (
-    <Alert open={isOpen} onClose={setIsOpen} size='md'>
+    <Alert open={isOpen} onClose={setIsOpen} size='sm' className='lg:ml-64'>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
         You are about to connect to signaling.p2party.com to discover peers in
         the same URL. To establish a WebRTC connection, information about your
@@ -59,7 +71,7 @@ const ConnectAlert = ({ roomUrl, isOpen, setIsOpen }: ConnectAlertProps) => {
         .
       </AlertBody>
       <AlertActions>
-        <Button plain onClick={() => setIsOpen(false)}>
+        <Button plain onClick={handleCancelConnect}>
           Cancel
         </Button>
         <Button autoFocus onClick={handleConnectNow}>

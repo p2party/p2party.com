@@ -17,7 +17,7 @@ export interface QRCodeAlertProps {
 }
 
 const urlBase = "https://p2party.com/";
-const urlPath = "room/";
+const urlPath = "rooms/";
 
 const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -139,7 +139,7 @@ const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
   };
 
   return (
-    <Alert open={isOpen} onClose={setIsOpen} size='lg'>
+    <Alert open={isOpen} onClose={setIsOpen} size='md'>
       <AlertTitle>Scan the room URL</AlertTitle>
       <AlertBody>
         <canvas

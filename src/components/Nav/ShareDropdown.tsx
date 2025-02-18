@@ -20,7 +20,7 @@ export interface ShareProps {
 }
 
 const Share: FC<ShareProps> = ({ roomUrl, setShowQRCode }) => {
-  const url = "https://p2party.com/room/" + roomUrl;
+  const url = "https://p2party.com/rooms/" + roomUrl;
   const shareData: ShareData = {
     title: "P2Party room URL",
     // text: "Join me in this room",

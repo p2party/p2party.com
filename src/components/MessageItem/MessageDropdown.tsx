@@ -54,8 +54,6 @@ const MessageDropdown = ({
 
   const handleDownload = async () => {
     if (Capacitor.getPlatform() === "web") {
-      console.log("WE ARE HERE");
-
       // Create an anchor element for the download
       const link = document.createElement("a");
       link.href = msg;
@@ -85,13 +83,13 @@ const MessageDropdown = ({
 
   return (
     <div
-      className={`relative my-1 w-auto max-w-full overflow-hidden rounded-lg border-2 p-1 font-bold shadow md:max-w-lg ${message.fromPeerId === peerId ? "border-darkOrange bg-orange-950" : "border-darkOrange bg-black"}`}
+      className={`relative my-1 w-auto max-w-full overflow-hidden rounded-lg border-2 p-1 shadow md:max-w-lg ${message.fromPeerId === peerId ? "bg-mediumOrange border-black" : "border-darkOrange bg-black"}`}
     >
       <Dropdown>
         <DropdownButton plain>
           {msgCategory === MessageCategory.Text && (
             <Text
-              className={`text-left break-words whitespace-pre-wrap text-white dark:text-white`}
+              className={`text-left tracking-wide break-words whitespace-pre-wrap ${message.fromPeerId === peerId ? "font-medium text-black dark:font-semibold dark:text-black" : "font-normal text-white dark:text-white"} antialiased`}
             >
               {msg as string}
             </Text>
@@ -99,7 +97,7 @@ const MessageDropdown = ({
 
           {msgCategory !== MessageCategory.Text && (
             <div className='flex w-full items-center justify-between px-2'>
-              <Text className='flex-grow text-left'>
+              <Text className='flex-grow text-left font-normal tracking-wide antialiased'>
                 {truncateFilename(`${msgFilename}.${msgExtension}`, 20)}
               </Text>
               <DocumentIcon className='h-6 w-6 text-gray-500' />
