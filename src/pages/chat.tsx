@@ -23,22 +23,68 @@ const ChatPage = () => {
   } = useRoom();
   const { roomUrl } = useParams();
 
-  // const [messages, setMessages] = useState<Message[]>([]);
-
+  const [messageCount, setMessageCount] = useState(0);
   const [_isDragging, setIsDragging] = useState(false);
   const [dots, setDots] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // const handleUnload = () => {
+  //   let connected = localStorage.getItem("connected-rooms") ?? "";
+  //   if (connected.indexOf(roomId) > -1) {
+  //     connected = connected.replace(roomId, "");
+  //   }
+  //   connected = connected.replace(",,", ",");
+  //   if (connected[0] === ",") connected = connected.slice(1);
+  //
+  //   localStorage.setItem("connected-rooms", connected);
+  //   console.log(connected);
+  // }
+  //
+  // window.addEventListener("popstate", handleUnload);
+  //
+  // return () => {
+  //   window.removeEventListener("popstate", handleUnload);
+  // }
+
+  // useEffect(() => {
+  //   let connected = localStorage.getItem("connected-rooms");
+  //   if (!connected) {
+  //     connected = "";
+  //   } else if (connected[0] === ",") {
+  //     connected = connected.slice(1);
+  //   }
+  //
+  //   if (roomId.length > 0 && connected.indexOf(roomId) === -1) {
+  //     connected += roomId + ",";
+  //     localStorage.setItem("connected-rooms", connected);
+  //   }
+  // }, [roomId]);
+
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        block: "nearest",
-        behavior: "smooth",
-        inline: "start",
-      });
+    const scroll = () => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView(
+          // false
+          {
+            block: "end",
+            behavior: "smooth",
+            inline: "nearest",
+          },
+        );
+      }
+    };
+
+    if (messageCount === 0 && messages.length > 0) {
+      setTimeout(() => {
+        scroll();
+
+        setMessageCount(messages.length);
+      }, 500);
+    } else {
+      scroll();
     }
-  }, [messages]);
+  }, [messages.length]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -56,7 +102,7 @@ const ChatPage = () => {
   useEffect(() => {
     const p = peers.length + 1;
     document.title =
-      "P2Party:" + p + " peers, " + messages.length + " messages";
+      "P2Party: " + p + " peers, " + messages.length + " messages";
   }, [peers, messages]);
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
@@ -97,36 +143,6 @@ const ChatPage = () => {
       //   reader.readAsArrayBuffer(file);
     });
   };
-
-  // const dropHandler = (ev) => {
-  //   console.log("File(s) dropped");
-  //
-  //   // Prevent default behavior (Prevent file from being opened)
-  //   ev.preventDefault();
-  //
-  //   if (ev.dataTransfer.items) {
-  //     // Use DataTransferItemList interface to access the file(s)
-  //     [...ev.dataTransfer.items].forEach((item, i) => {
-  //       // If dropped items aren't files, reject them
-  //       if (item.kind === "file") {
-  //         const file = item.getAsFile();
-  //         console.log(`… file[${i}].name = ${file.name}`);
-  //       }
-  //     });
-  //   } else {
-  //     // Use DataTransfer interface to access the file(s)
-  //     [...ev.dataTransfer.files].forEach((file, i) => {
-  //       console.log(`… file[${i}].name = ${file.name}`);
-  //     });
-  //   }
-  // };
-  //
-  // const dragOverHandler = (ev) => {
-  //   console.log("File(s) in drop zone");
-  //
-  //   // Prevent default behavior (Prevent file from being opened)
-  //   ev.preventDefault();
-  // };
 
   // useEffect(() => {
   //   if (textareaRef.current) {
@@ -191,24 +207,23 @@ const ChatPage = () => {
         )}
 
         {messages.length > 0 && (
-          <>
-            <div className='mb-10 overflow-x-hidden overflow-y-auto overscroll-contain bg-white/70 dark:bg-black/60'>
-              {/* Messages */}
-              {messages.map((message, i) => {
-                if (message.channelLabel === selectedChannel) {
-                  return (
-                    <Suspense key={i}>
-                      <MessageItem message={message} />
-                    </Suspense>
-                  );
-                }
-              })}
-            </div>
-          </>
+          <div className='mb-10 overflow-x-hidden overflow-y-auto overscroll-contain bg-white/80 dark:bg-black/70'>
+            {messages.map((message, i) => {
+              if (message.channelLabel === selectedChannel) {
+                return (
+                  <Suspense key={i}>
+                    <MessageItem message={message} />
+                  </Suspense>
+                );
+              }
+            })}
+            <div
+              ref={messagesEndRef}
+              className='scroll-mb-10 md:scroll-mb-3 lg:scroll-mb-9'
+            />
+          </div>
         )}
       </div>
-
-      <div ref={messagesEndRef} />
 
       <Suspense>
         <MessageInput handleFiles={handleFiles} />

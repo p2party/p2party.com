@@ -185,7 +185,7 @@ export function Switch({
           // Invisible border so the switch is still visible in forced-colors mode
           "border border-transparent",
           // Unchecked
-          "bg-white ring-1 shadow-sm ring-black/5",
+          "bg-white shadow-sm ring-1 ring-black/5",
           // Checked
           "group-data-checked:bg-(--switch) group-data-checked:shadow-(--switch-shadow) group-data-checked:ring-(--switch-ring)",
           "group-data-checked:translate-x-4 sm:group-data-checked:translate-x-3",

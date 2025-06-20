@@ -22,12 +22,12 @@ const ChatLayout: FC<PropsWithChildren> = () => {
   const { roomUrl } = useParams();
 
   // let [alertIsOpen, setAlertIsOpen] = useState(false);
-  let [alertIsOpen, setAlertIsOpen] = useLocalStorage(
+  const [alertIsOpen, setAlertIsOpen] = useLocalStorage(
     "alertIsOpenInRoom" + roomUrl,
     true,
   );
   // let [pressedCancelInConnect, setPressedCancelInConnect] = useState(false);
-  let [pressedCancelInConnect, setPressedCancelInConnect] = useLocalStorage(
+  const [pressedCancelInConnect, setPressedCancelInConnect] = useLocalStorage(
     "pressedCancelButtonInRoom" + roomUrl,
     true,
   );

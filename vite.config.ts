@@ -26,5 +26,8 @@ export default defineConfig((configEnv) => {
     server: {
       port: 3000,
     },
+    // build: {
+    //   sourcemap: "inline"
+    // }
   };
 });

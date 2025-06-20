@@ -40,7 +40,7 @@ export function DropdownMenu({
         // Popover background
         "bg-white/75 backdrop-blur-xl dark:bg-zinc-800/75",
         // Shadows
-        "ring-1 shadow-lg ring-zinc-950/10 dark:ring-white/10 dark:ring-inset",
+        "shadow-lg ring-1 ring-zinc-950/10 dark:ring-white/10 dark:ring-inset",
         // Define grid at the menu level if subgrid is supported
         "supports-[grid-template-columns:subgrid]:grid supports-[grid-template-columns:subgrid]:grid-cols-[auto_1fr_1.5rem_0.5rem_auto]",
         // Transitions

@@ -9,13 +9,22 @@ const config: CapacitorConfig = {
     contentInset: "always",
   },
   plugins: {
-    SafeArea: {
-      enabled: true,
-      // customColorsForSystemBars: true,
-      // statusBarColor: '#000000',
-      // statusBarContent: 'light',
-      // navigationBarColor: '#000000',
-      // navigationBarContent: 'light',
+    // SafeArea: {
+    //   enabled: true,
+    //   customColorsForSystemBars: true,
+    //   // statusBarColor: '#000000',
+    //   // statusBarContent: 'light',
+    //   // navigationBarColor: '#000000',
+    //   // navigationBarContent: 'light',
+    // },
+    ScreenOrientation: {
+      orientation: "portrait",
+    },
+    StatusBar: {
+      overlaysWebView: false,
+    },
+    SplashScreen: {
+      launchShowDuration: 0,
     },
   },
 };

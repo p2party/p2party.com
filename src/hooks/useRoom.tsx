@@ -57,21 +57,6 @@ export const useRoom = () =>
       p2party.sendMessage(message, channel, rooms[roomIndex].id, chunks);
     };
 
-    const readMessage = async (merkleRootHex: string) => {
-      return await p2party.readMessage(merkleRootHex);
-    };
-
-    const cancelMessage = async (
-      channelLabel: string,
-      merkleRootHex: string,
-    ) => {
-      return await p2party.cancelMessage(channelLabel, merkleRootHex);
-    };
-
-    const deleteMessage = async (merkleRootHex: string) => {
-      return await p2party.deleteMessage(merkleRootHex);
-    };
-
     useEffect(() => {
       // const abortController = new AbortController();
 
@@ -117,6 +102,7 @@ export const useRoom = () =>
       disconnect: p2party.disconnectFromRoom,
       disconnectFromSignalingServer: p2party.disconnectFromSignalingServer,
       disconnectFromRoom: p2party.disconnectFromRoom,
+      disconnectFromAllRooms: p2party.disconnectFromAllRooms,
       disconnectFromPeer: p2party.disconnectFromPeer,
       setOnlyConnectToKnownPeers: p2party.onlyAllowConnectionsFromAddressBook,
       addPeerToAddressBook: p2party.addPeerToAddressBook,
@@ -124,12 +110,13 @@ export const useRoom = () =>
       removePeerFromAddressBook: p2party.deletePeerFromAddressBook,
       blacklistPeer: p2party.blacklistPeer,
       peerIsBlacklisted: p2party.getPeerIsBlacklisted,
+      getAllPastRooms: p2party.getAllExistingRooms,
       openChannel,
       selectChannel: setSelectedChannel,
       sendMessage,
-      readMessage,
-      cancelMessage,
-      deleteMessage,
+      readMessage: p2party.readMessage,
+      cancelMessage: p2party.cancelMessage,
+      deleteMessage: p2party.deleteMessage,
       purge: p2party.purge,
       purgeRoom: p2party.purgeRoom,
       purgeIdentity: p2party.purgeIdentity,

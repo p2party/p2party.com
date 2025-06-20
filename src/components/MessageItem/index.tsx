@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MessageCategory } from "p2party";
+import p2party from "p2party";
 
 import { useRoom } from "../../hooks/useRoom";
 
@@ -12,6 +12,19 @@ import type { Message, FileExtension } from "p2party";
 export interface MessageItemProps {
   message: Message;
 }
+
+const formatBytes = (bytes: number): string => {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let index = 0;
+
+  while (bytes >= 1024 && index < units.length - 1) {
+    bytes /= 1024;
+    index++;
+  }
+
+  const formattedValue = index === 0 ? bytes.toFixed(0) : bytes.toFixed(2);
+  return `${formattedValue} ${units[index]}`;
+};
 
 // const formatBytes = (bytes: number): string => {
 //   const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -33,14 +46,16 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
     msg: string;
     msgSize: number;
     msgFilename: string;
-    msgCategory: MessageCategory;
+    msgCategory: string;
     msgPercentage: number;
+    msgLoadingText: string;
     msgExtension: FileExtension;
   }>({
     msg: "",
     msgSize: 0,
     msgFilename: "",
-    msgCategory: MessageCategory.Text,
+    msgCategory: p2party.MessageCategory.Text,
+    msgLoadingText: "",
     msgPercentage: 0,
     msgExtension: "",
   });
@@ -49,9 +64,13 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
     const controller = new AbortController();
 
     const setMessage = async () => {
-      const m = await readMessage(message.merkleRootHex);
+      const m = await readMessage(message.merkleRootHex, message.sha512Hex);
 
-      if (m.percentage === 100) {
+      if (
+        message.fromPeerId === peerId &&
+        message.totalChunks > 0 &&
+        message.chunksCreated < message.totalChunks
+      ) {
         setState((prevState) => ({
           ...prevState,
           msg:
@@ -60,21 +79,77 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
               : m.message
                 ? URL.createObjectURL(m.message)
                 : "",
-          msgSize: m.size,
+          msgLoadingText:
+            "Split " +
+            message.chunksCreated +
+            " chunks of " +
+            message.totalChunks,
           msgFilename: m.filename,
           msgCategory: m.category,
           msgExtension: m.extension,
-          msgPercentage: m.percentage,
+          msgPercentage: Math.floor(
+            (message.chunksCreated / message.totalChunks) * 100,
+          ),
         }));
+        // } else if (
+        //   message.fromPeerId === peerId &&
+        //   message.savedSize < message.totalSize
+        // ) {
+        //   const percentage = Math.floor(
+        //     (message.savedSize / message.totalSize) * 100,
+        //   );
+
+        //   setState((prevState) => ({
+        //     ...prevState,
+        //     msg:
+        //       typeof m.message === "string"
+        //         ? m.message
+        //         : m.message
+        //           ? URL.createObjectURL(m.message)
+        //           : "",
+        //     msgLoadingText:
+        //       "Sent " +
+        //       formatBytes(message.savedSize) +
+        //       " of " +
+        //       formatBytes(message.totalSize),
+        //     msgSize: m.size,
+        //     msgFilename: m.filename,
+        //     msgCategory: m.category,
+        //     msgExtension: m.extension,
+        //     msgPercentage: percentage,
+        //   }));
       } else {
-        setState((prevState) => ({
-          ...prevState,
-          msgSize: m.size,
-          msgFilename: m.filename,
-          msgCategory: m.category,
-          msgExtension: m.extension,
-          msgPercentage: m.percentage,
-        }));
+        if (m.percentage === 100) {
+          setState((prevState) => ({
+            ...prevState,
+            msg:
+              typeof m.message === "string"
+                ? m.message
+                : m.message
+                  ? URL.createObjectURL(m.message)
+                  : "",
+            msgSize: m.size,
+            msgLoadingText: "",
+            msgFilename: m.filename,
+            msgCategory: m.category,
+            msgExtension: m.extension,
+            msgPercentage: m.percentage, // 100,
+          }));
+        } else {
+          setState((prevState) => ({
+            ...prevState,
+            msgSize: m.size,
+            msgLoadingText:
+              "Received " +
+              formatBytes(message.savedSize) +
+              " of " +
+              formatBytes(message.totalSize),
+            msgFilename: m.filename,
+            msgCategory: m.category,
+            msgExtension: m.extension,
+            msgPercentage: m.percentage,
+          }));
+        }
       }
     };
 
@@ -83,10 +158,15 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
     return () => {
       controller.abort();
 
-      if (msg.length > 0 && msgCategory !== MessageCategory.Text)
+      if (msg.length > 0 && msgCategory !== p2party.MessageCategory.Text)
         URL.revokeObjectURL(msg);
     };
-  }, [message.merkleRootHex, message.savedSize]);
+  }, [
+    message.merkleRootHex,
+    message.sha512Hex,
+    message.savedSize,
+    message.chunksCreated,
+  ]);
 
   const {
     msg,
@@ -94,12 +174,12 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
     msgCategory,
     msgPercentage,
     msgExtension,
+    msgLoadingText,
     msgFilename,
   } = state;
 
   return (
     <div
-      key={message.merkleRootHex}
       className={`mb-6 flex items-center ${
         message.fromPeerId === peerId ? "justify-end" : "justify-start"
       }`}
@@ -127,6 +207,7 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
           msgCategory={msgCategory}
           msgExtension={msgExtension}
           msgSize={msgSize}
+          msgLoadingText={msgLoadingText}
           msgFilename={msgFilename}
           msgPercentage={msgPercentage}
         />

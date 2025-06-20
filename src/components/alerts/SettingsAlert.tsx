@@ -59,7 +59,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
   };
 
   return (
-    <Alert open={isOpen} onClose={setIsOpen} size='xs'>
+    <Alert open={isOpen} onClose={setIsOpen} size='md'>
       <AlertTitle>Settings</AlertTitle>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
         These parameters affect the way p2party handles cryptography and

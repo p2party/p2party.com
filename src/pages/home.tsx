@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import p2party from "p2party";
 
@@ -11,6 +11,22 @@ const CatAvatar = lazy(() => import("../components/avatars/cat"));
 
 const HomePage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const getRooms = async () => {
+      const r = await p2party.getAllExistingRooms();
+
+      if (r.length > 0) navigate("/rooms/", { replace: true });
+    };
+
+    getRooms();
+
+    return () => {
+      abortController.abort();
+    };
+  }, []);
 
   const handleNewRoom = async () => {
     const random = await p2party.generateRandomRoomUrl();

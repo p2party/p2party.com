@@ -33,7 +33,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
 
       const messagesLen = messages.length;
-      if (messages[messagesLen - 1].fromPeerId === peerId) {
+      if (messagesLen > 0 && messages[messagesLen - 1].fromPeerId === peerId) {
         textareaRef.current.focus();
       }
     }
@@ -68,7 +68,7 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
   return (
     <>
       {channels.length > 0 && (
-        <div className='fixed right-0 bottom-0 left-0 z-50 flex-shrink-0 bg-white px-4 py-4 lg:mb-2 lg:ml-64 lg:px-16 dark:bg-black'>
+        <div className='fixed right-0 bottom-0 left-0 z-50 flex-shrink-0 bg-white px-4 py-4 lg:mr-2 lg:mb-2 lg:ml-64 lg:rounded-b-lg lg:px-14 dark:bg-black'>
           <div className='flex max-w-full items-center'>
             <input
               type='file'

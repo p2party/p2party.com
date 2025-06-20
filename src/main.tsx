@@ -1,10 +1,5 @@
 import { StrictMode, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { SafeArea } from "@capacitor-community/safe-area";
-
-SafeArea.enable({
-  config: {},
-});
 
 import "./index.css";
 

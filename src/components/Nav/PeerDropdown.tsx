@@ -45,14 +45,19 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
   return (
     <Dropdown>
       <DropdownButton as={NavbarItem}>
-        <UserGroupIcon />
+        <UserGroupIcon className='size-6 text-zinc-500 dark:text-zinc-400' />
+        {peers.length > 0 && (
+          <span className='bg-darkOrange absolute -top-1 -right-1 flex min-w-[1.25rem] items-center justify-center rounded-full text-xs text-white'>
+            {peers.length + 1 > 99 ? "99+" : peers.length + 1}
+          </span>
+        )}
       </DropdownButton>
 
       <DropdownMenu className='min-w-64' anchor='bottom start'>
         <DropdownHeader>
           <div className='pr-6'>
             <div className='text-xs text-zinc-500 dark:text-zinc-400'>
-              Peers:
+              Room peers:
             </div>
             <div className='text-sm/7 font-semibold text-zinc-800 dark:text-white'>
               {peers.length + 1}
@@ -67,7 +72,7 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
             {signalingServerConnectionState.isConnected && (
               <DropdownItem onClick={() => connect(roomUrl ?? "")}>
                 <SignalIcon />
-                Connect with new peers
+                Discover new peers
               </DropdownItem>
             )}
 

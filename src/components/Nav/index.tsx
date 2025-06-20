@@ -47,13 +47,6 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
           </NavbarItem>
         )}
 
-        <NavbarItem aria-label='settings' onClick={() => setShowSettings(true)}>
-          <Cog8ToothIcon />
-          <Suspense fallback={<Spinner />}>
-            <SettingsAlert isOpen={showSettings} setIsOpen={setShowSettings} />
-          </Suspense>
-        </NavbarItem>
-
         {roomUrl.length === 64 && (
           <>
             <Suspense fallback={<Spinner />}>
@@ -85,6 +78,13 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
             </Suspense>
           </>
         )}
+
+        <NavbarItem aria-label='settings' onClick={() => setShowSettings(true)}>
+          <Cog8ToothIcon />
+          <Suspense fallback={<Spinner />}>
+            <SettingsAlert isOpen={showSettings} setIsOpen={setShowSettings} />
+          </Suspense>
+        </NavbarItem>
 
         <Suspense fallback={<Spinner />}>
           <DeleteDropdown />
