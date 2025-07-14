@@ -16,7 +16,7 @@
     "class-validator": "^0.14.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
-    "p2party": "file:../p2party-js/p2party-0.6.10.tgz",
+    "p2party": "file:../p2party-js/p2party-0.6.11.tgz",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -41,16 +41,35 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
   } = useRoom();
   const { roomUrl } = useParams();
 
-  const [chunks, setChunks] = useLocalStorage("chunksToSplitMessage", 3);
+  const [chunks, setChunks] = useLocalStorage("chunksToSplitMessage", 1);
+  const [percentageFilledChunk, setPercentageFilledChunk] = useLocalStorage(
+    "percentageFilledChunk",
+    90,
+  );
   const [pressedCancelInConnect, setPressedCancelInConnect] = useLocalStorage(
     "pressedCancelButtonInRoom" + roomUrl,
     false,
   );
 
+  const handlePercentageFilledChunk = (e: ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    // if (v < 3) {
+    //   setChunks(3);
+    if (v < 1) {
+      setPercentageFilledChunk(1);
+    } else if (v > 100) {
+      setPercentageFilledChunk(100);
+    } else {
+      setPercentageFilledChunk(v);
+    }
+  };
+
   const handleChunks = (e: ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
-    if (v < 3) {
-      setChunks(3);
+    // if (v < 3) {
+    //   setChunks(3);
+    if (v < 1) {
+      setChunks(1);
     } else if (v > 20) {
       setChunks(20);
     } else {
@@ -134,11 +153,26 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
           <Divider className='my-3' />
 
           <Headless.Field className='justify-left flex items-center gap-12'>
+            <Label>Percentage of chunk with real data:</Label>
+            <Input
+              type='number'
+              name='chunks'
+              min={1}
+              max={100}
+              className='max-w-24'
+              value={percentageFilledChunk}
+              onChange={handlePercentageFilledChunk}
+            />
+          </Headless.Field>
+
+          <Divider className='my-3' />
+
+          <Headless.Field className='justify-left flex items-center gap-12'>
             <Label>Min chunks to split every message:</Label>
             <Input
               type='number'
               name='chunks'
-              min={3}
+              min={1}
               max={20}
               className='max-w-24'
               value={chunks}

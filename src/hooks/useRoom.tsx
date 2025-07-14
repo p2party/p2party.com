@@ -23,7 +23,11 @@ export const useRoom = () =>
   {
     const { roomUrl } = useParams();
     const navigate = useNavigate();
-    const [chunks] = useLocalStorage("chunksToSplitMessage", 3);
+    const [percentageFilledChunk] = useLocalStorage(
+      "percentageFilledChunk",
+      90,
+    );
+    const [chunks] = useLocalStorage("chunksToSplitMessage", 1);
 
     const keyPair = useSelector(p2party.keyPairSelector);
     const rooms = useSelector(p2party.roomSelector);
@@ -54,7 +58,13 @@ export const useRoom = () =>
     const sendMessage = (message: string | File, channel: string) => {
       if (roomIndex === -1) throw new Error("No room was selected");
 
-      p2party.sendMessage(message, channel, rooms[roomIndex].id, chunks);
+      p2party.sendMessage(
+        message,
+        channel,
+        rooms[roomIndex].id,
+        percentageFilledChunk / 100,
+        chunks,
+      );
     };
 
     useEffect(() => {
