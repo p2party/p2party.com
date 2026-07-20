@@ -384,6 +384,116 @@ const roomState = (url) => {
       );
     log("✅ TELEMETRY: sender retransmit count exposed");
 
+    // 5c. Big file: the streaming send-side SHA-512 hashes the file from disk in
+    // HASH_WINDOW_BYTES (1 MiB) windows without ever holding the whole file in
+    // RAM. A 16 MiB payload spans ~16 hash windows and ~275 chunks — a wrong
+    // incremental hash would corrupt the message identity / merkle and fail the
+    // byte-exact check. (Receive still reassembles in-memory until OPFS lands.)
+    const HUGE_BYTES = 16 * 1024 * 1024;
+    await A.page.evaluate(
+      ({ roomId, n }) => {
+        const bytes = new Uint8Array(n);
+        for (let i = 0; i < n; i++) bytes[i] = (i * 97 + 41) & 0xff;
+        const file = new File([bytes], "huge.bin", {
+          type: "application/octet-stream",
+        });
+        return window.p2party.sendMessage(file, "main", roomId).then(() => n);
+      },
+      { roomId, n: HUGE_BYTES },
+    );
+    log("A sent 16 MiB file (streaming send-side hash, multi-window)");
+    const gotHuge = await waitFor(
+      B.page,
+      async ({ url, expectBytes }) => {
+        const P = window.p2party;
+        const rooms = P.roomSelector(P.store.getState()) || [];
+        const r = rooms.find((x) => x.url === url);
+        if (!r) return null;
+        for (const m of r.messages) {
+          if (!m.merkleRootHex || m.totalSize !== expectBytes) continue;
+          const res = await P.readMessage(m.merkleRootHex);
+          if (res.percentage !== 100) continue;
+          if (res.message instanceof Blob && res.message.size === expectBytes) {
+            const buf = new Uint8Array(await res.message.arrayBuffer());
+            let ok = true;
+            for (let i = 0; i < buf.length; i++)
+              if (buf[i] !== ((i * 97 + 41) & 0xff)) {
+                ok = false;
+                break;
+              }
+            // The OPFS reassembly path returns a File; the in-memory Blob
+            // fallback returns a plain Blob. instanceof File tells them apart.
+            return {
+              size: res.message.size,
+              byteExact: ok,
+              opfsUsed: res.message instanceof File,
+            };
+          }
+        }
+        return null;
+      },
+      { url: roomUrl, expectBytes: HUGE_BYTES },
+      { label: "B receives 16 MiB file", timeout: 120000, interval: 1000 },
+    );
+    if (!gotHuge.byteExact)
+      throw new Error("16 MiB file corrupted — streaming hash mismatch?");
+    log(
+      `✅ BIG FILE: 16 MiB transfer byte-exact (streaming send-side SHA-512 over ~16 windows); opfsReassembly=${gotHuge.opfsUsed}`,
+    );
+    if (!gotHuge.opfsUsed)
+      throw new Error(
+        "16 MiB file was reassembled in-memory (Blob), not streamed to OPFS — Component B did not engage",
+      );
+    log("✅ OPFS RECEIVE: big file reassembled to a disk-backed OPFS file (never built in RAM)");
+
+    // OPFS concurrency + idempotency safety: (1) concurrent reads for the same
+    // completed file must be coalesced so BOTH stay on OPFS (a lock collision
+    // would silently fall back to a whole-file-in-RAM Blob); (2) a re-read must
+    // not re-truncate/re-stream the content-addressed file, so a File handed out
+    // earlier stays byte-readable.
+    const opfsSafety = await B.page.evaluate(
+      async ({ url, n }) => {
+        const P = window.p2party;
+        const rooms = P.roomSelector(P.store.getState()) || [];
+        const r = rooms.find((x) => x.url === url);
+        const m = (r?.messages || []).find(
+          (x) => x.totalSize === n && x.merkleRootHex,
+        );
+        if (!m) return { found: false };
+        const mr = m.merkleRootHex;
+        const [c1, c2] = await Promise.all([
+          P.readMessage(mr),
+          P.readMessage(mr),
+        ]);
+        const bothOpfs =
+          c1.message instanceof File && c2.message instanceof File;
+        const held = (await P.readMessage(mr)).message;
+        await P.readMessage(mr); // would truncate+rewrite without the guard
+        let heldReadable = false;
+        try {
+          const buf = new Uint8Array(await held.arrayBuffer());
+          heldReadable = buf.length === n;
+        } catch {
+          heldReadable = false;
+        }
+        return { found: true, bothOpfs, heldReadable };
+      },
+      { url: roomUrl, n: HUGE_BYTES },
+    );
+    if (!opfsSafety.found)
+      throw new Error("16 MiB message not found for OPFS safety check");
+    if (!opfsSafety.bothOpfs)
+      throw new Error(
+        "concurrent reads did not both use OPFS — coalescing failed (RAM fallback)",
+      );
+    if (!opfsSafety.heldReadable)
+      throw new Error(
+        "a re-read invalidated an earlier File — idempotency guard failed (NotReadableError)",
+      );
+    log(
+      "✅ OPFS SAFETY: concurrent reads coalesced (both OPFS) + re-read kept the earlier File readable",
+    );
+
     // 6. Prove it was the real WebRTC data channel, not the WS-relay fallback.
     const dcA = await A.page.evaluate(() => window.__dc);
     const dcB = await B.page.evaluate(() => window.__dc);
