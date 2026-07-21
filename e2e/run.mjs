@@ -388,7 +388,9 @@ const roomState = (url) => {
     // HASH_WINDOW_BYTES (1 MiB) windows without ever holding the whole file in
     // RAM. A 16 MiB payload spans ~16 hash windows and ~275 chunks — a wrong
     // incremental hash would corrupt the message identity / merkle and fail the
-    // byte-exact check. (Receive still reassembles in-memory until OPFS lands.)
+    // byte-exact check. On the receive side each real chunk is written straight
+    // into a pre-sized OPFS file at its offset as it arrives (out of order), so
+    // a wrong offset / uniformSize would leave a zero-gap and fail byte-exact.
     const HUGE_BYTES = 16 * 1024 * 1024;
     await A.page.evaluate(
       ({ roomId, n }) => {
@@ -421,8 +423,8 @@ const roomState = (url) => {
                 ok = false;
                 break;
               }
-            // The OPFS reassembly path returns a File; the in-memory Blob
-            // fallback returns a plain Blob. instanceof File tells them apart.
+            // The OPFS path returns a File; the in-memory Blob fallback returns
+            // a plain Blob. instanceof File tells them apart.
             return {
               size: res.message.size,
               byteExact: ok,
@@ -697,6 +699,66 @@ const roomState = (url) => {
       { label: "A send-buffer (newChunks) reclaimed", timeout: 30000, interval: 1000 },
     );
     log(`✅ NO SEND-BUFFER LEAK: sender newChunks reclaimed after completion (${JSON.stringify(leftover)})`);
+
+    // 11. Reload persistence: the RECEIVE-side OPFS file + IndexedDB have-set
+    // (leaf hashes) persist across a full page reload — the worker is torn down
+    // and its open sync-access-handle is gone, yet the bytes are on disk. After B
+    // reloads and re-consents, the completed 16 MiB file must still be served
+    // BYTE-EXACT straight from its persisted OPFS file (getReceiveFile reopens
+    // it), proving received bytes survive a reload — the basis of reload-resume,
+    // where remaining zero-gaps are filled on the next connection.
+    log("Reloading B to prove the received file survives a page reload...");
+    await B.page.reload({ waitUntil: "domcontentloaded" });
+    try {
+      await B.page
+        .getByRole("button", { name: "Connect" })
+        .click({ timeout: 15000 });
+    } catch {
+      /* consent may be remembered — no dialog to accept */
+    }
+    const reloaded = await waitFor(
+      B.page,
+      async ({ url, expectBytes }) => {
+        const P = window.p2party;
+        if (!P || !P.store) return null;
+        const rooms = P.roomSelector(P.store.getState()) || [];
+        const r = rooms.find((x) => x.url === url);
+        if (!r) return null;
+        for (const m of r.messages) {
+          if (!m.merkleRootHex || m.totalSize !== expectBytes) continue;
+          const res = await P.readMessage(m.merkleRootHex);
+          if (res.percentage !== 100) continue;
+          if (res.message instanceof Blob && res.message.size === expectBytes) {
+            const buf = new Uint8Array(await res.message.arrayBuffer());
+            let ok = true;
+            for (let i = 0; i < buf.length; i++)
+              if (buf[i] !== ((i * 97 + 41) & 0xff)) {
+                ok = false;
+                break;
+              }
+            return { byteExact: ok, opfsUsed: res.message instanceof File };
+          }
+        }
+        return null;
+      },
+      { url: roomUrl, expectBytes: HUGE_BYTES },
+      {
+        label: "B re-reads 16 MiB file after reload",
+        timeout: 60000,
+        interval: 1000,
+      },
+    );
+    if (!reloaded.byteExact)
+      throw new Error(
+        "16 MiB file NOT byte-exact after reload — OPFS/have-set did not persist",
+      );
+    if (!reloaded.opfsUsed)
+      throw new Error(
+        "16 MiB file after reload served from a RAM Blob, not OPFS — persisted-file reopen failed",
+      );
+    log(
+      "✅ RELOAD PERSISTENCE: 16 MiB file survived a page reload, served byte-exact from persisted OPFS",
+    );
 
     await browser.close();
     log("DONE — all transfers verified over real WebRTC");
