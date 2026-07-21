@@ -476,7 +476,12 @@ const roomState = (url) => {
         } catch {
           heldReadable = false;
         }
-        return { found: true, bothOpfs, heldReadable };
+        // Metadata-only read (materialize=false) must NOT materialize the file:
+        // returns metadata with an empty message (used for list previews/bubbles).
+        const meta = await P.readMessage(mr, undefined, false);
+        const metaOnly =
+          meta.message === "" && meta.size === n && meta.percentage === 100;
+        return { found: true, bothOpfs, heldReadable, metaOnly };
       },
       { url: roomUrl, n: HUGE_BYTES },
     );
@@ -490,8 +495,12 @@ const roomState = (url) => {
       throw new Error(
         "a re-read invalidated an earlier File — idempotency guard failed (NotReadableError)",
       );
+    if (!opfsSafety.metaOnly)
+      throw new Error(
+        "readMessage(materialize=false) did not return metadata-only (message must be empty)",
+      );
     log(
-      "✅ OPFS SAFETY: concurrent reads coalesced (both OPFS) + re-read kept the earlier File readable",
+      "✅ OPFS SAFETY: concurrent reads coalesced (both OPFS) + re-read kept the earlier File readable + metadata-only read skips materialization",
     );
 
     // 6. Prove it was the real WebRTC data channel, not the WS-relay fallback.
