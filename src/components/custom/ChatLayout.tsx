@@ -1,4 +1,4 @@
-import { useEffect, FC, lazy } from "react";
+import { useEffect, useRef, FC, lazy } from "react";
 import { useParams, Outlet } from "react-router-dom";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -19,6 +19,11 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     connectToSignalingServer,
     disconnectFromSignalingServer,
   } = useRoom();
+  const isConnected = signalingServerConnectionState.isConnected;
+  const isEstablishingConnection =
+    signalingServerConnectionState.isEstablishingConnection;
+  const signalingServerHasUrl =
+    signalingServerConnectionState.serverUrl.length > 0;
   const { roomUrl } = useParams();
 
   // let [alertIsOpen, setAlertIsOpen] = useState(false);
@@ -31,6 +36,7 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     "pressedCancelButtonInRoom" + roomUrl,
     true,
   );
+  const autoConnectAttemptedRoomRef = useRef<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -39,28 +45,45 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       roomUrl &&
       roomUrl.length === 64 &&
       !pressedCancelInConnect &&
-      !alertIsOpen
+      !alertIsOpen &&
+      !isConnected &&
+      !isEstablishingConnection &&
+      autoConnectAttemptedRoomRef.current !== roomUrl
     ) {
+      autoConnectAttemptedRoomRef.current = roomUrl;
       connectToSignalingServer(roomUrl);
     }
 
     if (roomUrl && roomUrl.length !== 64) {
+      autoConnectAttemptedRoomRef.current = null;
       goToRandomRoom(true);
+    }
+
+    if (pressedCancelInConnect || alertIsOpen) {
+      autoConnectAttemptedRoomRef.current = null;
     }
 
     return () => {
       controller.abort();
     };
-  }, [alertIsOpen, pressedCancelInConnect, roomUrl]);
+  }, [
+    alertIsOpen,
+    pressedCancelInConnect,
+    roomUrl,
+    isConnected,
+    isEstablishingConnection,
+    connectToSignalingServer,
+    goToRandomRoom,
+  ]);
 
   useEffect(() => {
     const onFocus = () => {
       if (
         roomUrl &&
         roomUrl.length === 64 &&
-        !signalingServerConnectionState.isConnected &&
-        !signalingServerConnectionState.isEstablishingConnection &&
-        signalingServerConnectionState.serverUrl.length > 0 &&
+        !isConnected &&
+        !isEstablishingConnection &&
+        signalingServerHasUrl &&
         !alertIsOpen &&
         !pressedCancelInConnect
       ) {
@@ -77,7 +100,9 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     };
   }, [
     roomUrl,
-    signalingServerConnectionState,
+    isConnected,
+    isEstablishingConnection,
+    signalingServerHasUrl,
     pressedCancelInConnect,
     alertIsOpen,
     connectToSignalingServer,

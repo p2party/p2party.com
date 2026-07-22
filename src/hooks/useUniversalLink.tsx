@@ -30,7 +30,7 @@ export const UniversalLinkProvider = ({
       abortController.abort();
       App.removeAllListeners();
     };
-  }, [navigate]);
+  }, [navigate, launchUrlHandled]);
 
   return (
     <UniversalLinkContext.Provider value={undefined}>

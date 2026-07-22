@@ -28,6 +28,7 @@ import BlacklistAlert from "../alerts/BlacklistAlert";
 import QRCodeAlert from "../alerts/QRCodeAlert";
 
 import { useRoom } from "../../hooks/useRoom";
+import p2party from "p2party";
 
 const CatAvatar = lazy(() => import("../avatars/cat"));
 const SignalingDropdown = lazy(() => import("./SignalingDropdown"));
@@ -170,6 +171,10 @@ const SideBar = () => {
           <SidebarHeading>Servers</SidebarHeading>
 
           <SignalingDropdown />
+        </SidebarSection>
+
+        <SidebarSection>
+          <SidebarHeading>Using p2party-js v{p2party.VERSION}</SidebarHeading>
         </SidebarSection>
       </SidebarBody>
     </Sidebar>

@@ -37,7 +37,7 @@ const AppUrlListener: FC = () => {
       App.removeAllListeners();
       abortController.abort();
     };
-  }, []);
+  }, [navigate, openedUrl]);
 
   return null;
 };

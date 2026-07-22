@@ -5,7 +5,7 @@ import { Provider } from "react-redux";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 // import { ScreenOrientation } from "@capacitor/screen-orientation";
-import { SafeArea } from "@capacitor-community/safe-area";
+import { SafeArea, SystemBarsStyle } from "@capacitor-community/safe-area";
 
 import p2party from "p2party";
 
@@ -47,32 +47,14 @@ const App = () => {
         if (isDarkMode) {
           // await StatusBar.setBackgroundColor({ color: "#000" });
           await StatusBar.setStyle({ style: Style.Dark });
-          // await SafeArea.disable({
-          //   config: {},
-          // });
-          await SafeArea.enable({
-            config: {
-              customColorsForSystemBars: true,
-              statusBarColor: "#000", // transparent
-              statusBarContent: "light",
-              navigationBarColor: "#000", // transparent
-              navigationBarContent: "light",
-            },
+          await SafeArea.setSystemBarsStyle({
+            style: SystemBarsStyle.Dark,
           });
         } else {
           // await StatusBar.setBackgroundColor({ color: "#fff" });
           await StatusBar.setStyle({ style: Style.Dark });
-          // await SafeArea.disable({
-          //   config: {},
-          // });
-          await SafeArea.enable({
-            config: {
-              customColorsForSystemBars: true,
-              statusBarColor: "#fff", // transparent
-              statusBarContent: "dark",
-              navigationBarColor: "#fff", // transparent
-              navigationBarContent: "dark",
-            },
+          await SafeArea.setSystemBarsStyle({
+            style: SystemBarsStyle.Light,
           });
         }
       }
