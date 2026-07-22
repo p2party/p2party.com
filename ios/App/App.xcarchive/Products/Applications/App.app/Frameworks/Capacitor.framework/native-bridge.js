@@ -33,7 +33,7 @@ var nativeBridge = (function (exports) {
     }
 
     // For removing exports for iOS/Android, keep let for reassignment
-    // eslint-disable-next-line
+     
     let dummy = {};
     const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -206,7 +206,7 @@ var nativeBridge = (function (exports) {
                     ev.initEvent(eventName, false, false);
                     if (eventData && typeof eventData === 'object') {
                         for (const i in eventData) {
-                            // eslint-disable-next-line no-prototype-builtins
+                             
                             if (eventData.hasOwnProperty(i)) {
                                 ev[i] = eventData[i];
                             }
