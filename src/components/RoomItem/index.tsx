@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 // import { useNavigate } from "react-router-dom";
 import p2party from "p2party";
 
 import { Avatar } from "../avatar";
 import { TableRow, TableCell } from "../table";
-
-import { useRoom } from "../../hooks/useRoom";
 
 import type { FC } from "react";
 import type { FileExtension, UniqueRoom } from "p2party";
@@ -33,8 +31,9 @@ const timeSince = (date: Date): string => {
 };
 
 const RoomListItem: FC<UniqueRoom> = (room) => {
-  const { readMessage } = useRoom();
-
+  // No redux subscription here: the row's data comes from the `room` prop, and
+  // readMessage is a stable module function. Subscribing to the whole rooms
+  // array (via useRoom) would re-render every room row on any store change.
   const [lastMessage, setLastMessage] = useState<{
     msg: string;
     msgSize: number;
@@ -50,46 +49,39 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
   });
 
   useEffect(() => {
-    const controller = new AbortController();
+    if (!room.lastMessageMerkleRoot || room.lastMessageMerkleRoot.length === 0)
+      return;
+
+    let cancelled = false;
 
     const setMessage = async () => {
-      const m = await readMessage(room.lastMessageMerkleRoot);
-
-      if (m.percentage === 100) {
+      try {
+        // Metadata only — the list preview shows a text snippet or a filename,
+        // never the file itself, so do NOT materialize (which would reassemble
+        // the whole file to OPFS just to render a row).
+        const m = await p2party.readMessage(
+          room.lastMessageMerkleRoot,
+          undefined,
+          false,
+        );
+        if (cancelled) return;
         setLastMessage((prevState) => ({
           ...prevState,
-          msg:
-            typeof m.message === "string"
-              ? m.message
-              : m.message
-                ? URL.createObjectURL(m.message)
-                : "",
+          msg: typeof m.message === "string" ? m.message : "",
           msgSize: m.size,
           msgFilename: m.filename,
           msgCategory: m.category,
           msgExtension: m.extension,
         }));
-      } else {
-        setLastMessage((prevState) => ({
-          ...prevState,
-          msgSize: m.size,
-          msgFilename: m.filename,
-          msgCategory: m.category,
-          msgExtension: m.extension,
-        }));
+      } catch (error) {
+        console.error(error);
       }
     };
 
     setMessage();
 
     return () => {
-      controller.abort();
-
-      if (
-        lastMessage.msg.length > 0 &&
-        lastMessage.msgCategory !== p2party.MessageCategory.Text
-      )
-        URL.revokeObjectURL(lastMessage.msg);
+      cancelled = true;
     };
   }, [room.lastMessageMerkleRoot]);
 
@@ -104,21 +96,23 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
             }
             className='size-9'
           />
-          <div>
-            <div className='font-medium'>
+          <div className='min-w-0'>
+            <div className='truncate font-medium'>
               p2party.com/rooms/
               {room.roomUrl.slice(0, 3) +
                 ".." +
                 room.roomUrl.slice(room.roomUrl.length - 2)}
             </div>
-            <div className='font-normal'>
-              {lastMessage.msg.length > 0
-                ? lastMessage.msgCategory === p2party.MessageCategory.Text
+            <div className='truncate font-normal'>
+              {lastMessage.msgCategory === p2party.MessageCategory.Text
+                ? lastMessage.msg.length > 0
                   ? lastMessage.msg.slice(0, 28) + "..."
-                  : lastMessage.msgFilename.slice(0, 15) +
+                  : "No messages yet"
+                : lastMessage.msgFilename.length > 0
+                  ? lastMessage.msgFilename.slice(0, 15) +
                     "..." +
                     lastMessage.msgExtension
-                : "No messages yet"}
+                  : "No messages yet"}
             </div>
           </div>
 
@@ -175,4 +169,4 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
   // );
 };
 
-export default RoomListItem;
+export default memo(RoomListItem);

@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
+import { useSelector } from "react-redux";
 import p2party from "p2party";
-
-import { useRoom } from "../../hooks/useRoom";
 
 import MessageSenderDropdown from "./MessageSenderDropdown";
 import MessageDropdown from "./MessageDropdown";
@@ -13,18 +12,18 @@ export interface MessageItemProps {
   message: Message;
 }
 
-const formatBytes = (bytes: number): string => {
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let index = 0;
-
-  while (bytes >= 1024 && index < units.length - 1) {
-    bytes /= 1024;
-    index++;
-  }
-
-  const formattedValue = index === 0 ? bytes.toFixed(0) : bytes.toFixed(2);
-  return `${formattedValue} ${units[index]}`;
-};
+// const formatBytes = (bytes: number): string => {
+//   const units = ["B", "KB", "MB", "GB", "TB"];
+//   let index = 0;
+//
+//   while (bytes >= 1024 && index < units.length - 1) {
+//     bytes /= 1024;
+//     index++;
+//   }
+//
+//   const formattedValue = index === 0 ? bytes.toFixed(0) : bytes.toFixed(2);
+//   return `${formattedValue} ${units[index]}`;
+// };
 
 // const formatBytes = (bytes: number): string => {
 //   const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -40,7 +39,10 @@ const formatBytes = (bytes: number): string => {
 // }
 
 const MessageItem: FC<MessageItemProps> = ({ message }) => {
-  const { peerId, readMessage } = useRoom();
+  // Narrow subscription: only peerId (from keyPair, which changes rarely) — NOT
+  // the whole rooms array. readMessage is a stable module fn. This keeps a
+  // per-chunk progress tick from re-rendering every message row.
+  const peerId = useSelector(p2party.keyPairSelector).peerId;
 
   const [state, setState] = useState<{
     msg: string;
@@ -60,114 +62,6 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
     msgExtension: "",
   });
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const setMessage = async () => {
-      const m = await readMessage(message.merkleRootHex, message.sha512Hex);
-
-      if (
-        message.fromPeerId === peerId &&
-        message.totalChunks > 0 &&
-        message.chunksCreated < message.totalChunks
-      ) {
-        setState((prevState) => ({
-          ...prevState,
-          msg:
-            typeof m.message === "string"
-              ? m.message
-              : m.message
-                ? URL.createObjectURL(m.message)
-                : "",
-          msgLoadingText:
-            "Split " +
-            message.chunksCreated +
-            " chunks of " +
-            message.totalChunks,
-          msgFilename: m.filename,
-          msgCategory: m.category,
-          msgExtension: m.extension,
-          msgPercentage: Math.floor(
-            (message.chunksCreated / message.totalChunks) * 100,
-          ),
-        }));
-        // } else if (
-        //   message.fromPeerId === peerId &&
-        //   message.savedSize < message.totalSize
-        // ) {
-        //   const percentage = Math.floor(
-        //     (message.savedSize / message.totalSize) * 100,
-        //   );
-
-        //   setState((prevState) => ({
-        //     ...prevState,
-        //     msg:
-        //       typeof m.message === "string"
-        //         ? m.message
-        //         : m.message
-        //           ? URL.createObjectURL(m.message)
-        //           : "",
-        //     msgLoadingText:
-        //       "Sent " +
-        //       formatBytes(message.savedSize) +
-        //       " of " +
-        //       formatBytes(message.totalSize),
-        //     msgSize: m.size,
-        //     msgFilename: m.filename,
-        //     msgCategory: m.category,
-        //     msgExtension: m.extension,
-        //     msgPercentage: percentage,
-        //   }));
-      } else {
-        if (m.percentage === 100) {
-          setState((prevState) => ({
-            ...prevState,
-            msg:
-              typeof m.message === "string"
-                ? m.message
-                : m.message
-                  ? URL.createObjectURL(m.message)
-                  : "",
-            msgSize: m.size,
-            msgLoadingText: "",
-            msgFilename: m.filename,
-            msgCategory: m.category,
-            msgExtension: m.extension,
-            msgPercentage: m.percentage, // 100,
-          }));
-        } else {
-          setState((prevState) => ({
-            ...prevState,
-            msgSize: m.size,
-            msgLoadingText:
-              "Received " +
-              formatBytes(message.savedSize) +
-              " of " +
-              formatBytes(message.totalSize),
-            msgFilename: m.filename,
-            msgCategory: m.category,
-            msgExtension: m.extension,
-            msgPercentage: m.percentage,
-          }));
-        }
-      }
-    };
-
-    setMessage();
-
-    return () => {
-      controller.abort();
-
-      if (msg.length > 0 && msgCategory !== p2party.MessageCategory.Text)
-        URL.revokeObjectURL(msg);
-    };
-  }, [
-    message.merkleRootHex,
-    message.sha512Hex,
-    message.savedSize,
-    message.chunksCreated,
-  ]);
-
   const {
     msg,
     msgSize,
@@ -178,25 +72,126 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
     msgFilename,
   } = state;
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const setMessage = async () => {
+      try {
+        // Metadata-only read — the file bubble shows a filename; the file itself
+        // is materialized only when the user opens/downloads it
+        // (MessageDropdown). This keeps the whole-file OPFS reassembly off the
+        // render path.
+        const m = await p2party.readMessage(
+          message.merkleRootHex,
+          message.sha512Hex,
+          false,
+        );
+        if (cancelled) return;
+
+        const nextMsg = typeof m.message === "string" ? m.message : "";
+
+        if (
+          message.fromPeerId === peerId &&
+          message.totalChunks > 0 &&
+          message.chunksCreated < message.totalChunks
+        ) {
+          const percentage = Math.floor(
+            (message.chunksCreated / message.totalChunks) * 100,
+          );
+
+          setState((prevState) => ({
+            ...prevState,
+            msg: nextMsg,
+            msgLoadingText: `Generating chunks ${percentage}%`,
+            msgFilename: m.filename,
+            msgCategory: m.category,
+            msgExtension: m.extension,
+            msgPercentage: percentage,
+          }));
+        } else if (
+          message.fromPeerId === peerId &&
+          message.savedSize < message.totalSize
+        ) {
+          const percentage = Math.floor(
+            (message.savedSize / message.totalSize) * 100,
+          );
+
+          setState((prevState) => ({
+            ...prevState,
+            msg: nextMsg,
+            msgLoadingText: `Sent ${percentage}%`,
+            msgSize: m.size,
+            msgFilename: m.filename,
+            msgCategory: m.category,
+            msgExtension: m.extension,
+            msgPercentage: percentage,
+          }));
+        } else if (m.percentage === 100) {
+          setState((prevState) => ({
+            ...prevState,
+            msg: nextMsg,
+            msgSize: m.size,
+            msgLoadingText: "",
+            msgFilename: m.filename,
+            msgCategory: m.category,
+            msgExtension: m.extension,
+            msgPercentage: m.percentage,
+          }));
+        } else {
+          setState((prevState) => ({
+            ...prevState,
+            msgSize: m.size,
+            msgLoadingText: `Received ${Math.floor(
+              (message.savedSize / message.totalSize) * 100,
+            )}%`,
+            msgFilename: m.filename,
+            msgCategory: m.category,
+            msgExtension: m.extension,
+            msgPercentage: m.percentage,
+          }));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    setMessage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    message.merkleRootHex,
+    message.fromPeerId,
+    message.sha512Hex,
+    message.savedSize,
+    message.totalSize,
+    message.chunksCreated,
+    message.totalChunks,
+    peerId,
+  ]);
+
   return (
     <div
-      className={`mb-6 flex items-center ${
+      className={`mb-4 flex items-end px-2 ${
         message.fromPeerId === peerId ? "justify-end" : "justify-start"
       }`}
     >
       {message.fromPeerId !== peerId && (
-        <MessageSenderDropdown message={message} />
+        <div className='self-center'>
+          <MessageSenderDropdown message={message} />
+        </div>
       )}
 
-      <div className='flex flex-col'>
+      <div className='flex max-w-[85%] flex-col md:max-w-[75%]'>
         {message.fromPeerId !== peerId && (
-          <span className='ml-1 text-left text-xs font-semibold text-gray-500 dark:text-gray-300'>
+          <span className='mb-0.5 ml-1 text-left text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-400'>
             {message.fromPeerId.slice(0, 8)}
           </span>
         )}
 
         {message.fromPeerId === peerId && (
-          <span className='mr-1 text-right text-xs font-semibold text-gray-500 dark:text-gray-300'>
+          <span className='mr-1 mb-0.5 text-right text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-400'>
             {message.fromPeerId.slice(0, 8)}
           </span>
         )}
@@ -207,29 +202,78 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
           msgCategory={msgCategory}
           msgExtension={msgExtension}
           msgSize={msgSize}
-          msgLoadingText={msgLoadingText}
+          // msgLoadingText={msgLoadingText}
           msgFilename={msgFilename}
           msgPercentage={msgPercentage}
         />
 
-        {message.fromPeerId !== peerId && (
-          <span className='ml-1 text-left text-xs font-semibold text-gray-500 dark:text-gray-300'>
-            {new Date(message.timestamp).toLocaleString()}
-          </span>
+        {/* Loading */}
+        {msgPercentage < 100 && (
+          <div
+            className={`mt-1 flex items-center gap-2 ${
+              message.fromPeerId === peerId
+                ? "justify-end"
+                : "flex-row-reverse justify-start"
+            }`}
+          >
+            <span
+              className={`w-48 text-[11px] text-zinc-500 dark:text-zinc-400 ${
+                message.fromPeerId === peerId ? "text-right" : "text-left"
+              }`}
+            >
+              {msgLoadingText}
+            </span>
+            <div className='relative h-5 w-5'>
+              <svg className='h-5 w-5 -rotate-90' viewBox='0 0 36 36'>
+                <path
+                  className='text-zinc-200 dark:text-zinc-700'
+                  stroke='currentColor'
+                  strokeWidth='4'
+                  fill='none'
+                  d='M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32'
+                />
+                <path
+                  className='text-darkOrange'
+                  stroke='currentColor'
+                  strokeWidth='4'
+                  fill='none'
+                  strokeLinecap='round'
+                  strokeDasharray='100'
+                  strokeDashoffset={100 - msgPercentage}
+                  d='M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32'
+                />
+              </svg>
+            </div>
+          </div>
         )}
 
-        {message.fromPeerId === peerId && (
-          <span className='mr-1 text-right text-xs font-semibold text-gray-500 dark:text-gray-300'>
-            {new Date(message.timestamp).toLocaleString()}
-          </span>
+        {msgPercentage === 100 && (
+          <>
+            {message.fromPeerId !== peerId && (
+              <span className='mt-0.5 ml-1 text-left text-[11px] text-zinc-500 dark:text-zinc-400'>
+                {new Date(message.timestamp).toLocaleString()}
+              </span>
+            )}
+
+            {message.fromPeerId === peerId && (
+              <span className='mt-0.5 mr-1 text-right text-[11px] text-zinc-500 dark:text-zinc-400'>
+                {new Date(message.timestamp).toLocaleString()}
+              </span>
+            )}
+          </>
         )}
       </div>
 
       {message.fromPeerId === peerId && (
-        <MessageSenderDropdown message={message} />
+        <div className='self-center'>
+          <MessageSenderDropdown message={message} />
+        </div>
       )}
     </div>
   );
 };
 
-export default MessageItem;
+// Immer keeps unchanged Message references stable, so a shallow-prop memo lets a
+// row skip re-render when its own message didn't change (combine with narrowing
+// the store subscription out of the row to fully stop O(N) list re-renders).
+export default memo(MessageItem);

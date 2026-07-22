@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
   TableBody,
+  TableCell,
 } from "../components/table";
 
 import type { UniqueRoom } from "p2party";
@@ -37,7 +38,7 @@ const RoomsPage = () => {
     return () => {
       abortController.abort();
     };
-  }, []);
+  }, [getAllPastRooms]);
 
   useEffect(() => {
     const r = rooms.length;
@@ -45,17 +46,17 @@ const RoomsPage = () => {
   }, [rooms]);
 
   return (
-    <div className='flex max-h-[calc(90svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] min-h-0 flex-col overflow-y-auto scroll-smooth pt-14 lg:my-2 lg:pt-0'>
+    <div className='flex min-h-0 flex-1 flex-col overflow-y-auto scroll-smooth pt-14 lg:my-2 lg:pt-0'>
       <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
         <Suspense>
-          <CatAvatar className='w-2/3 w-full outline-white md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
+          <CatAvatar className='w-full opacity-[0.08] md:w-2/3 lg:w-2/5 dark:opacity-[0.06]' />
         </Suspense>
       </div>
 
-      <div className='relative flex flex-1 flex-col items-center justify-center'>
+      <div className='relative flex min-h-0 flex-1 flex-col items-center justify-center'>
         <Table
           dense
-          className='h-full overflow-x-hidden overflow-y-auto overscroll-contain bg-white/95 dark:bg-black/85'
+          className='h-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg bg-white/90 backdrop-blur-sm dark:bg-black/80'
         >
           <TableHead>
             <TableRow>
@@ -64,6 +65,13 @@ const RoomsPage = () => {
           </TableHead>
 
           <TableBody>
+            {rooms.length === 0 && (
+              <TableRow>
+                <TableCell className='py-10 text-center font-mono text-sm text-zinc-500 dark:text-zinc-400'>
+                  No past rooms yet — generate one to get started.
+                </TableCell>
+              </TableRow>
+            )}
             {rooms.map((room) => (
               <Suspense key={room.roomId}>
                 <RoomListItem {...room} />
@@ -75,7 +83,7 @@ const RoomsPage = () => {
 
       <div className='fixed bottom-4 left-1/2 -translate-x-1/2 lg:right-4 lg:left-auto lg:translate-x-0'>
         <Button
-          className='bg-darkOrange cursor-pointer rounded-lg px-4 py-2 text-lg font-semibold text-white transition hover:bg-black'
+          className='bg-darkOrange cursor-pointer rounded-xl px-6 py-2.5 text-lg font-semibold text-white shadow-[4px_4px_0_0_rgba(0,0,0,0.18)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-black hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.24)] active:translate-x-0 active:translate-y-0'
           onClick={async () => await goToRandomRoom()}
         >
           Generate Room
