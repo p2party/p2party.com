@@ -26,6 +26,9 @@ export default defineConfig((configEnv) => {
     server: {
       port: 3000,
     },
+    optimizeDeps: {
+      exclude: ["p2party"],
+    },
     // build: {
     //   sourcemap: "inline"
     // }
