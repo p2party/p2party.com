@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capawesome-team/capacitor-file-opener";
 import { isURL } from "class-validator";
+import { useSelector } from "react-redux";
 import p2party from "p2party";
 
 import { Text } from "../text";
@@ -23,8 +23,6 @@ import {
   ArrowTopRightOnSquareIcon,
   ClipboardIcon,
 } from "@heroicons/react/20/solid";
-
-import { useRoom } from "../../hooks/useRoom";
 
 import type { Message, FileExtension } from "p2party";
 
@@ -49,7 +47,7 @@ export interface MessageDropdownProps {
   msgSize: number;
   msgFilename: string;
   msgCategory: string;
-  msgLoadingText: string;
+  // msgLoadingText: string;
   msgPercentage: number;
   msgExtension: FileExtension;
 }
@@ -59,44 +57,81 @@ const MessageDropdown = ({
   msg,
   msgFilename,
   msgCategory,
-  msgLoadingText,
+  // msgLoadingText,
   msgExtension,
   msgPercentage,
 }: MessageDropdownProps) => {
-  const { peerId, cancelMessage, deleteMessage } = useRoom();
-  const [url, setUrl] = useState("");
+  // Narrow subscription: peerId only (readMessage/cancelMessage/deleteMessage
+  // are stable module functions), so a dropdown row doesn't re-render on every
+  // store change.
+  const peerId = useSelector(p2party.keyPairSelector).peerId;
+  const url = isURL(msg) ? msg : "";
 
-  useEffect(() => {
-    if (isURL(msg)) {
-      setUrl(msg);
-    }
-  }, [msg, setUrl]);
+  // Materialize the file only on user action (not on render). For a big file
+  // this streams the IndexedDB chunks to a disk-backed OPFS File in the worker.
+  const materializeFile = async (): Promise<Blob | null> => {
+    const m = await p2party.readMessage(
+      message.merkleRootHex,
+      message.sha512Hex,
+    );
+    return m.message instanceof Blob ? m.message : null;
+  };
 
   const handleOpen = async () => {
-    window.open(msg, "_blank");
+    try {
+      const blob = await materializeFile();
+      if (!blob) return;
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, "_blank");
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // "Save as…": let the user pick the destination (Chromium File System Access
+  // API) and STREAM the disk-backed File there — never held in RAM, ideal for
+  // large files. Falls back to the anchor download elsewhere.
+  const canSaveAs =
+    typeof window !== "undefined" && "showSaveFilePicker" in window;
+
+  const handleSaveAs = async () => {
+    try {
+      // The picker must be invoked within the click gesture, before any await.
+      const handle = await (
+        window as unknown as {
+          showSaveFilePicker: (opts: { suggestedName?: string }) => Promise<{
+            createWritable: () => Promise<WritableStream<Uint8Array>>;
+          }>;
+        }
+      ).showSaveFilePicker({ suggestedName: msgFilename });
+      const blob = await materializeFile();
+      if (!blob) return;
+      const writable = await handle.createWritable();
+      await blob.stream().pipeTo(writable);
+    } catch (error) {
+      // A user cancelling the picker throws AbortError — not an error.
+      if ((error as Error)?.name !== "AbortError") console.error(error);
+    }
   };
 
   const handleDownload = async () => {
-    if (Capacitor.getPlatform() === "web") {
-      // Create an anchor element for the download
-      const link = document.createElement("a");
-      link.href = msg;
-      link.download = msgFilename; // Replace with your desired file name and extension
+    try {
+      const blob = await materializeFile();
+      if (!blob) return;
 
-      // Append the anchor to the body, trigger click, then remove it
-      document.body.appendChild(link);
-      link.addEventListener("click", async () => {
+      if (Capacitor.getPlatform() === "web") {
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = msgFilename;
+        document.body.appendChild(link);
+        link.click();
         document.body.removeChild(link);
-        // await deleteMessage(message.merkleRootHex);
-        link.removeEventListener("click", () => {});
-      });
-
-      link.click();
-    } else {
-      const blob = await fetch(msg).then((r) => r.blob());
-      const base64 = await readAsDataURL(blob);
-      const name = `${String(new Date().getTime())}-${msgFilename.replace("." + msgExtension, "")}.${msgExtension}`;
-      try {
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      } else {
+        const base64 = await readAsDataURL(blob);
+        const name = `${String(new Date().getTime())}-${msgFilename.replace("." + msgExtension, "")}.${msgExtension}`;
         await Filesystem.appendFile({
           path: name,
           data: base64,
@@ -108,30 +143,22 @@ const MessageDropdown = ({
           directory: Directory.Data,
         });
 
-        await FileOpener.openFile({
-          path: uri,
-        });
-
-        // await Filesystem.writeFile({
-        //   path: `Files/P2Party/${String(new Date().getTime())}-${msgFilename.replace("." + msgExtension, "")}.${msgExtension}`,
-        //   data: base64,
-        //   directory: Directory.Data,
-        // });
-      } catch (error) {
-        console.error(error);
+        await FileOpener.openFile({ path: uri });
       }
+    } catch (error) {
+      console.error(error);
     }
   };
 
   return (
     <div
-      className={`relative my-1 w-auto max-w-full overflow-hidden rounded-lg border-2 p-1 shadow md:max-w-lg ${message.fromPeerId === peerId ? "bg-mediumOrange ml-3 border-black lg:ml-0" : "border-darkOrange mr-3 bg-black lg:mr-0"}`}
+      className={`relative my-1 w-auto max-w-full overflow-hidden rounded-2xl border p-2 shadow-md transition-shadow hover:shadow-lg md:max-w-lg ${message.fromPeerId === peerId ? "bg-mediumOrange ml-3 border-orange-300/50 lg:ml-0 dark:border-orange-700/40" : "border-darkOrange/30 mr-3 bg-zinc-900 lg:mr-0 dark:border-orange-800/30"}`}
     >
       <Dropdown>
         <DropdownButton plain className='size-fit cursor-pointer'>
           {msgCategory === p2party.MessageCategory.Text && url.length === 0 && (
             <Text
-              className={`text-left tracking-wide break-words whitespace-pre-line ${message.fromPeerId === peerId ? "font-medium text-black dark:font-semibold dark:text-black" : "font-normal text-white dark:text-white"} text-pretty break-words text-clip hyphens-auto antialiased select-text`}
+              className={`text-left tracking-wide wrap-break-word whitespace-pre-line ${message.fromPeerId === peerId ? "font-medium text-black dark:font-semibold dark:text-black" : "font-normal text-white dark:text-white"} text-pretty wrap-break-word text-clip hyphens-auto antialiased select-text`}
             >
               {msg as string}
             </Text>
@@ -139,7 +166,7 @@ const MessageDropdown = ({
 
           {msgCategory === p2party.MessageCategory.Text && url.length > 0 && (
             <Text
-              className={`text-left font-semibold tracking-wide text-pretty break-words break-all text-clip hyphens-auto whitespace-normal text-sky-700 underline decoration-sky-400 antialiased select-text dark:font-normal dark:text-sky-400`}
+              className={`text-left font-semibold tracking-wide text-pretty wrap-break-word break-all text-clip hyphens-auto whitespace-normal text-sky-700 underline decoration-sky-400 antialiased select-text dark:font-normal dark:text-sky-400`}
             >
               {msg as string}
             </Text>
@@ -148,7 +175,7 @@ const MessageDropdown = ({
           {msgCategory !== p2party.MessageCategory.Text && (
             <div className='flex w-full items-center justify-between px-2'>
               <Text
-                className={`text-left tracking-wide break-words whitespace-pre-wrap ${message.fromPeerId === peerId ? "font-medium text-black dark:font-semibold dark:text-black" : "font-normal text-white dark:text-white"} antialiased`}
+                className={`text-left tracking-wide wrap-break-word whitespace-pre-wrap ${message.fromPeerId === peerId ? "font-medium text-black dark:font-semibold dark:text-black" : "font-normal text-white dark:text-white"} antialiased`}
               >
                 {truncateFilename(`${msgFilename}`, 20)}
               </Text>
@@ -189,6 +216,12 @@ const MessageDropdown = ({
                   <ArrowDownOnSquareIcon />
                   Download file
                 </DropdownItem>
+                {canSaveAs && (
+                  <DropdownItem onClick={handleSaveAs}>
+                    <ArrowDownOnSquareIcon />
+                    Save as…
+                  </DropdownItem>
+                )}
               </>
             )}
 
@@ -204,7 +237,7 @@ const MessageDropdown = ({
           {msgPercentage < 100 && (
             <DropdownItem
               onClick={async () =>
-                await cancelMessage(
+                await p2party.cancelMessage(
                   message.channelLabel,
                   message.merkleRootHex,
                   message.sha512Hex,
@@ -225,7 +258,10 @@ const MessageDropdown = ({
 
           <DropdownItem
             onClick={async () =>
-              await deleteMessage(message.merkleRootHex, message.sha512Hex)
+              await p2party.deleteMessage(
+                message.merkleRootHex,
+                message.sha512Hex,
+              )
             }
           >
             <TrashIcon />
@@ -235,6 +271,7 @@ const MessageDropdown = ({
       </Dropdown>
 
       {/* Loading Line */}
+      {/*
       {msgPercentage < 100 && (
         <div className='absolute bottom-0 left-0 w-full'>
           <div className='whitespace-no-wrap absolute -top-7 left-1/2 max-w-xs -translate-x-1/2 animate-pulse truncate rounded-md bg-gray-800 px-4 py-2 text-xs text-white shadow-md'>
@@ -249,6 +286,7 @@ const MessageDropdown = ({
           </div>
         </div>
       )}
+      */}
     </div>
   );
 };
