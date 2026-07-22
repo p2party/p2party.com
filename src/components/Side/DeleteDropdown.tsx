@@ -44,7 +44,7 @@ const DeleteDropdown = () => {
         )}
 
         {roomId.length > 0 && (
-          <DropdownItem onClick={() => purgeRoom(roomUrl ?? "")}>
+          <DropdownItem onClick={async () => await purgeRoom(roomUrl ?? "")}>
             <ScissorsIcon />
             Purge Room Data
           </DropdownItem>

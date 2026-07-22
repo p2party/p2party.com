@@ -25,10 +25,10 @@ const ConnectAlert = ({
   setIsOpen,
   setPressedCancel,
 }: ConnectAlertProps) => {
-  const { connect } = useRoom();
+  const { connect, signalingServerUrl } = useRoom();
 
-  const handleConnectNow = () => {
-    connect(roomUrl);
+  const handleConnectNow = async () => {
+    await connect(roomUrl);
     setIsOpen(false);
     setPressedCancel(false);
   };
@@ -41,13 +41,12 @@ const ConnectAlert = ({
   return (
     <Alert open={isOpen} onClose={setIsOpen} size='sm' className='lg:ml-64'>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
-        You are about to connect to signaling.p2party.com to discover peers in
+        You are about to connect to {signalingServerUrl} to discover peers in
         the same URL. To establish a WebRTC connection, information about your
         device's networking capabilities, such as your IP address, need to be
         relayed to your peers. You can blacklist users or only allow connections
         from your address book. If you wish to connect to your own signaling
-        server or another STUN/TURN service, click Cancel and go to the related
-        sidebar section.
+        server or another STUN/TURN service, click Cancel and go to Settings.
       </AlertDescription>
       <AlertBody>
         By continuing, you agree to the{" "}

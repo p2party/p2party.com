@@ -14,8 +14,8 @@ import { useRoom } from "../../hooks/useRoom";
 
 const SignalingDropdown = () => {
   const {
-    iceServers,
-    signalingServerURL,
+    stunServerUrls,
+    signalingServerUrl,
     signalingServerConnectionState,
     connectToSignalingServer,
     disconnectFromSignalingServer,
@@ -28,9 +28,9 @@ const SignalingDropdown = () => {
         <span className='flex min-w-0 items-center gap-3'>
           <span className='min-w-0'>
             <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
-              {signalingServerURL}
+              {signalingServerUrl}
             </span>
-            {iceServers?.map((v, i) => (
+            {stunServerUrls?.map((v, i) => (
               <span
                 key={i}
                 className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'
@@ -59,7 +59,9 @@ const SignalingDropdown = () => {
         )}
 
         {!signalingServerConnectionState.isConnected && (
-          <DropdownItem onClick={() => connectToSignalingServer(roomUrl ?? "")}>
+          <DropdownItem
+            onClick={async () => await connectToSignalingServer(roomUrl ?? "")}
+          >
             <CheckIcon />
             Become discoverable
           </DropdownItem>

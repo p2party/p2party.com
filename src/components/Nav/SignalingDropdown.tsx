@@ -46,7 +46,9 @@ const SignalingDropdown = () => {
         )}
 
         {!signalingServerConnectionState.isConnected && (
-          <DropdownItem onClick={() => connectToSignalingServer(roomUrl ?? "")}>
+          <DropdownItem
+            onClick={async () => await connectToSignalingServer(roomUrl ?? "")}
+          >
             <CheckIcon />
             Become discoverable
           </DropdownItem>

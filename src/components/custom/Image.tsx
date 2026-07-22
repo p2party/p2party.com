@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 
 import { Button } from "../button";
 import { Text } from "../text";
@@ -19,19 +19,16 @@ const Image = ({
   mimeType?: MimeType;
   className?: string;
 }) => {
-  const [url, setUrl] = useState("");
+  const url = useMemo(
+    () => (blob && percentage === 100 ? URL.createObjectURL(blob) : ""),
+    [blob, percentage],
+  );
 
   useEffect(() => {
-    if (blob && percentage === 100) {
-      // if (blob) {
-      const objectUrl = URL.createObjectURL(blob);
-      setUrl(objectUrl);
-    }
-
     return () => {
       if (url.length > 0) URL.revokeObjectURL(url);
     };
-  }, [blob, percentage]);
+  }, [url]);
 
   const truncateFilename = (filename: string, maxLength: number) => {
     if (filename.length <= maxLength) return filename;

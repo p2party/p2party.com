@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react";
-
 import { useRoom } from "../../hooks/useRoom";
 
 import { Dropdown, DropdownButton } from "../dropdown";
@@ -10,12 +8,7 @@ import { ChatBubbleBottomCenterTextIcon } from "@heroicons/react/16/solid";
 
 const ChannelDropdownNavigation = () => {
   const { channels } = useRoom();
-
-  const [channelsLen, setChannelsLen] = useState(0);
-
-  useEffect(() => {
-    setChannelsLen(channels.length);
-  }, [channels, setChannelsLen]);
+  const channelsLen = channels.length;
 
   return (
     <Dropdown>

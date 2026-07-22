@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react";
-
 import { useRoom } from "../../hooks/useRoom";
 
 import {
@@ -18,12 +16,7 @@ import {
 
 const MessagesDropdown = () => {
   const { messages, deleteMessage } = useRoom();
-
-  const [messagesLen, setMessagesLen] = useState(0);
-
-  useEffect(() => {
-    setMessagesLen(messages.length);
-  }, [messages, setMessagesLen]);
+  const messagesLen = messages.length;
 
   const handleDeleteMessages = async () => {
     const MESSAGES_LEN = messages.length;

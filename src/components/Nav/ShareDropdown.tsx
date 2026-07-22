@@ -35,7 +35,7 @@ const Share: FC<ShareProps> = ({ roomUrl, setShowQRCode }) => {
     }
   };
 
-  // @ts-ignore
+  // @ts-expect-error navigator.share may not be defined
   if (navigator.share) {
     return (
       <Dropdown>

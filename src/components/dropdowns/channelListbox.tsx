@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 
 import {
   Listbox,
@@ -12,22 +12,14 @@ import { useRoom } from "../../hooks/useRoom";
 const ChannelListbox = () => {
   const { channels, messages, selectedChannel, selectChannel } = useRoom();
 
-  const [messagesLen, setMessagesLen] = useState<number[]>([]);
-
-  useEffect(() => {
-    const mlen = messages.length;
-    const clen = channels.length;
-    for (let i = 0; i < clen; i++) {
-      let k = 0;
-      for (let j = 0; j < mlen; j++) {
-        if (messages[j].channelLabel === channels[i].label) k++;
-      }
-
-      const m = messagesLen;
-      m[i] = k;
-      setMessagesLen(m);
-    }
-  }, [messages, selectedChannel, channels]);
+  const messagesLen = useMemo(
+    () =>
+      channels.map(
+        (channel) =>
+          messages.filter((m) => m.channelLabel === channel.label).length,
+      ),
+    [channels, messages],
+  );
 
   return (
     <Listbox

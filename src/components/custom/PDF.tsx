@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { DocumentIcon } from "@heroicons/react/24/solid";
 
 import { Text } from "../text";
@@ -20,18 +20,13 @@ const PDF = ({
   percentage: number;
   className?: string;
 }) => {
-  const [url, setUrl] = useState("");
+  const url = useMemo(() => (blob ? URL.createObjectURL(blob) : ""), [blob]);
 
   useEffect(() => {
-    if (blob) {
-      const objectUrl = URL.createObjectURL(blob);
-      setUrl(objectUrl);
-    }
-
     return () => {
       if (url.length > 0) URL.revokeObjectURL(url);
     };
-  }, [blob]);
+  }, [url]);
 
   const truncateFilename = (filename: string, maxLength: number) => {
     if (filename.length <= maxLength) return filename;
@@ -50,7 +45,7 @@ const PDF = ({
       onClick={handleClick}
     >
       <div className='flex w-full items-center justify-between px-2'>
-        <Text className='flex-grow text-left'>
+        <Text className='grow text-left'>
           {truncateFilename(`${filename}.${extension}`, 20)}
         </Text>
         <DocumentIcon className='h-6 w-6 text-gray-500' />

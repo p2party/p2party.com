@@ -1,8 +1,9 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { useParams } from "react-router";
 import { useLocalStorage } from "usehooks-ts";
 
 import * as Headless from "@headlessui/react";
+import { PlusIcon, XMarkIcon } from "@heroicons/react/20/solid";
 
 import {
   Alert,
@@ -17,7 +18,11 @@ import { Input } from "../input";
 import { Divider } from "../divider";
 import { Fieldset } from "../fieldset";
 
-import { useRoom } from "../../hooks/useRoom";
+import {
+  useRoom,
+  DEFAULT_SIGNALING_URL,
+  DEFAULT_STUN_URLS,
+} from "../../hooks/useRoom";
 
 // import { Checkbox, CheckboxField } from "../checkbox";
 import { Description, Label } from "../fieldset";
@@ -38,6 +43,10 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     onlyConnectWithKnownPeers,
     peers,
     setOnlyConnectToKnownPeers,
+    signalingServerUrl,
+    setSignalingServerUrl,
+    stunServerUrls,
+    setStunServerUrls,
   } = useRoom();
   const { roomUrl } = useParams();
 
@@ -50,6 +59,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     "pressedCancelButtonInRoom" + roomUrl,
     false,
   );
+
+  const [newStunUrl, setNewStunUrl] = useState("");
 
   const handlePercentageFilledChunk = (e: ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
@@ -70,8 +81,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     //   setChunks(3);
     if (v < 1) {
       setChunks(1);
-    } else if (v > 20) {
-      setChunks(20);
+    } else if (v > 100) {
+      setChunks(100);
     } else {
       setChunks(v);
     }
@@ -88,6 +99,105 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
         <Divider className='mb-3' />
 
         <Fieldset>
+          <Headless.Field className='flex flex-col gap-2'>
+            <Label>Signaling Server URL</Label>
+            <Description>
+              The WebSocket URL of the signaling server used to discover peers.
+            </Description>
+            <div className='flex items-center gap-2'>
+              <Input
+                type='url'
+                name='signalingServerUrl'
+                value={signalingServerUrl}
+                onChange={(e) => setSignalingServerUrl(e.target.value)}
+                placeholder={DEFAULT_SIGNALING_URL}
+                className='flex-1'
+              />
+              {signalingServerUrl !== DEFAULT_SIGNALING_URL && (
+                <Button
+                  plain
+                  onClick={() => setSignalingServerUrl(DEFAULT_SIGNALING_URL)}
+                  title='Reset to default'
+                >
+                  <XMarkIcon className='size-4' />
+                </Button>
+              )}
+            </div>
+          </Headless.Field>
+
+          <Divider className='my-3' />
+
+          <Headless.Field className='flex flex-col gap-2'>
+            <Label>ICE Servers (STUN/TURN)</Label>
+            <Description>
+              Server URLs used for WebRTC NAT traversal. Changes take effect on
+              next connection.
+            </Description>
+            <div className='space-y-2'>
+              {stunServerUrls.map((url, i) => (
+                <div key={i} className='flex items-center gap-2'>
+                  <Input
+                    type='text'
+                    value={url}
+                    onChange={(e) => {
+                      const updated = [...stunServerUrls];
+                      updated[i] = e.target.value;
+                      setStunServerUrls(updated);
+                    }}
+                    className='flex-1'
+                  />
+                  <Button
+                    plain
+                    onClick={() =>
+                      setStunServerUrls(
+                        stunServerUrls.filter((_, j) => j !== i),
+                      )
+                    }
+                    title='Remove'
+                  >
+                    <XMarkIcon className='size-4' />
+                  </Button>
+                </div>
+              ))}
+              <div className='flex items-center gap-2'>
+                <Input
+                  type='text'
+                  value={newStunUrl}
+                  onChange={(e) => setNewStunUrl(e.target.value)}
+                  placeholder='stun:stun.example.com:3478'
+                  className='flex-1'
+                />
+                <Button
+                  outline
+                  onClick={() => {
+                    if (newStunUrl.trim().length > 0) {
+                      setStunServerUrls([...stunServerUrls, newStunUrl.trim()]);
+                      setNewStunUrl("");
+                    }
+                  }}
+                  title='Add server'
+                >
+                  <PlusIcon className='size-4' />
+                </Button>
+              </div>
+              {JSON.stringify(stunServerUrls) !==
+                JSON.stringify(DEFAULT_STUN_URLS) && (
+                <Button
+                  plain
+                  className='text-xs'
+                  onClick={() => {
+                    setStunServerUrls(DEFAULT_STUN_URLS);
+                    setNewStunUrl("");
+                  }}
+                >
+                  Reset to defaults
+                </Button>
+              )}
+            </div>
+          </Headless.Field>
+
+          <Divider className='my-3' />
+
           <SwitchGroup>
             {roomUrl && roomUrl.length === 64 && (
               <>
@@ -95,7 +205,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
                   <Label>Connected to signaling server</Label>
                   <Description>
                     To be discoverable you need to be connected to the signaling
-                    server {signalingServerConnectionState.serverUrl}
+                    server {signalingServerUrl}
                   </Description>
                   <Switch
                     name='Signaling server connection'
@@ -113,9 +223,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
                 <SwitchField>
                   <Label>Be discoverable on focus</Label>
                   <Description>
-                    Connect to the signaling server{" "}
-                    {signalingServerConnectionState.serverUrl} every time you
-                    come back to this window
+                    Connect to the signaling server {signalingServerUrl} every
+                    time you come back to this window
                   </Description>
                   <Switch
                     name='Be discoverable on focus'
@@ -173,7 +282,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
               type='number'
               name='chunks'
               min={1}
-              max={20}
+              max={100}
               className='max-w-24'
               value={chunks}
               onChange={handleChunks}
