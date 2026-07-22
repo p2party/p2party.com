@@ -33,7 +33,7 @@ const PrivacyPage = () => {
         {/* 1 */}
         <SectionHeading>1. Introduction</SectionHeading>
         <Para>
-          This Privacy Policy explains how CHAIN 41 Single Member P.C. (Ι.Κ.Ε.)
+          This Privacy Policy explains how the operator of p2party
           (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) handles
           information when you use the p2party platform (the
           &ldquo;Service&rdquo;) to create peer-to-peer (P2P) mesh networks for
@@ -51,13 +51,13 @@ const PrivacyPage = () => {
         {/* 2 */}
         <SectionHeading>2. Data Controller</SectionHeading>
         <Para>
-          The data controller for the purposes of the GDPR is CHAIN 41 Single
-          Member P.C. (Ι.Κ.Ε.). You may reach us at{" "}
+          The data controller for the purposes of the GDPR is the operator of
+          p2party. You may reach us at{" "}
           <Link
-            href='mailto:info@chain41.com'
+            href='mailto:[contact email]'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            info@chain41.com
+            [contact email]
           </Link>
           .
         </Para>
@@ -251,10 +251,10 @@ const PrivacyPage = () => {
           ephemeral session data, most of these rights are satisfied by design.
           If you wish to exercise any right, please contact us at{" "}
           <Link
-            href='mailto:info@chain41.com'
+            href='mailto:[contact email]'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            info@chain41.com
+            [contact email]
           </Link>
           .
         </Para>
@@ -330,10 +330,10 @@ const PrivacyPage = () => {
         <Para>
           A copy of the full DPIA is available upon request by contacting{" "}
           <Link
-            href='mailto:info@chain41.com'
+            href='mailto:[contact email]'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            info@chain41.com
+            [contact email]
           </Link>
           .
         </Para>
@@ -355,18 +355,14 @@ const PrivacyPage = () => {
           Policy or your personal data, please contact us at:
         </Para>
         <Para>
-          CHAIN 41 Single Member P.C. (Ι.Κ.Ε.)
-          <br />
-          Liosion 117, 10440 Athens, Greece
-          <br />
-          G.E.MI. 190803303000 · VAT EL803152642
+          the operator of p2party
           <br />
           Email:{" "}
           <Link
-            href='mailto:info@chain41.com'
+            href='mailto:[contact email]'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            info@chain41.com
+            [contact email]
           </Link>
         </Para>
 

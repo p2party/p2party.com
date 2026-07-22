@@ -374,8 +374,7 @@ const HomePage = () => {
           </Link>
         </div>
         <p className='mt-1.5 text-[13px] text-zinc-500 dark:text-zinc-400'>
-          &copy; 2026 CHAIN 41 Single Member P.C. (Ι.Κ.Ε.) · G.E.MI.
-          190803303000. All rights reserved.
+          &copy; 2026 p2party. All rights reserved.
         </p>
       </footer>
     </div>

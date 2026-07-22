@@ -35,9 +35,9 @@ const TOSPage = () => {
         <Para>
           These Terms of Service (&ldquo;Terms&rdquo;) constitute a legally
           binding agreement between you (&ldquo;User&rdquo;, &ldquo;you&rdquo;)
-          and CHAIN 41 Single Member P.C. (Ι.Κ.Ε.) (&ldquo;we&rdquo;,
-          &ldquo;us&rdquo;, &ldquo;our&rdquo;) governing your access to and use
-          of the p2party platform and any associated services (collectively, the
+          and the operator of p2party (&ldquo;we&rdquo;, &ldquo;us&rdquo;,
+          &ldquo;our&rdquo;) governing your access to and use of the p2party
+          platform and any associated services (collectively, the
           &ldquo;Service&rdquo;). By accessing or using the Service you agree to
           be bound by these Terms. If you do not agree, you must stop using the
           Service immediately.
@@ -161,12 +161,12 @@ const TOSPage = () => {
         <Para>
           All proprietary content and technology relating to the Service —
           including trademarks, logos, the p2party name, visual design, and any
-          non-open-source code — are and remain the property of CHAIN 41 Single
-          Member P.C. (Ι.Κ.Ε.) and are protected by applicable
-          intellectual-property laws. Nothing in these Terms grants you any
-          right, title, or interest in such proprietary materials except for the
-          limited, revocable, non-transferable, non-exclusive right to use the
-          Service in accordance with these Terms.
+          non-open-source code — are and remain the property of the operator of
+          p2party and are protected by applicable intellectual-property laws.
+          Nothing in these Terms grants you any right, title, or interest in
+          such proprietary materials except for the limited, revocable,
+          non-transferable, non-exclusive right to use the Service in accordance
+          with these Terms.
         </Para>
 
         {/* 8 */}
@@ -202,11 +202,10 @@ const TOSPage = () => {
         <SectionHeading>10. Limitation of Liability</SectionHeading>
         <Para>
           TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
-          CHAIN 41 SINGLE MEMBER P.C. (Ι.Κ.Ε.), ITS OFFICERS, DIRECTORS,
-          EMPLOYEES, AGENTS, OR AFFILIATES BE LIABLE FOR ANY INDIRECT,
-          INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS
-          OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING
-          FROM:
+          THE OPERATOR OF P2PARTY, ITS OFFICERS, DIRECTORS, EMPLOYEES, AGENTS,
+          OR AFFILIATES BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+          CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, USE,
+          GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM:
         </Para>
         <Ul>
           <li>Your access to, use of, or inability to use the Service.</li>
@@ -232,13 +231,12 @@ const TOSPage = () => {
         {/* 11 */}
         <SectionHeading>11. Indemnification</SectionHeading>
         <Para>
-          You agree to defend, indemnify, and hold harmless CHAIN 41 Single
-          Member P.C. (Ι.Κ.Ε.) and its officers, directors, employees, and
-          agents from and against any claims, liabilities, damages, losses, and
-          expenses — including reasonable legal fees — arising out of or in any
-          way connected with your access to or use of the Service, your
-          violation of these Terms, or your violation of any rights of a third
-          party.
+          You agree to defend, indemnify, and hold harmless the operator of
+          p2party and its officers, directors, employees, and agents from and
+          against any claims, liabilities, damages, losses, and expenses —
+          including reasonable legal fees — arising out of or in any way
+          connected with your access to or use of the Service, your violation of
+          these Terms, or your violation of any rights of a third party.
         </Para>
 
         {/* 12 */}
@@ -287,10 +285,10 @@ const TOSPage = () => {
           Before initiating formal legal proceedings, you agree to attempt to
           resolve any dispute informally by contacting us at{" "}
           <Link
-            href='mailto:info@chain41.com'
+            href='mailto:[contact email]'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            info@chain41.com
+            [contact email]
           </Link>
           . We will endeavour to resolve the matter within 30 days. If the
           dispute is not resolved informally, either party may proceed in
@@ -329,10 +327,10 @@ const TOSPage = () => {
           >
             Privacy Policy
           </Link>
-          , constitute the entire agreement between you and CHAIN 41 Single
-          Member P.C. (Ι.Κ.Ε.) with respect to the Service and supersede all
-          prior or contemporaneous understandings, agreements, and
-          communications, whether written or oral.
+          , constitute the entire agreement between you and the operator of
+          p2party with respect to the Service and supersede all prior or
+          contemporaneous understandings, agreements, and communications,
+          whether written or oral.
         </Para>
 
         {/* 18 */}
@@ -352,18 +350,14 @@ const TOSPage = () => {
           at:
         </Para>
         <Para>
-          CHAIN 41 Single Member P.C. (Ι.Κ.Ε.)
-          <br />
-          Liosion 117, 10440 Athens, Greece
-          <br />
-          G.E.MI. 190803303000 · VAT EL803152642
+          the operator of p2party
           <br />
           Email:{" "}
           <Link
-            href='mailto:info@chain41.com'
+            href='mailto:[contact email]'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            info@chain41.com
+            [contact email]
           </Link>
         </Para>
 
