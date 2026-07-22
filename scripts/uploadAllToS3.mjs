@@ -1,6 +1,6 @@
+#!/usr/bin/env bun
 import { promises as fs, readFileSync } from "fs";
 import * as path from "path";
-import dotenv from "dotenv";
 import {
   S3Client,
   // This command supersedes the ListObjectsCommand and is the recommended way to list objects.
@@ -11,8 +11,6 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { getMimeTypeFromExtension } from "./getMimeTypeFromExtension.mjs";
-
-dotenv.config({ path: "./.env" });
 
 const client = new S3Client({
   region: process.env.AWS_S3_REGION,
