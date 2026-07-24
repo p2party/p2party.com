@@ -183,6 +183,12 @@ const HomePage = () => {
               createSession() lab
             </Link>
             <Link
+              href='/blog'
+              className='inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 font-mono text-sm font-semibold text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-orange-300'
+            >
+              protocol field notes
+            </Link>
+            <Link
               href='https://github.com/p2party/p2party-js'
               target='_blank'
               rel='noopener noreferrer'
@@ -369,6 +375,13 @@ const HomePage = () => {
             className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
           >
             Terms
+          </Link>
+          <span className='text-zinc-300 dark:text-zinc-700'>·</span>
+          <Link
+            href='/blog'
+            className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
+          >
+            Field notes
           </Link>
           <span className='text-zinc-300 dark:text-zinc-700'>·</span>
           <Link

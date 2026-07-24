@@ -285,10 +285,10 @@ const TOSPage = () => {
           Before initiating formal legal proceedings, you agree to attempt to
           resolve any dispute informally by contacting us at{" "}
           <Link
-            href='mailto:[contact email]'
+            href='mailto:legal@p2party.com'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            [contact email]
+            legal@p2party.com
           </Link>
           . We will endeavour to resolve the matter within 30 days. If the
           dispute is not resolved informally, either party may proceed in
@@ -354,10 +354,10 @@ const TOSPage = () => {
           <br />
           Email:{" "}
           <Link
-            href='mailto:[contact email]'
+            href='mailto:legal@p2party.com'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            [contact email]
+            legal@p2party.com
           </Link>
         </Para>
 

@@ -66,6 +66,176 @@
   }
 }
 
+@layer components {
+  .blog-prose {
+    color: color-mix(in srgb, currentColor 78%, transparent);
+    font-size: 1.0625rem;
+    line-height: 1.85;
+  }
+
+  .blog-prose > :first-child {
+    margin-top: 0;
+  }
+
+  .blog-prose h2,
+  .blog-prose h3 {
+    color: inherit;
+    font-weight: 850;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    scroll-margin-top: 2rem;
+  }
+
+  .blog-prose h2 {
+    margin-top: 3.5rem;
+    margin-bottom: 1rem;
+    border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    padding-top: 1.5rem;
+    font-size: clamp(1.65rem, 4vw, 2.25rem);
+  }
+
+  .blog-prose h3 {
+    margin-top: 2.25rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+  }
+
+  .blog-prose p,
+  .blog-prose ul,
+  .blog-prose ol,
+  .blog-prose table,
+  .blog-prose pre,
+  .blog-prose blockquote {
+    margin-block: 1.25rem;
+  }
+
+  .blog-prose ul,
+  .blog-prose ol {
+    padding-left: 1.4rem;
+  }
+
+  .blog-prose ul {
+    list-style: square;
+  }
+
+  .blog-prose ol {
+    list-style: decimal-leading-zero;
+  }
+
+  .blog-prose li {
+    margin-block: 0.45rem;
+    padding-left: 0.25rem;
+  }
+
+  .blog-prose li::marker {
+    color: #ea580c;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 800;
+  }
+
+  .blog-prose a {
+    border-radius: 0.125rem;
+    color: #c2410c;
+    font-weight: 650;
+    text-decoration: underline;
+    text-decoration-color: #f97316;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+  }
+
+  .blog-prose a:hover {
+    color: #9a3412;
+  }
+
+  .blog-prose a:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 4px;
+  }
+
+  .blog-prose strong {
+    color: inherit;
+    font-weight: 800;
+  }
+
+  .blog-prose blockquote {
+    border-left: 4px solid #f97316;
+    background: color-mix(in srgb, #f97316 7%, transparent);
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+  }
+
+  .blog-prose :not(pre) > code {
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+    padding: 0.12rem 0.35rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.86em;
+  }
+
+  .blog-prose pre {
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+    background: #11100e;
+    padding: 1rem;
+    color: #e7e5e4;
+    box-shadow: 5px 5px 0 #f97316;
+  }
+
+  .blog-prose pre code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+  }
+
+  .blog-prose pre:has(.blog-mermaid)::before {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: #fb923c;
+    content: "protocol sketch / mermaid source";
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .blog-prose table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .blog-prose th,
+  .blog-prose td {
+    border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    padding: 0.7rem 0.8rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .blog-prose th {
+    background: color-mix(in srgb, #f97316 10%, transparent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .blog-prose a {
+      color: #fb923c;
+    }
+
+    .blog-prose a:hover {
+      color: #fdba74;
+    }
+  }
+}
+
 *,
 *::before,
 *::after {

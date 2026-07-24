@@ -14,8 +14,16 @@ The protocol-v3 release target consumes an immutable local `p2party` 0.12.0
 tarball:
 
 ```text
-file:../p2party-js/p2party-0.12.0.tgz
+file:vendor/p2party-0.12.0.tgz
 ```
+
+Artifact SHA-256:
+`436dd8533edc7f4d5a78450b5fc401df87d86c22c0c692d05940690325555944`.
+
+The browser loads the matching committed
+`public/vendor/p2party-0.12.0/libcrypto.wasm`; the SDK's build-pinned SRI still
+applies. `npm run provenance:check` verifies the tarball, its embedded WASM
+provenance, the lockfile integrity, and the self-hosted bytes as one unit.
 
 Protocol v3 uses interactive 3DH combined with one exact room-wide ML-KEM suite:
 ML-KEM-512, ML-KEM-768 (the default), or ML-KEM-1024. It also provides optional
@@ -38,8 +46,7 @@ Prerequisites:
 
 - Node.js 24.11.1 and npm 11.6.2
 - Bun 1.3.14 for the unit-test runner
-- a sibling `../p2party-js` checkout
-- a verified `../p2party-js/p2party-0.12.0.tgz`
+- the committed, verified `vendor/p2party-0.12.0.tgz`
 
 Install and run:
 
@@ -54,9 +61,8 @@ SHA-256, and update the dependency and lockfile in the same release commit. A
 public release is incomplete until those references and the recorded digest
 agree.
 
-The sibling `file:../p2party-js/...` layout is supported only for paired local
-development. Before publishing this repository, vendor the immutable tarball at
-`vendor/p2party-0.12.0.tgz` and point the dependency and lockfile there (or use
+Paired local development may temporarily use a sibling `file:../p2party-js/...`
+artifact, but public commits must return to the immutable vendored tarball (or
 an immutable registry release). `npm run provenance:check` verifies the bytes
 against the lockfile and deliberately rejects an external sibling artifact in
 CI, so a standalone clone cannot pass accidentally with undeclared local state.

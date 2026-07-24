@@ -1,0 +1,95 @@
+{
+  "series": {
+    "id": "road-to-protocol-v3",
+    "title": "Road to protocol-v3",
+    "description": "How p2party evolved from uniform encrypted chunks into a browser-native hybrid post-quantum Double Ratchet, and what the metadata-privacy research still has to prove.",
+    "author": {
+      "name": "Dimitris Karoukis"
+    },
+    "status": "published",
+    "defaultDate": "2026-07-24",
+    "repository": "https://github.com/p2party/p2party-js",
+    "tryUrl": "https://p2party.com",
+    "renderer": {
+      "format": "markdown",
+      "frontmatter": "yaml",
+      "features": ["gfm", "mermaid", "tables", "fenced-code"]
+    }
+  },
+  "posts": [
+    {
+      "order": 1,
+      "slug": "the-64-kib-lie",
+      "href": "/blog/the-64-kib-lie",
+      "file": "01-the-64-kib-lie.md",
+      "title": "The 64 KiB lie: how p2party learned to make every chunk look guilty",
+      "description": "Uniform chunks, decoys, message-scoped WebRTC channels, and the bugs that taught us what fixed-size encryption does not hide.",
+      "date": "2026-07-24",
+      "commitAnchors": [
+        "72457f9",
+        "bc7f282",
+        "d59517b",
+        "ad494b5",
+        "8340686",
+        "0174333",
+        "c39c4d6",
+        "6016862"
+      ]
+    },
+    {
+      "order": 2,
+      "slug": "green-tests-are-not-a-security-proof",
+      "href": "/blog/green-tests-are-not-a-security-proof",
+      "file": "02-green-tests-are-not-a-security-proof.md",
+      "title": "Green tests are not a security proof",
+      "description": "The impossible nonce, fail-open DTLS check, ratchet desynchronization, and key-separation traps that adversarial review caught.",
+      "date": "2026-07-24",
+      "commitAnchors": [
+        "92b07e8",
+        "e5f6348",
+        "26d353f",
+        "d65ce73",
+        "2af322b",
+        "59b011a",
+        "d35045c"
+      ]
+    },
+    {
+      "order": 3,
+      "slug": "a-room-is-n-minus-one-sessions",
+      "href": "/blog/a-room-is-n-minus-one-sessions",
+      "file": "03-a-room-is-n-minus-one-sessions.md",
+      "title": "A room is n-1 sessions wearing one URL",
+      "description": "The signaling star, full WebRTC mesh, message-scoped channels, transport-neutral createSession API, and fragment room invites.",
+      "date": "2026-07-24",
+      "commitAnchors": [
+        "d59517b",
+        "743f19b",
+        "5caa1c3",
+        "9167400",
+        "8e8b823",
+        "eeccc41"
+      ]
+    },
+    {
+      "order": 4,
+      "slug": "protocol-v3-is-not-pqxdh",
+      "href": "/blog/protocol-v3-is-not-pqxdh",
+      "file": "04-protocol-v3-is-not-pqxdh.md",
+      "title": "Protocol-v3 is not PQXDH, X-Wing, or a pile of fashionable acronyms",
+      "description": "The exact live-edge handshake: separate identities, interactive 3DH, room-selected ML-KEM, optional CPace, and chained confirmation.",
+      "date": "2026-07-24",
+      "commitAnchors": ["d35045c", "b5c0334", "6e13d81", "64dea1e"]
+    },
+    {
+      "order": 5,
+      "slug": "free-is-a-dangerous-word",
+      "href": "/blog/free-is-a-dangerous-word",
+      "file": "05-free-is-a-dangerous-word.md",
+      "title": "Free is a dangerous word: the Double Ratchet, sparse PQ healing, and the cells we already paid for",
+      "description": "What ships, what remains gated, and the measured systems claim across cover traffic, blind rendezvous, and private swarms.",
+      "date": "2026-07-24",
+      "commitAnchors": ["749e3d2", "293ce4c", "a426490", "f044286", "135b0fb"]
+    }
+  ]
+}

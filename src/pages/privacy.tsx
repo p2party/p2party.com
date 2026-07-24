@@ -54,10 +54,10 @@ const PrivacyPage = () => {
           The data controller for the purposes of the GDPR is the operator of
           p2party. You may reach us at{" "}
           <Link
-            href='mailto:[contact email]'
+            href='mailto:privacy@p2party.com'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            [contact email]
+            privacy@p2party.com
           </Link>
           .
         </Para>
@@ -251,10 +251,10 @@ const PrivacyPage = () => {
           ephemeral session data, most of these rights are satisfied by design.
           If you wish to exercise any right, please contact us at{" "}
           <Link
-            href='mailto:[contact email]'
+            href='mailto:privacy@p2party.com'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            [contact email]
+            privacy@p2party.com
           </Link>
           .
         </Para>
@@ -330,10 +330,10 @@ const PrivacyPage = () => {
         <Para>
           A copy of the full DPIA is available upon request by contacting{" "}
           <Link
-            href='mailto:[contact email]'
+            href='mailto:privacy@p2party.com'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            [contact email]
+            privacy@p2party.com
           </Link>
           .
         </Para>
@@ -359,10 +359,10 @@ const PrivacyPage = () => {
           <br />
           Email:{" "}
           <Link
-            href='mailto:[contact email]'
+            href='mailto:privacy@p2party.com'
             className='text-orange-600 underline dark:text-orange-400'
           >
-            [contact email]
+            privacy@p2party.com
           </Link>
         </Para>
 

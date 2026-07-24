@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -53,3 +54,59 @@ if (lockEntry.integrity !== integrity)
 
 const sha256 = createHash("sha256").update(artifact).digest("hex");
 console.log(`p2party artifact SHA-256: ${sha256}`);
+
+const tarString = (bytes) => {
+  const terminator = bytes.indexOf(0);
+  return bytes
+    .subarray(0, terminator === -1 ? bytes.length : terminator)
+    .toString("utf8");
+};
+
+const extractTarEntry = (tarball, wantedPath) => {
+  const archive = gunzipSync(tarball);
+  for (let offset = 0; offset + 512 <= archive.length;) {
+    const header = archive.subarray(offset, offset + 512);
+    const name = tarString(header.subarray(0, 100));
+    if (!name) break;
+    const prefix = tarString(header.subarray(345, 500));
+    const entryPath = prefix ? `${prefix}/${name}` : name;
+    const sizeText = tarString(header.subarray(124, 136)).trim();
+    const size = Number.parseInt(sizeText || "0", 8);
+    if (!Number.isSafeInteger(size) || size < 0)
+      throw new Error(`Invalid tar entry size for ${entryPath}`);
+
+    const dataOffset = offset + 512;
+    if (dataOffset + size > archive.length)
+      throw new Error(`Truncated tar entry: ${entryPath}`);
+    if (entryPath === wantedPath)
+      return archive.subarray(dataOffset, dataOffset + size);
+    offset = dataOffset + Math.ceil(size / 512) * 512;
+  }
+  throw new Error(`Missing tar entry: ${wantedPath}`);
+};
+
+const packagedWasm = extractTarEntry(artifact, "package/lib/libcrypto.wasm");
+const packagedProvenance = JSON.parse(
+  extractTarEntry(artifact, "package/lib/libcrypto.provenance.json").toString(
+    "utf8",
+  ),
+);
+const publicWasmPath = path.join(
+  projectRoot,
+  "public",
+  "vendor",
+  `p2party-${lockEntry.version}`,
+  "libcrypto.wasm",
+);
+if (!existsSync(publicWasmPath))
+  throw new Error(`Missing self-hosted p2party WASM: ${publicWasmPath}`);
+const publicWasm = readFileSync(publicWasmPath);
+const wasmSha256 = createHash("sha256").update(packagedWasm).digest("hex");
+if (
+  packagedProvenance.artifact?.bytes !== packagedWasm.byteLength ||
+  packagedProvenance.artifact?.sha256 !== wasmSha256
+)
+  throw new Error("p2party tarball WASM does not match its provenance");
+if (!publicWasm.equals(packagedWasm))
+  throw new Error("self-hosted frontend WASM differs from the p2party tarball");
+console.log(`p2party WASM SHA-256: ${wasmSha256}`);

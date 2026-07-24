@@ -21,6 +21,8 @@ const ChatPage = lazy(() => import("./pages/chat"));
 const TOSPage = lazy(() => import("./pages/tos"));
 const PrivacyPage = lazy(() => import("./pages/privacy"));
 const SessionLabPage = lazy(() => import("./pages/session-lab"));
+const BlogPage = lazy(() => import("./pages/blog"));
+const BlogPostPage = lazy(() => import("./pages/blog-post"));
 
 const App = () => {
   const { isDarkMode } = useDarkMode();
@@ -102,6 +104,22 @@ const App = () => {
             element={
               <Suspense>
                 <SessionLabPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path='/blog'
+            element={
+              <Suspense>
+                <BlogPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path='/blog/:slug'
+            element={
+              <Suspense>
+                <BlogPostPage />
               </Suspense>
             }
           />
