@@ -1,20 +1,14 @@
+import { memo, useMemo } from "react";
+
 import { XMarkIcon, StopIcon } from "@heroicons/react/20/solid";
 
 import { Button } from "./button";
 
 import type { Message } from "p2party";
-import type {
-  MessageTransferHandle,
-  SendMessageResult,
-} from "../protocol/v3";
+import type { MessageTransferHandle, SendMessageResult } from "../protocol/v3";
 
 export type TransferStatus =
-  | "preparing"
-  | "cancelling"
-  | "delivered"
-  | "partial"
-  | "failed"
-  | "cancelled";
+  "preparing" | "cancelling" | "delivered" | "partial" | "failed" | "cancelled";
 
 export interface TrackedTransfer {
   handle: MessageTransferHandle;
@@ -46,6 +40,16 @@ const TransferTray = ({
   onCancel,
   onDismiss,
 }: TransferTrayProps) => {
+  const messagesByTransfer = useMemo(() => {
+    const byTransfer = new Map<string, Message>();
+    for (const message of messages) {
+      if (message.transferId !== undefined) {
+        byTransfer.set(message.transferId, message);
+      }
+    }
+    return byTransfer;
+  }, [messages]);
+
   if (transfers.length === 0) return null;
 
   return (
@@ -55,22 +59,16 @@ const TransferTray = ({
       className='fixed right-3 bottom-24 z-40 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2 lg:right-5 lg:bottom-28'
     >
       {transfers.map((transfer) => {
-        const message = messages.find(
-          (candidate) =>
-            candidate.transferId === transfer.handle.transferId,
-        );
+        const message = messagesByTransfer.get(transfer.handle.transferId);
         const preparationProgress =
           message && message.totalChunks > 0
             ? Math.min(
                 100,
-                Math.round(
-                  (message.chunksCreated / message.totalChunks) * 100,
-                ),
+                Math.round((message.chunksCreated / message.totalChunks) * 100),
               )
             : 0;
         const isActive =
-          transfer.status === "preparing" ||
-          transfer.status === "cancelling";
+          transfer.status === "preparing" || transfer.status === "cancelling";
 
         return (
           <section
@@ -170,4 +168,4 @@ const TransferTray = ({
   );
 };
 
-export default TransferTray;
+export default memo(TransferTray);

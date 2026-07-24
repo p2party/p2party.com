@@ -11,11 +11,14 @@ const WASM = readFileSync(
   new URL("../node_modules/p2party/lib/libcrypto.wasm", import.meta.url),
 );
 
-// 64-char room url (the route requires exactly 64 chars).
-const roomUrl = randomBytes(32).toString("hex");
-const roomPath = `${APP}/rooms/${roomUrl}`;
+// The server/database key stays canonical hex, while the browser receives the
+// same 256-bit capability only in the fragment (which HTTP never transmits).
+const roomCapability = randomBytes(32);
+const roomUrl = roomCapability.toString("hex");
+const roomPath = `${APP}/r#v1.${roomCapability.toString("base64url")}`;
 
-const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
+const log = (...a) =>
+  console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
 
 async function setupContext(browser, tag) {
   const context = await browser.newContext();
@@ -113,7 +116,12 @@ async function setupContext(browser, tag) {
   return { context, page };
 }
 
-async function waitFor(page, fn, arg, { timeout = 60000, interval = 500, label }) {
+async function waitFor(
+  page,
+  fn,
+  arg,
+  { timeout = 60000, interval = 500, label },
+) {
   const start = Date.now();
   let last;
   while (Date.now() - start < timeout) {
@@ -121,7 +129,9 @@ async function waitFor(page, fn, arg, { timeout = 60000, interval = 500, label }
     if (last) return last;
     await page.waitForTimeout(interval);
   }
-  throw new Error(`timeout waiting for: ${label} (last=${JSON.stringify(last)})`);
+  throw new Error(
+    `timeout waiting for: ${label} (last=${JSON.stringify(last)})`,
+  );
 }
 
 // Evaluated in-page: helpers over the live window.p2party the app uses.
@@ -151,14 +161,22 @@ const roomState = (url) => {
     log("room:", roomUrl);
 
     // 1. Load the real app in both contexts and accept the consent dialog.
-    for (const [tag, { page }] of [["A", A], ["B", B]]) {
+    for (const [tag, { page }] of [
+      ["A", A],
+      ["B", B],
+    ]) {
       await page.goto(roomPath, { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: "Connect" }).click({ timeout: 30000 });
+      await page
+        .getByRole("button", { name: "Connect" })
+        .click({ timeout: 30000 });
       log(`${tag} clicked Connect`);
     }
 
     // 2. Wait until the SDK is verified and each side sees the other peer.
-    for (const [tag, { page }] of [["A", A], ["B", B]]) {
+    for (const [tag, { page }] of [
+      ["A", A],
+      ["B", B],
+    ]) {
       const s = await waitFor(
         page,
         (url) => {
@@ -169,7 +187,9 @@ const roomState = (url) => {
               const rooms = P.roomSelector(P.store.getState()) || [];
               const r = rooms.find((x) => x.url === url);
               if (!r || !r.id) return null;
-              return r.peers && r.peers.length > 0 ? { id: r.id, peers: r.peers.length } : null;
+              return r.peers && r.peers.length > 0
+                ? { id: r.id, peers: r.peers.length }
+                : null;
             })(),
           );
           return st;
@@ -185,8 +205,9 @@ const roomState = (url) => {
     log("B state:", JSON.stringify(await B.page.evaluate(roomState, roomUrl)));
 
     const roomId = (await A.page.evaluate(roomState, roomUrl)).id;
-    const bPeerId = await B.page.evaluate(() =>
-      window.p2party.keyPairSelector(window.p2party.store.getState()).peerId,
+    const bPeerId = await B.page.evaluate(
+      () =>
+        window.p2party.keyPairSelector(window.p2party.store.getState()).peerId,
     );
     log("roomId:", roomId, "B peerId:", bPeerId);
 
@@ -219,7 +240,8 @@ const roomState = (url) => {
       { label: "B receives text", timeout: 60000 },
     );
     log("B received text:", JSON.stringify(got));
-    if (got.message !== TEXT) throw new Error(`text mismatch: got ${got.message}`);
+    if (got.message !== TEXT)
+      throw new Error(`text mismatch: got ${got.message}`);
     log("✅ TEXT transfer verified over WebRTC");
 
     // 5. A sends a FILE (multi-chunk, exercises decoys + chunk pipeline). Use a
@@ -348,17 +370,24 @@ const roomState = (url) => {
         return null;
       },
       { url: roomUrl, expectBytes: BIG_BYTES },
-      { label: "B receives big file after selective retransmit", timeout: 90000 },
+      {
+        label: "B receives big file after selective retransmit",
+        timeout: 90000,
+      },
     );
     const wasDropped = await A.page.evaluate(() => window.__dropped);
     log(
       `big file: dropped a frame = ${wasDropped}, received byte-exact = ${gotBig.byteExact}`,
     );
     if (!wasDropped)
-      throw new Error("test setup: no frame was dropped, cannot prove retransmit");
+      throw new Error(
+        "test setup: no frame was dropped, cannot prove retransmit",
+      );
     if (!gotBig.byteExact)
       throw new Error("big file corrupted despite retransmit");
-    log("✅ RETRANSMIT: dropped load-bearing chunk recovered byte-exact (selective)");
+    log(
+      "✅ RETRANSMIT: dropped load-bearing chunk recovered byte-exact (selective)",
+    );
 
     // Sender telemetry: the reconcile that recovered the dropped chunk surfaces
     // as a retransmit count on the sender's message.
@@ -446,7 +475,9 @@ const roomState = (url) => {
       throw new Error(
         "16 MiB file was reassembled in-memory (Blob), not streamed to OPFS — Component B did not engage",
       );
-    log("✅ OPFS RECEIVE: big file reassembled to a disk-backed OPFS file (never built in RAM)");
+    log(
+      "✅ OPFS RECEIVE: big file reassembled to a disk-backed OPFS file (never built in RAM)",
+    );
 
     // OPFS concurrency + idempotency safety: (1) concurrent reads for the same
     // completed file must be coalesced so BOTH stay on OPFS (a lock collision
@@ -583,7 +614,9 @@ const roomState = (url) => {
       { label: "A resume-file mid-flight", timeout: 60000, interval: 200 },
     );
     const framesAtCut = await A.page.evaluate(() => window.__dc.count65536);
-    log(`A mid-flight at ${framesAtCut} forward frames — forcing full reconnect`);
+    log(
+      `A mid-flight at ${framesAtCut} forward frames — forcing full reconnect`,
+    );
 
     // Force a FULL reconnect: tear down A's connection to B (closes pc + all
     // channels). The 'main' onclose drives re-establishment with a new pc.
@@ -696,9 +729,15 @@ const roomState = (url) => {
         return total === 0 ? { drained: true } : null;
       },
       null,
-      { label: "A send-buffer (newChunks) reclaimed", timeout: 30000, interval: 1000 },
+      {
+        label: "A send-buffer (newChunks) reclaimed",
+        timeout: 30000,
+        interval: 1000,
+      },
     );
-    log(`✅ NO SEND-BUFFER LEAK: sender newChunks reclaimed after completion (${JSON.stringify(leftover)})`);
+    log(
+      `✅ NO SEND-BUFFER LEAK: sender newChunks reclaimed after completion (${JSON.stringify(leftover)})`,
+    );
 
     // 11. Reload persistence: the RECEIVE-side OPFS file + IndexedDB have-set
     // (leaf hashes) persist across a full page reload — the worker is torn down
@@ -766,8 +805,14 @@ const roomState = (url) => {
   } catch (e) {
     log("❌ FAILED:", e.message);
     try {
-      log("A final:", JSON.stringify(await A.page.evaluate(roomState, roomUrl)));
-      log("B final:", JSON.stringify(await B.page.evaluate(roomState, roomUrl)));
+      log(
+        "A final:",
+        JSON.stringify(await A.page.evaluate(roomState, roomUrl)),
+      );
+      log(
+        "B final:",
+        JSON.stringify(await B.page.evaluate(roomState, roomUrl)),
+      );
     } catch {}
     await browser.close();
     process.exit(1);

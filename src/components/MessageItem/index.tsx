@@ -10,6 +10,7 @@ import type { Message, FileExtension } from "p2party";
 
 export interface MessageItemProps {
   message: Message;
+  roomId: string;
 }
 
 // const formatBytes = (bytes: number): string => {
@@ -38,7 +39,7 @@ export interface MessageItemProps {
 //   return `${result} ${units[i]}`;
 // }
 
-const MessageItem: FC<MessageItemProps> = ({ message }) => {
+const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
   // Narrow subscription: only peerId (from keyPair, which changes rarely) — NOT
   // the whole rooms array. readMessage is a stable module fn. This keeps a
   // per-chunk progress tick from re-rendering every message row.
@@ -198,6 +199,7 @@ const MessageItem: FC<MessageItemProps> = ({ message }) => {
 
         <MessageDropdown
           message={message}
+          roomId={roomId}
           msg={msg}
           msgCategory={msgCategory}
           msgExtension={msgExtension}

@@ -43,6 +43,7 @@ const readAsDataURL = (blob: Blob): Promise<string> => {
 
 export interface MessageDropdownProps {
   message: Message;
+  roomId: string;
   msg: string;
   msgSize: number;
   msgFilename: string;
@@ -54,6 +55,7 @@ export interface MessageDropdownProps {
 
 const MessageDropdown = ({
   message,
+  roomId,
   msg,
   msgFilename,
   msgCategory,
@@ -65,21 +67,6 @@ const MessageDropdown = ({
   // are stable module functions), so a dropdown row doesn't re-render on every
   // store change.
   const peerId = useSelector(p2party.keyPairSelector).peerId;
-  const roomId = useSelector((state: Parameters<typeof p2party.roomSelector>[0]) => {
-    const room = p2party
-      .roomSelector(state)
-      .find((candidate) =>
-        candidate.messages.some(
-          (item) =>
-            (message.transferId !== undefined &&
-              item.transferId === message.transferId) ||
-            (message.merkleRootHex.length > 0 &&
-              item.merkleRootHex === message.merkleRootHex) ||
-            item.sha512Hex === message.sha512Hex,
-        ),
-      );
-    return room?.id ?? "";
-  });
   const url = isURL(msg) ? msg : "";
 
   // Materialize the file only on user action (not on render). For a big file

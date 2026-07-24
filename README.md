@@ -10,15 +10,18 @@ not a generic component library.
 
 ## Protocol status
 
-This checkout consumes the local `p2party` 0.10.0 tarball:
+The protocol-v3 release target consumes an immutable local `p2party` 0.12.0
+tarball:
 
 ```text
-file:../p2party-js/p2party-0.10.0.tgz
+file:../p2party-js/p2party-0.12.0.tgz
 ```
 
-Protocol v3 uses a fixed interactive-3DH + ML-KEM-768 handshake, optional CPace
-room-PIN authentication, and a per-peer Double Ratchet. There is no suite
-negotiation or classical fallback.
+Protocol v3 uses interactive 3DH combined with one exact room-wide ML-KEM suite:
+ML-KEM-512, ML-KEM-768 (the default), or ML-KEM-1024. It also provides optional
+CPace room-PIN authentication, triple handshake confirmation, and a per-peer
+Double Ratchet. There is no suite negotiation, downgrade, or classical
+fallback; peers with conflicting room policy fail closed.
 
 Immediate delivery is the only wired room-wide traffic policy and remains the
 default. The UI shows the reserved 10-second, 60-second, and 5-minute scheduled
@@ -33,16 +36,30 @@ treat the research claims or current release as a substitute for one.
 
 Prerequisites:
 
-- Bun 1.3+ and Node.js/npm
+- Node.js 24.11.1 and npm 11.6.2
+- Bun 1.3.14 for the unit-test runner
 - a sibling `../p2party-js` checkout
-- an audited `../p2party-js/p2party-0.10.0.tgz`
+- a verified `../p2party-js/p2party-0.12.0.tgz`
 
 Install and run:
 
 ```bash
-npm install
-npm run start
+npm ci
+npm run dev
 ```
+
+`package-lock.json` is the authoritative dependency graph. Do not replace a
+published tarball while keeping the same version: build it once, record its
+SHA-256, and update the dependency and lockfile in the same release commit. A
+public release is incomplete until those references and the recorded digest
+agree.
+
+The sibling `file:../p2party-js/...` layout is supported only for paired local
+development. Before publishing this repository, vendor the immutable tarball at
+`vendor/p2party-0.12.0.tgz` and point the dependency and lockfile there (or use
+an immutable registry release). `npm run provenance:check` verifies the bytes
+against the lockfile and deliberately rejects an external sibling artifact in
+CI, so a standalone clone cannot pass accidentally with undeclared local state.
 
 The app defaults to `wss://signaling.p2party.com/ws` and
 `stun:stun.p2party.com:3478`. Both are editable in room settings, so a local
@@ -51,8 +68,12 @@ signaling service does not require a source change.
 Non-database checks:
 
 ```bash
+npm run format:check
+npm run lint:check
+npm run typecheck
+npm test
 npm run build
-npm run lint -- --no-fix
+npm audit
 ```
 
 No frontend test or build command needs PostgreSQL. Browser end-to-end tests
@@ -73,20 +94,24 @@ IndexedDB, logs, screenshots, analytics, or issue reports.
 
 ## Deployment
 
-`npm run build` writes the static bundle to `dist/`. Upload scripts require the
-variables documented in `.env.example`; those credentials are deployment-only
-and must never be exposed through Vite `VITE_*` variables.
+`npm run build` writes the static bundle to `dist/`. `npm run upload` performs a
+fail-closed, assets-first deployment using the variables documented in
+`.env.example`; those credentials are deployment-only and must never be exposed
+through Vite `VITE_*` variables. Read [docs/deployment.md](docs/deployment.md)
+before enabling remote pruning or verified native links.
 
 There is no `.openai/hosting.json` in this repository as of this release.
 
 ## Contributing and security
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before opening a pull request. Report
 security issues privately according to [SECURITY.md](SECURITY.md), not in a
 public issue.
 
 ## License
 
-Copyright © p2party contributors.
+Copyright © p2party contributors. The corresponding source for the deployed
+site is [p2party/p2party.com](https://github.com/p2party/p2party.com).
 
 Licensed under the [GNU Affero General Public License v3.0 only](LICENSE.md).

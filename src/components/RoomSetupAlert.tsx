@@ -224,7 +224,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
               </div>
               <p className='mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'>
                 10 s, 60 s, and 5 min room cadences are reserved in the public
-                policy, but v0.11.0 refuses them until the scheduler ships.
+                policy, but v0.12.0 refuses them until the scheduler ships.
               </p>
             </div>
           </div>

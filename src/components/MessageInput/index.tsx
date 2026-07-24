@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 
 import { Textarea } from "../textarea";
 // import { Input } from "../input";
@@ -161,4 +161,4 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
   );
 };
 
-export default MessageInput;
+export default memo(MessageInput);

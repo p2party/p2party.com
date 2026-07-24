@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   lazy,
   Suspense,
 } from "react";
@@ -51,6 +52,7 @@ const ChatPage = () => {
     connectToSignalingServer,
     disconnectFromSignalingServer,
     roomUrl,
+    roomId,
     // purgeRoom,
   } = useRoom();
 
@@ -141,7 +143,13 @@ const ChatPage = () => {
     const p = peers.length + 1;
     document.title =
       "P2Party: " + p + " peers, " + messages.length + " messages";
-  }, [peers, messages]);
+  }, [peers.length, messages.length]);
+
+  const selectedMessages = useMemo(
+    () =>
+      messages.filter((message) => message.channelLabel === selectedChannel),
+    [messages, selectedChannel],
+  );
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -379,13 +387,11 @@ const ChatPage = () => {
 
         {messages.length > 0 && (
           <div className='mb-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg bg-white/35 pb-24 backdrop-blur-sm dark:bg-black/35'>
-            {messages
-              .filter((message) => message.channelLabel === selectedChannel)
-              .map((message) => (
-                <Suspense key={`${message.sha512Hex}-${message.timestamp}`}>
-                  <MessageItem message={message} />
-                </Suspense>
-              ))}
+            {selectedMessages.map((message) => (
+              <Suspense key={`${message.sha512Hex}-${message.timestamp}`}>
+                <MessageItem message={message} roomId={roomId} />
+              </Suspense>
+            ))}
             <div
               ref={messagesEndRef}
               className='scroll-mb-24 md:scroll-mb-24 lg:scroll-mb-28'

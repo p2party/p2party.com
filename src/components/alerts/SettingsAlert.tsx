@@ -290,7 +290,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
                   Scheduled · not wired
                 </p>
                 <p className='mt-1 text-xs text-zinc-600 dark:text-zinc-400'>
-                  Future room-wide presets: 10 s, 60 s, or 5 min. v0.11.0
+                  Future room-wide presets: 10 s, 60 s, or 5 min. v0.12.0
                   rejects these policies until the scheduler exists.
                 </p>
               </div>

@@ -15,14 +15,30 @@ Thank you for helping with p2party.com.
 
 ## Development
 
-The site consumes a local p2party-js tarball. Build and audit that package
+The site consumes a local p2party-js tarball. Build and verify that package
 before updating the `file:../p2party-js/p2party-<version>.tgz` dependency and
-both lockfiles.
+`package-lock.json` in the same commit. npm and `package-lock.json` are the
+authoritative dependency resolver and lock; Bun is used only as the test
+runtime. Never replace an artifact without changing its version, and record its
+SHA-256 in the release handoff.
+
+Paired development may use a sibling `../p2party-js` artifact. The public branch
+must instead vendor that immutable tarball inside this repository (or consume an
+immutable registry release), so a clean clone can run `npm ci` without
+undeclared sibling state.
+
+Before the first public push, export a fresh or squashed history whose author
+and committer email addresses all use `@p2party.com`. Do not rewrite this active
+protocol-development branch.
 
 Run before opening a pull request:
 
 ```bash
-npm run lint -- --no-fix
+npm ci
+npm run format:check
+npm run lint:check
+npm run typecheck
+npm test
 npm run build
 npm audit
 ```
