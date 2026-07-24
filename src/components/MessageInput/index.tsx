@@ -15,11 +15,13 @@ import type { KeyboardEvent } from "react";
 
 export interface MessageInputProps {
   handleFiles: (files: FileList) => void;
+  onSend: (message: string | File, channel: string) => boolean;
 }
 
-const MessageInput = ({ handleFiles }: MessageInputProps) => {
-  const { peerId, channels, messages, selectedChannel, sendMessage } =
-    useRoom();
+const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
+  const { channels, selectedChannel } = useRoom({
+    subscribeToMessages: false,
+  });
 
   const [newMessage, setNewMessage] = useState("");
   const [bottomOffset, setBottomOffset] = useState(0);
@@ -99,25 +101,16 @@ const MessageInput = ({ handleFiles }: MessageInputProps) => {
     }
   }, [newMessage]);
 
-  useEffect(() => {
-    const messagesLen = messages.length;
-    if (
-      messagesLen > 0 &&
-      messages[messagesLen - 1].fromPeerId === peerId &&
-      textareaRef.current
-    ) {
-      textareaRef.current.focus();
-    }
-  }, [messages, peerId]);
-
   const handleSend = useCallback(async () => {
-    await sendMessage(newMessage, selectedChannel);
+    if (newMessage.length === 0) return;
+    if (!onSend(newMessage, selectedChannel)) return;
     setNewMessage("");
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
+      requestAnimationFrame(() => textareaRef.current?.focus());
     }
-  }, [newMessage, selectedChannel, sendMessage]);
+  }, [newMessage, onSend, selectedChannel]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {

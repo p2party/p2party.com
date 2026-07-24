@@ -65,6 +65,21 @@ const MessageDropdown = ({
   // are stable module functions), so a dropdown row doesn't re-render on every
   // store change.
   const peerId = useSelector(p2party.keyPairSelector).peerId;
+  const roomId = useSelector((state: Parameters<typeof p2party.roomSelector>[0]) => {
+    const room = p2party
+      .roomSelector(state)
+      .find((candidate) =>
+        candidate.messages.some(
+          (item) =>
+            (message.transferId !== undefined &&
+              item.transferId === message.transferId) ||
+            (message.merkleRootHex.length > 0 &&
+              item.merkleRootHex === message.merkleRootHex) ||
+            item.sha512Hex === message.sha512Hex,
+        ),
+      );
+    return room?.id ?? "";
+  });
   const url = isURL(msg) ? msg : "";
 
   // Materialize the file only on user action (not on render). For a big file
@@ -238,9 +253,11 @@ const MessageDropdown = ({
             <DropdownItem
               onClick={async () =>
                 await p2party.cancelMessage(
+                  roomId,
                   message.channelLabel,
-                  message.merkleRootHex,
+                  message.merkleRootHex || undefined,
                   message.sha512Hex,
+                  message.transferId,
                 )
               }
             >
@@ -259,7 +276,8 @@ const MessageDropdown = ({
           <DropdownItem
             onClick={async () =>
               await p2party.deleteMessage(
-                message.merkleRootHex,
+                roomId,
+                message.merkleRootHex || undefined,
                 message.sha512Hex,
               )
             }

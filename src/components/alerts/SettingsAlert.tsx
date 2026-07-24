@@ -47,7 +47,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     setSignalingServerUrl,
     stunServerUrls,
     setStunServerUrls,
-  } = useRoom();
+    roomPolicy,
+  } = useRoom({ subscribeToMessages: false });
   const { roomUrl } = useParams();
 
   const [chunks, setChunks] = useLocalStorage("chunksToSplitMessage", 1);
@@ -68,8 +69,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     //   setChunks(3);
     if (v < 1) {
       setPercentageFilledChunk(1);
-    } else if (v > 100) {
-      setPercentageFilledChunk(100);
+    } else if (v > 99) {
+      setPercentageFilledChunk(99);
     } else {
       setPercentageFilledChunk(v);
     }
@@ -92,8 +93,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     <Alert open={isOpen} onClose={setIsOpen} size='md'>
       <AlertTitle>Settings</AlertTitle>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
-        These parameters affect the way p2party handles cryptography and
-        connectivity.
+        Connectivity can change locally. The authenticated room policy is
+        room-wide and immutable after first contact.
       </AlertDescription>
       <AlertBody>
         <Divider className='mb-3' />
@@ -261,13 +262,54 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
 
           <Divider className='my-3' />
 
+          <Headless.Field className='space-y-2'>
+            <Label>Authenticated room policy</Label>
+            <Description>
+              Protocol v{roomPolicy.wireVersion} ·{" "}
+              {roomPolicy.authMode === "pin"
+                ? "CPace PIN authentication"
+                : "no room PIN"}{" "}
+              · ML-KEM-768 hybrid root · legacy signaling rendezvous.
+            </Description>
+            <div className='grid gap-2 sm:grid-cols-2'>
+              <div className='rounded-lg border-2 border-orange-500 bg-orange-50/70 p-3 dark:bg-orange-950/25'>
+                <p className='font-mono text-xs font-bold text-orange-800 uppercase dark:text-orange-300'>
+                  Immediate · active
+                </p>
+                <p className='mt-1 text-xs text-zinc-600 dark:text-zinc-400'>
+                  Cells leave as soon as the app can send them. No timed cover
+                  stream.
+                </p>
+              </div>
+              <div
+                className='rounded-lg border border-dashed border-zinc-300 bg-zinc-100/70 p-3 opacity-70 dark:border-zinc-700 dark:bg-zinc-900/70'
+                aria-disabled='true'
+              >
+                <p className='font-mono text-xs font-bold text-zinc-600 uppercase dark:text-zinc-400'>
+                  Scheduled · not wired
+                </p>
+                <p className='mt-1 text-xs text-zinc-600 dark:text-zinc-400'>
+                  Future room-wide presets: 10 s, 60 s, or 5 min. v0.10.0
+                  rejects these policies until the scheduler exists.
+                </p>
+              </div>
+            </div>
+          </Headless.Field>
+
+          <Divider className='my-3' />
+
           <Headless.Field className='justify-left flex items-center gap-12'>
-            <Label>Percentage of chunk with real data:</Label>
+            <div>
+              <Label>Real data per message cell</Label>
+              <Description>
+                Per-message random padding; this is not room cover cadence.
+              </Description>
+            </div>
             <Input
               type='number'
               name='chunks'
               min={1}
-              max={100}
+              max={99}
               className='max-w-24'
               value={percentageFilledChunk}
               onChange={handlePercentageFilledChunk}
@@ -277,7 +319,12 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
           <Divider className='my-3' />
 
           <Headless.Field className='justify-left flex items-center gap-12'>
-            <Label>Min chunks to split every message:</Label>
+            <div>
+              <Label>Minimum cells per message</Label>
+              <Description>
+                Adds intra-message padding only; immediate mode still sends now.
+              </Description>
+            </div>
             <Input
               type='number'
               name='chunks'

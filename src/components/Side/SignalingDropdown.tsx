@@ -19,7 +19,7 @@ const SignalingDropdown = () => {
     signalingServerConnectionState,
     connectToSignalingServer,
     disconnectFromSignalingServer,
-  } = useRoom();
+  } = useRoom({ subscribeToMessages: false });
   const { roomUrl } = useParams();
 
   return (

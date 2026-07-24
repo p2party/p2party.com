@@ -7,7 +7,7 @@ import { useRoom } from "../../hooks/useRoom";
 import ChannelListbox from "../dropdowns/channelListbox";
 
 const ChatHeading = () => {
-  const { channels } = useRoom();
+  const { channels } = useRoom({ subscribeToMessages: false });
 
   return (
     <>

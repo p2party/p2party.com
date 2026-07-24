@@ -1,22 +1,48 @@
 import { useMemo, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
-import { useSelector } from "react-redux";
+import { useParams, useNavigate, useLocation } from "react-router";
+import { shallowEqual, useSelector } from "react-redux";
 import { useLocalStorage } from "usehooks-ts";
 
 import p2party from "p2party";
 
-import type { Message } from "p2party";
+import {
+  getTransientRoomPin,
+  getTransientRoomPolicy,
+  policyFromInvite,
+} from "../protocol/roomAccess";
+import {
+  protocolV3,
+  type MessageTransferHandle,
+  type RoomPolicyV1,
+} from "../protocol/v3";
+
+import type { Message, Room, State } from "p2party";
 
 export interface MessageWithData extends Message {
   data: string | File;
 }
 
+const EMPTY_PEERS: Room["peers"] = [];
+const EMPTY_CHANNELS: Room["channels"] = [];
+const EMPTY_MESSAGES: Message[] = [];
+
+interface UseRoomOptions {
+  /**
+   * Message records change for every chunk/progress update. Most room chrome
+   * does not render messages and should stay outside that hot subscription.
+   */
+  subscribeToMessages?: boolean;
+}
+
 export const DEFAULT_SIGNALING_URL = "wss://signaling.p2party.com/ws";
 export const DEFAULT_STUN_URLS = ["stun:stun.p2party.com:3478"];
 
-export const useRoom = () => {
+export const useRoom = ({
+  subscribeToMessages = true,
+}: UseRoomOptions = {}) => {
   const { roomUrl } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [percentageFilledChunk] = useLocalStorage("percentageFilledChunk", 90);
   const [chunks] = useLocalStorage("chunksToSplitMessage", 1);
 
@@ -30,17 +56,44 @@ export const useRoom = () => {
   );
 
   const keyPair = useSelector(p2party.keyPairSelector);
-  const rooms = useSelector(p2party.roomSelector);
-  // const commonState = useSelector(p2party.commonStateSelector)
+  const roomView = useSelector(
+    (state: State) => {
+      const room = p2party
+        .roomSelector(state)
+        .find((candidate) => candidate.url === roomUrl);
+      return {
+        exists: room !== undefined,
+        id: room?.id ?? "",
+        onlyConnectWithKnownAddresses:
+          room?.onlyConnectWithKnownAddresses ?? false,
+        policy: room?.policy,
+        peers: room?.peers ?? EMPTY_PEERS,
+        channels: room?.channels ?? EMPTY_CHANNELS,
+      };
+    },
+    shallowEqual,
+  );
+  const messages = useSelector((state: State) => {
+    if (!subscribeToMessages) return EMPTY_MESSAGES;
+    return (
+      p2party
+        .roomSelector(state)
+        .find((candidate) => candidate.url === roomUrl)?.messages ??
+      EMPTY_MESSAGES
+    );
+  });
   const signalingServerConnection = useSelector(
     p2party.signalingServerSelector,
   );
 
-  const roomIndex = useMemo(() => {
-    const i = rooms.findIndex((r) => r.url === roomUrl);
-    return i > -1 && rooms[i].id.length > 0 ? i : -1;
-  }, [roomUrl, rooms]);
   const [selectedChannel, setSelectedChannel] = useState("main");
+  const roomPolicy = useMemo<RoomPolicyV1>(() => {
+    return (
+      roomView.policy ??
+      (roomUrl ? getTransientRoomPolicy(roomUrl) : undefined) ??
+      policyFromInvite(location.search)
+    );
+  }, [location.search, roomUrl, roomView.policy]);
 
   const goToRandomRoom = useCallback(
     async (replace = false) => {
@@ -56,44 +109,75 @@ export const useRoom = () => {
         iceServers: stunServerUrls.length > 0 ? [{ urls: stunServerUrls }] : [],
         iceTransportPolicy: "all" as RTCIceTransportPolicy,
       };
-      await p2party.connect(roomUrl, signalingServerUrl, rtcConfig);
+      const policy =
+        getTransientRoomPolicy(roomUrl) ??
+        roomView.policy ??
+        policyFromInvite(location.search);
+      const pin =
+        policy.authMode === "pin" ? getTransientRoomPin(roomUrl) : undefined;
+
+      if (policy.authMode === "pin" && !pin)
+        throw new Error("Enter the room PIN before connecting");
+
+      try {
+        await protocolV3.connect(roomUrl, signalingServerUrl, rtcConfig, {
+          policy,
+          pin,
+        });
+      } finally {
+        pin?.fill(0);
+      }
     },
-    [signalingServerUrl, stunServerUrls],
+    [
+      location.search,
+      roomView.policy,
+      signalingServerUrl,
+      stunServerUrls,
+    ],
   );
 
   const connectToSignaling = useCallback(
     async (roomUrl: string) => {
+      // The first contact establishes an immutable authenticated room policy.
+      // Never let a PIN invitation fall through the legacy policy-less path.
+      if (!roomView.exists) {
+        await connectToRoom(roomUrl);
+        return;
+      }
       await p2party.connectToSignalingServer(roomUrl, signalingServerUrl);
     },
-    [signalingServerUrl],
+    [connectToRoom, roomView.exists, signalingServerUrl],
   );
 
-  const sendMessage = async (message: string | File, channel: string) => {
-    if (roomIndex === -1) throw new Error("No room was selected");
+  const sendMessage = useCallback(
+    (message: string | File, channel: string): MessageTransferHandle => {
+      if (!roomView.id) throw new Error("No room was selected");
 
-    await p2party.sendMessage(
-      message,
-      channel,
-      rooms[roomIndex].id,
-      percentageFilledChunk / 100,
-      chunks,
-    );
-  };
+      return protocolV3.sendMessage(
+        message,
+        channel,
+        roomView.id,
+        Math.min(99, Math.max(1, percentageFilledChunk)) / 100,
+        chunks,
+      );
+    },
+    [chunks, percentageFilledChunk, roomView.id],
+  );
 
   return {
     keyPair,
     peerId: keyPair.peerId,
-    roomId: roomIndex > -1 ? rooms[roomIndex].id : "",
-    onlyConnectWithKnownPeers:
-      roomIndex > -1 ? rooms[roomIndex].onlyConnectWithKnownAddresses : false,
+    roomId: roomView.id,
+    onlyConnectWithKnownPeers: roomView.onlyConnectWithKnownAddresses,
+    roomPolicy,
     signalingServerUrl,
     setSignalingServerUrl,
     stunServerUrls,
     setStunServerUrls,
     signalingServerConnectionState: signalingServerConnection,
-    peers: roomIndex > -1 ? rooms[roomIndex].peers : [],
-    channels: roomIndex > -1 ? rooms[roomIndex].channels : [],
-    messages: roomIndex > -1 ? rooms[roomIndex].messages : [],
+    peers: roomView.peers,
+    channels: roomView.channels,
+    messages,
     selectedChannel,
     goToRandomRoom,
     connect: connectToRoom,

@@ -15,16 +15,15 @@ import {
 import type { FC, Dispatch, SetStateAction } from "react";
 
 export interface ShareProps {
-  roomUrl: string;
+  inviteUrl: string;
   setShowQRCode: Dispatch<SetStateAction<boolean>>;
 }
 
-const Share: FC<ShareProps> = ({ roomUrl, setShowQRCode }) => {
-  const url = "https://p2party.com/rooms/" + roomUrl;
+const Share: FC<ShareProps> = ({ inviteUrl, setShowQRCode }) => {
   const shareData: ShareData = {
-    title: "P2Party room URL",
-    // text: "Join me in this room",
-    url,
+    title: "P2Party room invitation",
+    text: "Join this protocol-v3 room. If it uses a PIN, send the PIN separately.",
+    url: inviteUrl,
   };
 
   const handleShare = async () => {

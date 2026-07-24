@@ -6,6 +6,7 @@ import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from "../navbar";
 import Spinner from "../custom/spinner";
 
 import { useRoom } from "../../hooks/useRoom";
+import { absoluteRoomInviteUrl } from "../../protocol/roomAccess";
 
 const SettingsAlert = lazy(() => import("../alerts/SettingsAlert"));
 const QRCodeAlert = lazy(() => import("../alerts/QRCodeAlert"));
@@ -23,7 +24,13 @@ export interface NavBarProps {
 }
 
 const NavBar = ({ roomUrl }: NavBarProps) => {
-  const { goToRandomRoom } = useRoom();
+  const { goToRandomRoom, roomPolicy } = useRoom({
+    subscribeToMessages: false,
+  });
+  const inviteUrl =
+    roomUrl.length === 64
+      ? absoluteRoomInviteUrl(roomUrl, roomPolicy)
+      : "";
 
   const [showSettings, setShowSettings] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(false);
@@ -69,9 +76,10 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
         </Suspense> */}
 
             <Suspense fallback={<Spinner />}>
-              <Share roomUrl={roomUrl} setShowQRCode={setShowQRCode} />
+              <Share inviteUrl={inviteUrl} setShowQRCode={setShowQRCode} />
               <QRCodeAlert
                 roomUrl={roomUrl}
+                inviteUrl={inviteUrl}
                 isOpen={showQRCode}
                 setIsOpen={setShowQRCode}
               />

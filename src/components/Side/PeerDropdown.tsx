@@ -16,7 +16,7 @@ import { SidebarItem } from "../sidebar";
 const PeerDropdown = () => {
   const { roomUrl } = useParams();
   const { peers, signalingServerConnectionState, connect, disconnectFromPeer } =
-    useRoom();
+    useRoom({ subscribeToMessages: false });
 
   const handleDisconnectFromPeers = () => {
     const PEERS_LEN = peers.length;

@@ -20,7 +20,9 @@ const CatAvatar = lazy(() => import("../components/avatars/cat"));
 const RoomListItem = lazy(() => import("../components/RoomItem"));
 
 const RoomsPage = () => {
-  const { goToRandomRoom, getAllPastRooms } = useRoom();
+  const { goToRandomRoom, getAllPastRooms } = useRoom({
+    subscribeToMessages: false,
+  });
 
   const [rooms, setRooms] = useState<UniqueRoom[]>([]);
 

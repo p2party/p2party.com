@@ -1,8 +1,6 @@
-import { useState, useEffect, createContext } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { App, URLOpenListenerEvent } from "@capacitor/app";
-
-const UniversalLinkContext = createContext<void>(undefined);
 
 export const UniversalLinkProvider = ({
   children,
@@ -10,31 +8,23 @@ export const UniversalLinkProvider = ({
   children: React.ReactNode;
 }) => {
   const navigate = useNavigate();
-  const [launchUrlHandled, setLaunchUrlHandled] = useState(false);
+  const launchUrlHandledRef = useRef(false);
 
   useEffect(() => {
-    const abortController = new AbortController();
-
     const handleUrlOpen = (e: URLOpenListenerEvent) => {
-      console.log("appUrlOpen", launchUrlHandled);
       const slug = e.url.split("p2party.com").pop();
-      if (slug && !launchUrlHandled) {
-        setLaunchUrlHandled(true);
+      if (slug && !launchUrlHandledRef.current) {
+        launchUrlHandledRef.current = true;
         navigate(slug, { replace: true });
       }
     };
 
-    App.addListener("appUrlOpen", handleUrlOpen);
+    const listener = App.addListener("appUrlOpen", handleUrlOpen);
 
     return () => {
-      abortController.abort();
-      App.removeAllListeners();
+      void listener.then((handle) => handle.remove());
     };
-  }, [navigate, launchUrlHandled]);
+  }, [navigate]);
 
-  return (
-    <UniversalLinkContext.Provider value={undefined}>
-      {children}
-    </UniversalLinkContext.Provider>
-  );
+  return children;
 };

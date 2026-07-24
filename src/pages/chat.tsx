@@ -1,14 +1,51 @@
 "use client";
 
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { useParams } from "react-router-dom";
 
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
 
+import type {
+  SendMessageResult,
+  MessageTransferHandle,
+} from "../protocol/v3";
+import type { TrackedTransfer } from "../components/TransferTray";
+
 const CatAvatar = lazy(() => import("../components/avatars/cat"));
 const MessageItem = lazy(() => import("../components/MessageItem"));
 const MessageInput = lazy(() => import("../components/MessageInput"));
+const TransferTray = lazy(() => import("../components/TransferTray"));
+
+const deliveryResultFrom = (
+  error: unknown,
+): SendMessageResult | undefined => {
+  if (!error || typeof error !== "object" || !("result" in error))
+    return undefined;
+  return (error as { result?: SendMessageResult }).result;
+};
+
+const errorText = (error: unknown): string =>
+  error instanceof Error ? error.message : "Message transfer failed";
+
+const terminalStatus = (
+  result: SendMessageResult | undefined,
+): TrackedTransfer["status"] => {
+  if (!result || result.outcomes.length === 0) return "failed";
+  const delivered = result.outcomes.filter(
+    (outcome) => outcome.status === "delivered",
+  ).length;
+  if (delivered === result.outcomes.length) return "delivered";
+  if (delivered > 0) return "partial";
+  return "failed";
+};
 
 const ChatPage = () => {
   const {
@@ -26,8 +63,11 @@ const ChatPage = () => {
   const [messageCount, setMessageCount] = useState(0);
   const [, setIsDragging] = useState(false);
   const [dots, setDots] = useState("");
+  const [transfers, setTransfers] = useState<TrackedTransfer[]>([]);
+  const [sendError, setSendError] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const cancelledTransfersRef = useRef(new Set<string>());
 
   // const handleUnload = () => {
   //   let connected = localStorage.getItem("connected-rooms") ?? "";
@@ -131,22 +171,124 @@ const ChatPage = () => {
     }
   };
 
-  const handleFiles = (files: FileList) => {
-    Array.from(files).forEach((file) => {
-      sendMessage(file, selectedChannel);
+  const startTransfer = useCallback(
+    (payload: string | File, channel: string): boolean => {
+      setSendError("");
+      let handle: MessageTransferHandle;
+      try {
+        handle = sendMessage(payload, channel);
+      } catch (error) {
+        setSendError(errorText(error));
+        return false;
+      }
 
-      //   const reader = new FileReader();
-      //   reader.onload = (e: ProgressEvent<FileReader>) => {
-      //     const arrayBuffer = e.target?.result;
-      //     if (arrayBuffer && typeof arrayBuffer !== "string") {
-      //       const uint8Array = new Uint8Array(arrayBuffer);
-      //       // Handle the Uint8Array as needed
-      //       console.log("File converted to Uint8Array:", uint8Array);
-      //     }
-      //   };
-      //   reader.readAsArrayBuffer(file);
-    });
-  };
+      const label =
+        typeof payload === "string"
+          ? payload.length > 36
+            ? `${payload.slice(0, 36)}…`
+            : payload
+          : payload.name;
+      setTransfers((current) => [
+        ...current,
+        { handle, label, status: "preparing" },
+      ]);
+
+      void handle.done.then(
+        (result) => {
+          setTransfers((current) =>
+            current.map((transfer) =>
+              transfer.handle.transferId === handle.transferId
+                ? {
+                    ...transfer,
+                    status: cancelledTransfersRef.current.has(
+                      handle.transferId,
+                    )
+                      ? "cancelled"
+                      : terminalStatus(result),
+                    result,
+                    error:
+                      result === undefined
+                        ? "The transfer ended without a delivery result."
+                        : undefined,
+                  }
+                : transfer,
+            ),
+          );
+        },
+        (error) => {
+          const result = deliveryResultFrom(error);
+          setTransfers((current) =>
+            current.map((transfer) =>
+              transfer.handle.transferId === handle.transferId
+                ? {
+                    ...transfer,
+                    status: cancelledTransfersRef.current.has(
+                      handle.transferId,
+                    )
+                      ? "cancelled"
+                      : terminalStatus(result),
+                    result,
+                    error: errorText(error),
+                  }
+                : transfer,
+            ),
+          );
+        },
+      );
+
+      return true;
+    },
+    [sendMessage],
+  );
+
+  const handleFiles = useCallback(
+    (files: FileList) => {
+      Array.from(files).forEach((file) => {
+        startTransfer(file, selectedChannel);
+      });
+    },
+    [selectedChannel, startTransfer],
+  );
+
+  const cancelTransfer = useCallback(
+    (transferId: string) => {
+      const transfer = transfers.find(
+        (candidate) => candidate.handle.transferId === transferId,
+      );
+      if (!transfer) return;
+      cancelledTransfersRef.current.add(transferId);
+      setTransfers((current) =>
+        current.map((candidate) =>
+          candidate.handle.transferId === transferId
+            ? { ...candidate, status: "cancelling" }
+            : candidate,
+        ),
+      );
+      void transfer.handle.cancel().catch((error) => {
+        setTransfers((current) =>
+          current.map((candidate) =>
+            candidate.handle.transferId === transferId
+              ? {
+                  ...candidate,
+                  status: "failed",
+                  error: errorText(error),
+                }
+              : candidate,
+          ),
+        );
+      });
+    },
+    [transfers],
+  );
+
+  const dismissTransfer = useCallback((transferId: string) => {
+    cancelledTransfersRef.current.delete(transferId);
+    setTransfers((current) =>
+      current.filter(
+        (transfer) => transfer.handle.transferId !== transferId,
+      ),
+    );
+  }, []);
 
   // useEffect(() => {
   //   if (textareaRef.current) {
@@ -265,7 +407,25 @@ const ChatPage = () => {
       </div>
 
       <Suspense>
-        <MessageInput handleFiles={handleFiles} />
+        <TransferTray
+          messages={messages}
+          transfers={transfers}
+          onCancel={cancelTransfer}
+          onDismiss={dismissTransfer}
+        />
+      </Suspense>
+
+      {sendError && (
+        <div
+          role='alert'
+          className='fixed right-3 bottom-24 z-50 max-w-sm rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 shadow-md lg:right-5 lg:bottom-28 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
+        >
+          {sendError}
+        </div>
+      )}
+
+      <Suspense>
+        <MessageInput handleFiles={handleFiles} onSend={startTransfer} />
       </Suspense>
     </div>
   );

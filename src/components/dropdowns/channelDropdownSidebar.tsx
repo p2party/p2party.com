@@ -7,7 +7,7 @@ import ChannelDropdownMenu from "./channelDropdownMenu";
 import { ChatBubbleBottomCenterTextIcon } from "@heroicons/react/16/solid";
 
 const ChannelDropdownNavigation = () => {
-  const { channels } = useRoom();
+  const { channels } = useRoom({ subscribeToMessages: false });
   const channelsLen = channels.length;
 
   return (

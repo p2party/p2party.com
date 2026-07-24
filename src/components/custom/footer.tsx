@@ -10,7 +10,7 @@ const Footer = () => {
           rel='noopener noreferrer'
           className='text-center text-xs leading-5 text-gray-500'
         >
-          &copy; 2025 Deliberative Technologies. All rights reserved.
+          &copy; 2025 p2party contributors.
         </Link>
       </div>
     </footer>

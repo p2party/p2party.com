@@ -15,13 +15,17 @@ import {
 } from "@heroicons/react/20/solid";
 
 const MessagesDropdown = () => {
-  const { messages, deleteMessage } = useRoom();
+  const { roomId, messages, deleteMessage } = useRoom();
   const messagesLen = messages.length;
 
   const handleDeleteMessages = async () => {
     const MESSAGES_LEN = messages.length;
     for (let i = 0; i < MESSAGES_LEN; i++) {
-      await deleteMessage(messages[i].merkleRootHex);
+      await deleteMessage(
+        roomId,
+        messages[i].merkleRootHex || undefined,
+        messages[i].sha512Hex,
+      );
     }
   };
 

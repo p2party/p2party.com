@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import p2party from "p2party";
 
@@ -8,6 +8,7 @@ import { Button } from "../components/button";
 import { Link } from "../components/link";
 
 const CatAvatar = lazy(() => import("../components/avatars/cat"));
+const RoomSetupAlert = lazy(() => import("../components/RoomSetupAlert"));
 
 const features = [
   {
@@ -26,7 +27,7 @@ const features = [
       </svg>
     ),
     title: "End-to-End Encrypted",
-    desc: "ChaChaPoly1305 AEAD encryption with ephemeral Ed25519 keys. Messages never touch a server.",
+    desc: "Interactive 3DH + ML-KEM-768 feeds a per-peer Double Ratchet. Messages never touch the signaling server.",
   },
   {
     icon: (
@@ -78,7 +79,7 @@ const features = [
       </svg>
     ),
     title: "Text & File Sharing",
-    desc: "Send messages and share files of any size directly between browsers — chunked, verified by Merkle proofs, no uploads.",
+    desc: "Send text and large files directly between browsers — chunked, verified by Merkle proofs, and never uploaded.",
   },
 ];
 
@@ -86,22 +87,23 @@ const steps = [
   {
     num: "01",
     title: "Chunk & Flood",
-    body: "Your message is split into fixed-size 64 KB packets. Each packet is placed at a random offset inside a chunk and the remaining bytes are filled with cryptographic random noise — making every chunk the same size and statistically indistinguishable from pure entropy.",
+    body: "Your message is split into fixed-size 64 KiB wire cells. Real bytes sit at randomized offsets and the remaining space is filled with cryptographic noise, so every emitted cell has the same outer size.",
   },
   {
     num: "02",
-    title: "Encrypt & Scatter",
-    body: "Each chunk is individually encrypted with ChaChaPoly1305 using an ephemeral sender key. Chunks are then shuffled into a random order. An observer collecting traffic sees only a stream of uniform, opaque blobs with no way to tell signal from noise.",
+    title: "Ratchet & Scatter",
+    body: "Each chunk is protected by ChaCha20-Poly1305 under a per-peer Double Ratchet message key, then shuffled. ML-KEM-768 hardens the initial root while classical X25519 retains an independently understood security leg.",
   },
   {
     num: "03",
     title: "Verify & Reassemble",
-    body: "The recipient — and only the recipient — can decrypt each chunk, verify it against a Merkle tree root, and reassemble the original message. Anyone else is left holding gigabytes of cryptographically useless data.",
+    body: "The recipient decrypts each cell, checks its Merkle proof, and reassembles the payload. Immediate delivery is the default; timed room-wide cover is an explicit future policy, not a claim about today’s network.",
   },
 ];
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [roomSetupOpen, setRoomSetupOpen] = useState(false);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -118,11 +120,6 @@ const HomePage = () => {
       abortController.abort();
     };
   }, [navigate]);
-
-  const handleNewRoom = async () => {
-    const random = await p2party.generateRandomRoomUrl();
-    navigate("/rooms/" + random);
-  };
 
   return (
     <div className='relative isolate flex min-h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col items-center overflow-hidden bg-white px-6 dark:bg-black'>
@@ -156,7 +153,7 @@ const HomePage = () => {
         <div className='flex flex-col items-center text-center lg:items-start lg:text-left'>
           <span className='animate-fade-in mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/50 bg-orange-50/70 px-3 py-1 font-mono text-xs font-medium tracking-tight text-orange-700 shadow-[2px_2px_0_0_rgba(249,115,22,0.35)] dark:border-orange-700/50 dark:bg-orange-950/40 dark:text-orange-300'>
             <span className='inline-block size-1.5 animate-pulse rounded-full bg-orange-500' />
-            peer-to-peer · zero servers · v0.9
+            direct mesh · protocol v3 · no accounts
           </span>
           <h1 className='animate-fade-in text-4xl leading-tight font-extrabold tracking-tight text-balance text-zinc-900 sm:text-5xl lg:text-6xl dark:text-white'>
             Privacy That{" "}
@@ -166,19 +163,25 @@ const HomePage = () => {
           </h1>
 
           <p className='animate-slide-up mt-4 max-w-lg text-lg leading-relaxed text-balance text-zinc-500 dark:text-zinc-400'>
-            Peer-to-peer rooms where every message is drowned in noise.
+            Peer-to-peer rooms with post-quantum-hardened ratchets.
             <br className='hidden sm:block' />
-            Sniffers get junk. You get privacy. No accounts. No servers.
+            Sniffers get uniform cells. You get privacy. No accounts.
           </p>
 
           <div className='animate-slide-up mt-7 flex flex-col items-center gap-3 sm:flex-row lg:items-start'>
             <Button
-              onClick={handleNewRoom}
+              onClick={() => setRoomSetupOpen(true)}
               color='orange'
               className='rounded-xl px-8 py-3 text-lg font-semibold shadow-[4px_4px_0_0_rgba(0,0,0,0.18)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.24)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_0_rgba(0,0,0,0.2)]'
             >
               Generate Room
             </Button>
+            <Link
+              href='/session-lab'
+              className='inline-flex items-center gap-1.5 rounded-xl border border-orange-300/70 bg-orange-50/60 px-5 py-2.5 font-mono text-sm font-semibold text-orange-800 shadow-[2px_2px_0_0_rgba(249,115,22,0.18)] transition-colors hover:bg-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-orange-800/70 dark:bg-orange-950/30 dark:text-orange-300 dark:hover:bg-orange-950/60'
+            >
+              createSession() lab
+            </Link>
             <Link
               href='https://github.com/p2party/p2party-js'
               target='_blank'
@@ -197,6 +200,13 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+
+      <Suspense>
+        <RoomSetupAlert
+          isOpen={roomSetupOpen}
+          setIsOpen={setRoomSetupOpen}
+        />
+      </Suspense>
 
       {/* Feature cards */}
       <div className='relative mx-auto mb-16 grid w-full max-w-7xl gap-5 sm:grid-cols-2 lg:grid-cols-4'>

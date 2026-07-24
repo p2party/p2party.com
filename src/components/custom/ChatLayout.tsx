@@ -1,10 +1,14 @@
 import { useEffect, useRef, FC, lazy } from "react";
-import { useParams, Outlet } from "react-router-dom";
+import { useParams, useLocation, Outlet } from "react-router-dom";
 import { useLocalStorage } from "usehooks-ts";
 
 import { SidebarLayout } from "../sidebar-layout";
 
 import { useRoom } from "../../hooks/useRoom";
+import {
+  authModeFromInvite,
+  hasTransientRoomPin,
+} from "../../protocol/roomAccess";
 
 import type { PropsWithChildren } from "react";
 
@@ -16,15 +20,21 @@ const ChatLayout: FC<PropsWithChildren> = () => {
   const {
     signalingServerConnectionState,
     goToRandomRoom,
-    connectToSignalingServer,
+    connect,
     disconnectFromSignalingServer,
-  } = useRoom();
+    roomPolicy,
+  } = useRoom({ subscribeToMessages: false });
   const isConnected = signalingServerConnectionState.isConnected;
   const isEstablishingConnection =
     signalingServerConnectionState.isEstablishingConnection;
   const signalingServerHasUrl =
     signalingServerConnectionState.serverUrl.length > 0;
   const { roomUrl } = useParams();
+  const location = useLocation();
+  const pinRequired =
+    roomPolicy.authMode === "pin" ||
+    authModeFromInvite(location.search) === "pin";
+  const hasPin = roomUrl ? hasTransientRoomPin(roomUrl) : false;
 
   // let [alertIsOpen, setAlertIsOpen] = useState(false);
   const [alertIsOpen, setAlertIsOpen] = useLocalStorage(
@@ -43,7 +53,18 @@ const ChatLayout: FC<PropsWithChildren> = () => {
 
     if (
       roomUrl &&
+      pinRequired &&
+      !hasPin &&
+      !pressedCancelInConnect &&
+      !alertIsOpen
+    ) {
+      setAlertIsOpen(true);
+    }
+
+    if (
+      roomUrl &&
       roomUrl.length === 64 &&
+      (!pinRequired || hasPin) &&
       !pressedCancelInConnect &&
       !alertIsOpen &&
       !isConnected &&
@@ -51,7 +72,10 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       autoConnectAttemptedRoomRef.current !== roomUrl
     ) {
       autoConnectAttemptedRoomRef.current = roomUrl;
-      connectToSignalingServer(roomUrl);
+      void connect(roomUrl).catch(() => {
+        autoConnectAttemptedRoomRef.current = null;
+        setAlertIsOpen(true);
+      });
     }
 
     if (roomUrl && roomUrl.length !== 64) {
@@ -72,8 +96,11 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     roomUrl,
     isConnected,
     isEstablishingConnection,
-    connectToSignalingServer,
+    connect,
     goToRandomRoom,
+    hasPin,
+    pinRequired,
+    setAlertIsOpen,
   ]);
 
   useEffect(() => {
@@ -84,10 +111,11 @@ const ChatLayout: FC<PropsWithChildren> = () => {
         !isConnected &&
         !isEstablishingConnection &&
         signalingServerHasUrl &&
+        (!pinRequired || hasPin) &&
         !alertIsOpen &&
         !pressedCancelInConnect
       ) {
-        connectToSignalingServer(roomUrl);
+        void connect(roomUrl).catch(() => setAlertIsOpen(true));
       }
     };
 
@@ -105,8 +133,11 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     signalingServerHasUrl,
     pressedCancelInConnect,
     alertIsOpen,
-    connectToSignalingServer,
+    connect,
     disconnectFromSignalingServer,
+    hasPin,
+    pinRequired,
+    setAlertIsOpen,
   ]);
 
   return (

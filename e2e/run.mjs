@@ -8,7 +8,7 @@ import { randomBytes } from "crypto";
 
 const APP = process.env.APP_URL ?? "http://localhost:5190";
 const WASM = readFileSync(
-  new URL("../../p2party-js/src/cryptography/libcrypto.wasm", import.meta.url),
+  new URL("../node_modules/p2party/lib/libcrypto.wasm", import.meta.url),
 );
 
 // 64-char room url (the route requires exactly 64 chars).

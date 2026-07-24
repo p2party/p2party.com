@@ -28,6 +28,7 @@ import BlacklistAlert from "../alerts/BlacklistAlert";
 import QRCodeAlert from "../alerts/QRCodeAlert";
 
 import { useRoom } from "../../hooks/useRoom";
+import { absoluteRoomInviteUrl } from "../../protocol/roomAccess";
 import p2party from "p2party";
 
 const CatAvatar = lazy(() => import("../avatars/cat"));
@@ -40,8 +41,14 @@ export interface SideBarProps {
 }
 
 const SideBar = () => {
-  const { roomId, peerId } = useRoom();
+  const { roomId, peerId, roomPolicy } = useRoom({
+    subscribeToMessages: false,
+  });
   const { roomUrl } = useParams();
+  const inviteUrl =
+    roomUrl && roomUrl.length === 64
+      ? absoluteRoomInviteUrl(roomUrl, roomPolicy)
+      : "";
 
   const [showSettings, setShowSettings] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(false);
@@ -143,6 +150,7 @@ const SideBar = () => {
             </span>
             <QRCodeAlert
               roomUrl={roomUrl ?? ""}
+              inviteUrl={inviteUrl}
               isOpen={showQRCode}
               setIsOpen={setShowQRCode}
             />

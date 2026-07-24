@@ -17,7 +17,9 @@ import { useRoom } from "../../hooks/useRoom";
 import { TrashIcon } from "@heroicons/react/20/solid";
 
 const DeleteDropdown = () => {
-  const { keyPair, roomId, purge, purgeIdentity, purgeRoom } = useRoom();
+  const { keyPair, roomId, purge, purgeIdentity, purgeRoom } = useRoom({
+    subscribeToMessages: false,
+  });
   const { roomUrl } = useParams();
 
   return (

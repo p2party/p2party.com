@@ -12,14 +12,17 @@ import type { Dispatch, SetStateAction } from "react";
 
 export interface QRCodeAlertProps {
   roomUrl: string;
+  inviteUrl: string;
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-const urlBase = "https://p2party.com/";
-const urlPath = "rooms/";
-
-const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
+const QRCodeAlert = ({
+  roomUrl,
+  inviteUrl,
+  isOpen,
+  setIsOpen,
+}: QRCodeAlertProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const drawCanvas = (
@@ -72,7 +75,7 @@ const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
 
       try {
         // 1️⃣ Generate QR Code
-        const qrDataUrl = await QRCode.toDataURL(urlBase + urlPath + roomUrl, {
+        const qrDataUrl = await QRCode.toDataURL(inviteUrl, {
           margin: 0.4,
           width: 1024,
           errorCorrectionLevel: "H",
@@ -102,7 +105,7 @@ const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
         console.error("QR Code Generation Error:", error);
       }
     }, 100); // Wait 50ms to ensure canvas is attached
-  }, [roomUrl, isOpen]);
+  }, [inviteUrl, roomUrl, isOpen]);
 
   const handleDownload = async () => {
     if (canvasRef.current) {
@@ -110,7 +113,6 @@ const QRCodeAlert = ({ roomUrl, isOpen, setIsOpen }: QRCodeAlertProps) => {
         // Create an anchor element for the download
         const link = document.createElement("a");
         link.href = canvasRef.current.toDataURL("image/png"); // qrCodeDataUri;
-        console.log(link.href);
         link.download = "qr-" + roomUrl + ".png"; // Replace with your desired file name and extension
 
         // Append the anchor to the body, trigger click, then remove it

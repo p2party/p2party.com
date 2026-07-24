@@ -13,7 +13,7 @@ import { CheckIcon, SignalSlashIcon } from "@heroicons/react/20/solid";
 
 const SignalingServerNavigationButton = () => {
   const { signalingServerConnectionState, disconnectFromSignalingServer } =
-    useRoom();
+    useRoom({ subscribeToMessages: false });
 
   return (
     <Dropdown>

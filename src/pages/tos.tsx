@@ -150,10 +150,10 @@ const TOSPage = () => {
           >
             signaling server
           </Link>{" "}
-          — are released under open-source licences (AGPL-3.0 where specified).
-          Your use of those components is additionally governed by the
-          applicable open-source licence terms, which prevail in the event of
-          any conflict with these Terms.
+          — are released under Apache-2.0. The p2party.com website source is
+          released under AGPL-3.0-only. Your use of those components is
+          additionally governed by the applicable open-source licence terms,
+          which prevail in the event of any conflict with these Terms.
         </Para>
 
         {/* 7 */}
