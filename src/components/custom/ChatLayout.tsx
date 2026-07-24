@@ -1,14 +1,11 @@
 import { useEffect, useRef, FC, lazy } from "react";
-import { useParams, useLocation, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useLocalStorage } from "usehooks-ts";
 
 import { SidebarLayout } from "../sidebar-layout";
 
 import { useRoom } from "../../hooks/useRoom";
-import {
-  authModeFromInvite,
-  hasTransientRoomPin,
-} from "../../protocol/roomAccess";
+import { hasTransientRoomPin } from "../../protocol/roomAccess";
 
 import type { PropsWithChildren } from "react";
 
@@ -19,21 +16,18 @@ const ConnectAlert = lazy(() => import("../alerts/ConnectAlert"));
 const ChatLayout: FC<PropsWithChildren> = () => {
   const {
     signalingServerConnectionState,
-    goToRandomRoom,
     connect,
     disconnectFromSignalingServer,
     roomPolicy,
+    roomUrl,
+    roomInviteError,
   } = useRoom({ subscribeToMessages: false });
   const isConnected = signalingServerConnectionState.isConnected;
   const isEstablishingConnection =
     signalingServerConnectionState.isEstablishingConnection;
   const signalingServerHasUrl =
     signalingServerConnectionState.serverUrl.length > 0;
-  const { roomUrl } = useParams();
-  const location = useLocation();
-  const pinRequired =
-    roomPolicy.authMode === "pin" ||
-    authModeFromInvite(location.search) === "pin";
+  const pinRequired = roomPolicy.authMode === "pin";
   const hasPin = roomUrl ? hasTransientRoomPin(roomUrl) : false;
 
   // let [alertIsOpen, setAlertIsOpen] = useState(false);
@@ -49,10 +43,9 @@ const ChatLayout: FC<PropsWithChildren> = () => {
   const autoConnectAttemptedRoomRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-
     if (
       roomUrl &&
+      roomInviteError.length === 0 &&
       pinRequired &&
       !hasPin &&
       !pressedCancelInConnect &&
@@ -63,7 +56,7 @@ const ChatLayout: FC<PropsWithChildren> = () => {
 
     if (
       roomUrl &&
-      roomUrl.length === 64 &&
+      roomInviteError.length === 0 &&
       (!pinRequired || hasPin) &&
       !pressedCancelInConnect &&
       !alertIsOpen &&
@@ -78,18 +71,9 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       });
     }
 
-    if (roomUrl && roomUrl.length !== 64) {
-      autoConnectAttemptedRoomRef.current = null;
-      goToRandomRoom(true);
-    }
-
     if (pressedCancelInConnect || alertIsOpen) {
       autoConnectAttemptedRoomRef.current = null;
     }
-
-    return () => {
-      controller.abort();
-    };
   }, [
     alertIsOpen,
     pressedCancelInConnect,
@@ -97,9 +81,9 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     isConnected,
     isEstablishingConnection,
     connect,
-    goToRandomRoom,
     hasPin,
     pinRequired,
+    roomInviteError,
     setAlertIsOpen,
   ]);
 
@@ -107,7 +91,7 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     const onFocus = () => {
       if (
         roomUrl &&
-        roomUrl.length === 64 &&
+        roomInviteError.length === 0 &&
         !isConnected &&
         !isEstablishingConnection &&
         signalingServerHasUrl &&
@@ -137,6 +121,7 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     disconnectFromSignalingServer,
     hasPin,
     pinRequired,
+    roomInviteError,
     setAlertIsOpen,
   ]);
 
@@ -145,9 +130,24 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       navbar={<NavBar roomUrl={roomUrl ?? ""} />}
       sidebar={<SideBar />}
     >
-      <Outlet />
+      {roomInviteError.length > 0 ? (
+        <main className='flex min-h-0 flex-1 items-center justify-center p-6'>
+          <div
+            role='alert'
+            className='max-w-xl border-2 border-red-700 bg-red-50 p-5 font-mono text-sm text-red-900 shadow-[6px_6px_0_0_rgba(185,28,28,0.25)] dark:bg-red-950/40 dark:text-red-100'
+          >
+            <p className='font-black uppercase'>Invalid room invitation</p>
+            <p className='mt-2'>{roomInviteError}</p>
+            <p className='mt-3 text-xs opacity-80'>
+              Nothing was connected and no replacement room was generated.
+            </p>
+          </div>
+        </main>
+      ) : (
+        <Outlet />
+      )}
 
-      {roomUrl && roomUrl.length === 64 && (
+      {roomUrl && roomInviteError.length === 0 && (
         <ConnectAlert
           roomUrl={roomUrl}
           isOpen={alertIsOpen}

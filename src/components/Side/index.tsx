@@ -1,5 +1,4 @@
 import { lazy, Suspense, useState } from "react";
-import { useParams } from "react-router";
 
 import {
   ArchiveBoxXMarkIcon,
@@ -41,14 +40,10 @@ export interface SideBarProps {
 }
 
 const SideBar = () => {
-  const { roomId, peerId, roomPolicy } = useRoom({
+  const { roomUrl, roomId, peerId, roomPolicy } = useRoom({
     subscribeToMessages: false,
   });
-  const { roomUrl } = useParams();
-  const inviteUrl =
-    roomUrl && roomUrl.length === 64
-      ? absoluteRoomInviteUrl(roomUrl, roomPolicy)
-      : "";
+  const inviteUrl = roomUrl ? absoluteRoomInviteUrl(roomUrl, roomPolicy) : "";
 
   const [showSettings, setShowSettings] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(false);
@@ -69,13 +64,13 @@ const SideBar = () => {
       </SidebarHeader>
 
       <SidebarBody>
-        {roomUrl && roomUrl.length === 64 && (
+        {roomUrl && (
           <Suspense>
             <PeerDropdown />
           </Suspense>
         )}
 
-        {roomUrl && roomUrl.length === 64 && (
+        {roomUrl && (
           <SidebarItem>
             <span className='flex min-w-0 items-center gap-3'>
               {roomId.length > 0 && <HomeIcon className='size-10' />}
@@ -138,7 +133,7 @@ const SideBar = () => {
           />
         </SidebarItem>
 
-        {roomUrl && roomUrl.length === 64 && (
+        {roomUrl && (
           <SidebarItem onClick={() => setShowQRCode(true)}>
             <span className='flex min-w-0 items-center gap-3'>
               <QrCodeIcon className='size-9 lg:size-7' />
@@ -151,6 +146,7 @@ const SideBar = () => {
             <QRCodeAlert
               roomUrl={roomUrl ?? ""}
               inviteUrl={inviteUrl}
+              roomPolicy={roomPolicy}
               isOpen={showQRCode}
               setIsOpen={setShowQRCode}
             />

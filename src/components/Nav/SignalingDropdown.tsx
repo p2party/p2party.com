@@ -1,5 +1,3 @@
-import { useParams } from "react-router";
-
 import {
   Dropdown,
   DropdownButton,
@@ -18,8 +16,8 @@ const SignalingDropdown = () => {
     signalingServerConnectionState,
     connectToSignalingServer,
     disconnectFromSignalingServer,
+    roomUrl,
   } = useRoom({ subscribeToMessages: false });
-  const { roomUrl } = useParams();
 
   return (
     <Dropdown>

@@ -11,6 +11,7 @@ import p2party from "p2party";
 
 import { useDarkMode } from "usehooks-ts";
 import { UniversalLinkProvider } from "./hooks/useUniversalLink";
+import { RoomInviteProvider } from "./hooks/useRoomInvite";
 
 const ChatLayout = lazy(() => import("./components/custom/ChatLayout"));
 
@@ -109,9 +110,11 @@ const App = () => {
             path='rooms'
             element={
               <Provider store={p2party.store}>
-                <Suspense>
-                  <ChatLayout />
-                </Suspense>
+                <RoomInviteProvider>
+                  <Suspense>
+                    <ChatLayout />
+                  </Suspense>
+                </RoomInviteProvider>
               </Provider>
             }
           >
@@ -123,9 +126,22 @@ const App = () => {
                 </Suspense>
               }
             />
+          </Route>
 
+          <Route
+            path='r'
+            element={
+              <Provider store={p2party.store}>
+                <RoomInviteProvider>
+                  <Suspense>
+                    <ChatLayout />
+                  </Suspense>
+                </RoomInviteProvider>
+              </Provider>
+            }
+          >
             <Route
-              path=':roomUrl'
+              index
               element={
                 <Suspense>
                   <ChatPage />

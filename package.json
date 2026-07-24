@@ -12,13 +12,24 @@
   "bugs": {
     "url": "https://github.com/p2party/p2party.com/issues"
   },
+  "packageManager": "npm@11.6.2",
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=11.6.2"
+  },
   "type": "module",
   "scripts": {
-    "start": "bunx --bun vite --host",
-    "build": "tsc -b && bunx --bun vite build",
-    "format": "prettier . --write --ignore-path .gitignore --ignore-path .prettierignore && git update-index --again",
+    "dev": "vite --host",
+    "start": "npm run dev",
+    "typecheck": "tsc -b --pretty false",
+    "build": "npm run typecheck && vite build",
+    "test": "bun test",
+    "format": "prettier . --write --ignore-path .gitignore --ignore-path .prettierignore",
+    "format:check": "prettier . --check --ignore-path .gitignore --ignore-path .prettierignore",
     "lint": "eslint . --ext .ts,.tsx --fix",
-    "upload": "node --env-file .env scripts/uploadAllToS3.mjs",
+    "lint:check": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "e2e": "node e2e/run.mjs",
+    "upload": "npm run build && node --env-file=.env scripts/uploadAllToS3.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -28,7 +39,7 @@
     "class-validator": "^0.14.4",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
-    "p2party": "file:../p2party-js/p2party-0.10.0.tgz",
+    "p2party": "file:../p2party-js/p2party-0.11.0.tgz",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

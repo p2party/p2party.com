@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback } from "react";
-import { useParams, useNavigate, useLocation } from "react-router";
 import { shallowEqual, useSelector } from "react-redux";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -8,13 +7,14 @@ import p2party from "p2party";
 import {
   getTransientRoomPin,
   getTransientRoomPolicy,
-  policyFromInvite,
 } from "../protocol/roomAccess";
 import {
+  immediateRoomPolicy,
   protocolV3,
   type MessageTransferHandle,
   type RoomPolicyV1,
 } from "../protocol/v3";
+import { useRoomInvite } from "./useRoomInvite";
 
 import type { Message, Room, State } from "p2party";
 
@@ -40,9 +40,8 @@ export const DEFAULT_STUN_URLS = ["stun:stun.p2party.com:3478"];
 export const useRoom = ({
   subscribeToMessages = true,
 }: UseRoomOptions = {}) => {
-  const { roomUrl } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const roomInvite = useRoomInvite();
+  const roomUrl = roomInvite.kind === "valid" ? roomInvite.roomUrl : undefined;
   const [percentageFilledChunk] = useLocalStorage("percentageFilledChunk", 90);
   const [chunks] = useLocalStorage("chunksToSplitMessage", 1);
 
@@ -56,30 +55,25 @@ export const useRoom = ({
   );
 
   const keyPair = useSelector(p2party.keyPairSelector);
-  const roomView = useSelector(
-    (state: State) => {
-      const room = p2party
-        .roomSelector(state)
-        .find((candidate) => candidate.url === roomUrl);
-      return {
-        exists: room !== undefined,
-        id: room?.id ?? "",
-        onlyConnectWithKnownAddresses:
-          room?.onlyConnectWithKnownAddresses ?? false,
-        policy: room?.policy,
-        peers: room?.peers ?? EMPTY_PEERS,
-        channels: room?.channels ?? EMPTY_CHANNELS,
-      };
-    },
-    shallowEqual,
-  );
+  const roomView = useSelector((state: State) => {
+    const room = p2party
+      .roomSelector(state)
+      .find((candidate) => candidate.url === roomUrl);
+    return {
+      exists: room !== undefined,
+      id: room?.id ?? "",
+      onlyConnectWithKnownAddresses:
+        room?.onlyConnectWithKnownAddresses ?? false,
+      policy: room?.policy,
+      peers: room?.peers ?? EMPTY_PEERS,
+      channels: room?.channels ?? EMPTY_CHANNELS,
+    };
+  }, shallowEqual);
   const messages = useSelector((state: State) => {
     if (!subscribeToMessages) return EMPTY_MESSAGES;
     return (
-      p2party
-        .roomSelector(state)
-        .find((candidate) => candidate.url === roomUrl)?.messages ??
-      EMPTY_MESSAGES
+      p2party.roomSelector(state).find((candidate) => candidate.url === roomUrl)
+        ?.messages ?? EMPTY_MESSAGES
     );
   });
   const signalingServerConnection = useSelector(
@@ -87,49 +81,73 @@ export const useRoom = ({
   );
 
   const [selectedChannel, setSelectedChannel] = useState("main");
+  const transientPolicy = roomUrl ? getTransientRoomPolicy(roomUrl) : undefined;
+  const retainedPolicy = roomView.policy ?? transientPolicy;
+  const policyMismatch = useMemo(() => {
+    if (roomInvite.kind !== "valid" || retainedPolicy === undefined) return "";
+    if (
+      roomInvite.specifiedPolicy.authMode &&
+      retainedPolicy.authMode !== roomInvite.policy.authMode
+    )
+      return "Room invitation authentication mode conflicts with the saved room policy";
+    if (
+      roomInvite.specifiedPolicy.pqMode &&
+      retainedPolicy.pqMode !== roomInvite.policy.pqMode
+    )
+      return "Room invitation ML-KEM suite conflicts with the saved room policy";
+    if (
+      roomInvite.specifiedPolicy.wireVersion &&
+      retainedPolicy.wireVersion !== roomInvite.policy.wireVersion
+    )
+      return "Room invitation protocol version conflicts with the saved room policy";
+    return "";
+  }, [retainedPolicy, roomInvite]);
+  const roomInviteError =
+    roomInvite.kind === "invalid" ? roomInvite.error : policyMismatch;
   const roomPolicy = useMemo<RoomPolicyV1>(() => {
     return (
-      roomView.policy ??
-      (roomUrl ? getTransientRoomPolicy(roomUrl) : undefined) ??
-      policyFromInvite(location.search)
+      retainedPolicy ??
+      (roomInvite.kind === "valid" ? roomInvite.policy : undefined) ??
+      immediateRoomPolicy("nopin")
     );
-  }, [location.search, roomUrl, roomView.policy]);
-
-  const goToRandomRoom = useCallback(
-    async (replace = false) => {
-      const random = await p2party.generateRandomRoomUrl();
-      navigate("/rooms/" + random, { replace });
-    },
-    [navigate],
-  );
+  }, [retainedPolicy, roomInvite]);
 
   const connectToRoom = useCallback(
     async (roomUrl: string) => {
+      if (roomInviteError.length > 0) throw new Error(roomInviteError);
+      const canonicalRoomUrl = p2party.normalizeRoomCapability(roomUrl);
       const rtcConfig: RTCConfiguration = {
         iceServers: stunServerUrls.length > 0 ? [{ urls: stunServerUrls }] : [],
         iceTransportPolicy: "all" as RTCIceTransportPolicy,
       };
       const policy =
-        getTransientRoomPolicy(roomUrl) ??
+        getTransientRoomPolicy(canonicalRoomUrl) ??
         roomView.policy ??
-        policyFromInvite(location.search);
+        (roomInvite.kind === "valid"
+          ? roomInvite.policy
+          : immediateRoomPolicy("nopin"));
       const pin =
-        policy.authMode === "pin" ? getTransientRoomPin(roomUrl) : undefined;
+        policy.authMode === "pin"
+          ? getTransientRoomPin(canonicalRoomUrl)
+          : undefined;
 
       if (policy.authMode === "pin" && !pin)
         throw new Error("Enter the room PIN before connecting");
 
       try {
-        await protocolV3.connect(roomUrl, signalingServerUrl, rtcConfig, {
-          policy,
-          pin,
-        });
+        await protocolV3.connect(
+          canonicalRoomUrl,
+          signalingServerUrl,
+          rtcConfig,
+          { policy, pin },
+        );
       } finally {
         pin?.fill(0);
       }
     },
     [
-      location.search,
+      roomInvite,
+      roomInviteError,
       roomView.policy,
       signalingServerUrl,
       stunServerUrls,
@@ -138,13 +156,17 @@ export const useRoom = ({
 
   const connectToSignaling = useCallback(
     async (roomUrl: string) => {
+      const canonicalRoomUrl = p2party.normalizeRoomCapability(roomUrl);
       // The first contact establishes an immutable authenticated room policy.
       // Never let a PIN invitation fall through the legacy policy-less path.
       if (!roomView.exists) {
-        await connectToRoom(roomUrl);
+        await connectToRoom(canonicalRoomUrl);
         return;
       }
-      await p2party.connectToSignalingServer(roomUrl, signalingServerUrl);
+      await p2party.connectToSignalingServer(
+        canonicalRoomUrl,
+        signalingServerUrl,
+      );
     },
     [connectToRoom, roomView.exists, signalingServerUrl],
   );
@@ -165,6 +187,8 @@ export const useRoom = ({
   );
 
   return {
+    roomUrl,
+    roomInviteError,
     keyPair,
     peerId: keyPair.peerId,
     roomId: roomView.id,
@@ -179,7 +203,6 @@ export const useRoom = ({
     channels: roomView.channels,
     messages,
     selectedChannel,
-    goToRandomRoom,
     connect: connectToRoom,
     connectToSignalingServer: connectToSignaling,
     disconnect: p2party.disconnectFromRoom,

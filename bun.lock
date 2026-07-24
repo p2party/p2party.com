@@ -11,7 +11,7 @@
         "class-validator": "^0.14.4",
         "clsx": "^2.1.1",
         "framer-motion": "^12.42.2",
-        "p2party": "file:../p2party-js/p2party-0.10.0.tgz",
+        "p2party": "file:../p2party-js/p2party-0.11.0.tgz",
         "qrcode": "^1.5.4",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
@@ -782,7 +782,7 @@
 
     "p-try": ["p-try@2.2.0", "", {}, "sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ=="],
 
-    "p2party": ["p2party@../p2party-js/p2party-0.10.0.tgz", { "dependencies": { "@reduxjs/toolkit": "^2.12.0", "class-validator": "^0.15.1" } }, "sha512-XIMdHcvxWTTQG1KgAA3MPMVJlTinTyvWCZkvBARTrACDvCRfpK6s5Yxoug3x43z3+3Oz8rlzTWuv4eZRqCumwA=="],
+    "p2party": ["p2party@../p2party-js/p2party-0.11.0.tgz", { "dependencies": { "@reduxjs/toolkit": "^2.12.0", "class-validator": "^0.15.1" } }, "sha512-Xku9/GxFU+IMXPVnB7GALE1HeQ1d76mdBUqqr85V6wekwzOl5UBVHUJgA27mgUf20vzUjWVVnuTaUDM68wt+Ug=="],
 
     "package-json-from-dist": ["package-json-from-dist@1.0.1", "", {}, "sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw=="],
 

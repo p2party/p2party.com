@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { useParams } from "react-router";
 import {
   BookOpenIcon,
   SignalIcon,
@@ -31,9 +30,13 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
   setAddressBookIsOpen,
   setBlacklistIsOpen,
 }) => {
-  const { roomUrl } = useParams();
-  const { peers, signalingServerConnectionState, connect, disconnectFromPeer } =
-    useRoom({ subscribeToMessages: false });
+  const {
+    roomUrl,
+    peers,
+    signalingServerConnectionState,
+    connect,
+    disconnectFromPeer,
+  } = useRoom({ subscribeToMessages: false });
 
   const handleDisconnectFromPeers = () => {
     const PEERS_LEN = peers.length;

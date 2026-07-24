@@ -8,15 +8,11 @@ import {
   lazy,
   Suspense,
 } from "react";
-import { useParams } from "react-router-dom";
 
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
 
-import type {
-  SendMessageResult,
-  MessageTransferHandle,
-} from "../protocol/v3";
+import type { SendMessageResult, MessageTransferHandle } from "../protocol/v3";
 import type { TrackedTransfer } from "../components/TransferTray";
 
 const CatAvatar = lazy(() => import("../components/avatars/cat"));
@@ -24,9 +20,7 @@ const MessageItem = lazy(() => import("../components/MessageItem"));
 const MessageInput = lazy(() => import("../components/MessageInput"));
 const TransferTray = lazy(() => import("../components/TransferTray"));
 
-const deliveryResultFrom = (
-  error: unknown,
-): SendMessageResult | undefined => {
+const deliveryResultFrom = (error: unknown): SendMessageResult | undefined => {
   if (!error || typeof error !== "object" || !("result" in error))
     return undefined;
   return (error as { result?: SendMessageResult }).result;
@@ -56,9 +50,9 @@ const ChatPage = () => {
     sendMessage,
     connectToSignalingServer,
     disconnectFromSignalingServer,
+    roomUrl,
     // purgeRoom,
   } = useRoom();
-  const { roomUrl } = useParams();
 
   const [messageCount, setMessageCount] = useState(0);
   const [, setIsDragging] = useState(false);
@@ -200,9 +194,7 @@ const ChatPage = () => {
               transfer.handle.transferId === handle.transferId
                 ? {
                     ...transfer,
-                    status: cancelledTransfersRef.current.has(
-                      handle.transferId,
-                    )
+                    status: cancelledTransfersRef.current.has(handle.transferId)
                       ? "cancelled"
                       : terminalStatus(result),
                     result,
@@ -222,9 +214,7 @@ const ChatPage = () => {
               transfer.handle.transferId === handle.transferId
                 ? {
                     ...transfer,
-                    status: cancelledTransfersRef.current.has(
-                      handle.transferId,
-                    )
+                    status: cancelledTransfersRef.current.has(handle.transferId)
                       ? "cancelled"
                       : terminalStatus(result),
                     result,
@@ -284,9 +274,7 @@ const ChatPage = () => {
   const dismissTransfer = useCallback((transferId: string) => {
     cancelledTransfersRef.current.delete(transferId);
     setTransfers((current) =>
-      current.filter(
-        (transfer) => transfer.handle.transferId !== transferId,
-      ),
+      current.filter((transfer) => transfer.handle.transferId !== transferId),
     );
   }, []);
 

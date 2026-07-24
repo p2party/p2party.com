@@ -18,24 +18,24 @@ const PeerDropdown = lazy(() => import("./PeerDropdown"));
 // const MessagesDropdown = lazy(() => import("./MessagesDropdown"));
 const Share = lazy(() => import("./ShareDropdown"));
 const DeleteDropdown = lazy(() => import("./DeleteDropdown"));
+const RoomSetupAlert = lazy(() => import("../RoomSetupAlert"));
 
 export interface NavBarProps {
   roomUrl: string;
 }
 
 const NavBar = ({ roomUrl }: NavBarProps) => {
-  const { goToRandomRoom, roomPolicy } = useRoom({
+  const { roomPolicy } = useRoom({
     subscribeToMessages: false,
   });
   const inviteUrl =
-    roomUrl.length === 64
-      ? absoluteRoomInviteUrl(roomUrl, roomPolicy)
-      : "";
+    roomUrl.length > 0 ? absoluteRoomInviteUrl(roomUrl, roomPolicy) : "";
 
   const [showSettings, setShowSettings] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(false);
   const [showBlacklist, setShowBlacklist] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+  const [showRoomSetup, setShowRoomSetup] = useState(false);
 
   return (
     <Navbar>
@@ -48,13 +48,16 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
       {/* <ConnectButtonNavigation roomUrl={roomUrl ?? ""} /> */}
 
       <NavbarSection className='gap-1'>
-        {roomUrl.length !== 64 && (
-          <NavbarItem aria-label='new room' onClick={() => goToRandomRoom()}>
+        {roomUrl.length === 0 && (
+          <NavbarItem
+            aria-label='new room'
+            onClick={() => setShowRoomSetup(true)}
+          >
             <PlusIcon />
           </NavbarItem>
         )}
 
-        {roomUrl.length === 64 && (
+        {roomUrl.length > 0 && (
           <>
             <Suspense fallback={<Spinner />}>
               <PeerDropdown
@@ -80,6 +83,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
               <QRCodeAlert
                 roomUrl={roomUrl}
                 inviteUrl={inviteUrl}
+                roomPolicy={roomPolicy}
                 isOpen={showQRCode}
                 setIsOpen={setShowQRCode}
               />
@@ -96,6 +100,9 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
 
         <Suspense fallback={<Spinner />}>
           <DeleteDropdown />
+        </Suspense>
+        <Suspense>
+          <RoomSetupAlert isOpen={showRoomSetup} setIsOpen={setShowRoomSetup} />
         </Suspense>
       </NavbarSection>
     </Navbar>

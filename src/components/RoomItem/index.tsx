@@ -4,6 +4,8 @@ import p2party from "p2party";
 
 import { Avatar } from "../avatar";
 import { TableRow, TableCell } from "../table";
+import { roomInvitePath } from "../../protocol/roomAccess";
+import { immediateRoomPolicy } from "../../protocol/v3";
 
 import type { FC } from "react";
 import type { FileExtension, UniqueRoom } from "p2party";
@@ -47,6 +49,10 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
     msgCategory: p2party.MessageCategory.Text,
     msgExtension: "txt",
   });
+  const roomPolicy = room.roomPolicy
+    ? p2party.decodeRoomPolicyV1(new Uint8Array(room.roomPolicy))
+    : immediateRoomPolicy("nopin");
+  const inviteHref = roomInvitePath(room.roomUrl, roomPolicy);
 
   useEffect(() => {
     if (!room.lastMessageMerkleRoot || room.lastMessageMerkleRoot.length === 0)
@@ -86,7 +92,7 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
   }, [room.lastMessageMerkleRoot]);
 
   return (
-    <TableRow key={room.roomId} href={`/rooms/${room.roomUrl}`}>
+    <TableRow key={room.roomId} href={inviteHref}>
       <TableCell>
         <div className='flex items-center gap-2'>
           <Avatar
@@ -98,10 +104,7 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
           />
           <div className='min-w-0'>
             <div className='truncate font-medium'>
-              p2party.com/rooms/
-              {room.roomUrl.slice(0, 3) +
-                ".." +
-                room.roomUrl.slice(room.roomUrl.length - 2)}
+              Room {room.roomId.slice(0, 8)}
             </div>
             <div className='truncate font-normal'>
               {lastMessage.msgCategory === p2party.MessageCategory.Text

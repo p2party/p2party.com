@@ -27,7 +27,7 @@ const features = [
       </svg>
     ),
     title: "End-to-End Encrypted",
-    desc: "Interactive 3DH + ML-KEM-768 feeds a per-peer Double Ratchet. Messages never touch the signaling server.",
+    desc: "Interactive 3DH + a room-fixed ML-KEM-512/768/1024 suite feeds each per-peer Double Ratchet. Messages never touch the signaling server.",
   },
   {
     icon: (
@@ -92,7 +92,7 @@ const steps = [
   {
     num: "02",
     title: "Ratchet & Scatter",
-    body: "Each chunk is protected by ChaCha20-Poly1305 under a per-peer Double Ratchet message key, then shuffled. ML-KEM-768 hardens the initial root while classical X25519 retains an independently understood security leg.",
+    body: "Each chunk is protected by ChaCha20-Poly1305 under a per-peer Double Ratchet message key, then shuffled. The room-fixed ML-KEM suite hardens the initial root while classical X25519 retains an independently understood security leg.",
   },
   {
     num: "03",
@@ -202,10 +202,7 @@ const HomePage = () => {
       </div>
 
       <Suspense>
-        <RoomSetupAlert
-          isOpen={roomSetupOpen}
-          setIsOpen={setRoomSetupOpen}
-        />
+        <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
       </Suspense>
 
       {/* Feature cards */}

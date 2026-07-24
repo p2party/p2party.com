@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
 
 import {
   Alert,
@@ -14,11 +13,10 @@ import { Input } from "../input";
 
 import { useRoom } from "../../hooks/useRoom";
 import {
-  authModeFromInvite,
   hasTransientRoomPin,
   rememberRoomAccess,
 } from "../../protocol/roomAccess";
-import { immediateRoomPolicy } from "../../protocol/v3";
+import { roomPqModeParameterSet } from "../../protocol/v3";
 
 import type { Dispatch, SetStateAction } from "react";
 
@@ -38,17 +36,10 @@ const ConnectAlert = ({
   const { connect, signalingServerUrl, roomPolicy } = useRoom({
     subscribeToMessages: false,
   });
-  const location = useLocation();
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
-  const pinRequired =
-    roomPolicy.authMode === "pin" ||
-    authModeFromInvite(location.search) === "pin";
-  const requestedPolicy =
-    pinRequired && roomPolicy.authMode !== "pin"
-      ? immediateRoomPolicy("pin")
-      : roomPolicy;
+  const pinRequired = roomPolicy.authMode === "pin";
   const pinIsLoaded = hasTransientRoomPin(roomUrl);
 
   const handleConnectNow = async () => {
@@ -62,8 +53,8 @@ const ConnectAlert = ({
     const pinBytes =
       pinRequired && pin.length > 0 ? new TextEncoder().encode(pin) : undefined;
     try {
-      if (pinBytes) rememberRoomAccess(roomUrl, requestedPolicy, pinBytes);
-      else if (!pinRequired) rememberRoomAccess(roomUrl, requestedPolicy);
+      if (pinBytes) rememberRoomAccess(roomUrl, roomPolicy, pinBytes);
+      else if (!pinRequired) rememberRoomAccess(roomUrl, roomPolicy);
       await connect(roomUrl);
       setPin("");
       setIsOpen(false);
@@ -126,7 +117,8 @@ const ConnectAlert = ({
         )}
 
         <p>
-          Room policy: hybrid ML-KEM-768 + interactive 3DH, immediate delivery
+          Room policy: hybrid ML-KEM-{roomPqModeParameterSet(roomPolicy.pqMode)}{" "}
+          + interactive 3DH, immediate delivery
           {pinRequired ? ", CPace PIN authentication" : ""}.
         </p>
 

@@ -18,13 +18,15 @@ import type { UniqueRoom } from "p2party";
 
 const CatAvatar = lazy(() => import("../components/avatars/cat"));
 const RoomListItem = lazy(() => import("../components/RoomItem"));
+const RoomSetupAlert = lazy(() => import("../components/RoomSetupAlert"));
 
 const RoomsPage = () => {
-  const { goToRandomRoom, getAllPastRooms } = useRoom({
+  const { getAllPastRooms } = useRoom({
     subscribeToMessages: false,
   });
 
   const [rooms, setRooms] = useState<UniqueRoom[]>([]);
+  const [roomSetupOpen, setRoomSetupOpen] = useState(false);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -86,10 +88,13 @@ const RoomsPage = () => {
       <div className='fixed bottom-4 left-1/2 -translate-x-1/2 lg:right-4 lg:left-auto lg:translate-x-0'>
         <Button
           className='bg-darkOrange cursor-pointer rounded-xl px-6 py-2.5 text-lg font-semibold text-white shadow-[4px_4px_0_0_rgba(0,0,0,0.18)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-black hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.24)] active:translate-x-0 active:translate-y-0'
-          onClick={async () => await goToRandomRoom()}
+          onClick={() => setRoomSetupOpen(true)}
         >
           Generate Room
         </Button>
+        <Suspense>
+          <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
+        </Suspense>
       </div>
     </div>
 

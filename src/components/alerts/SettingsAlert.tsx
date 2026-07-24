@@ -1,5 +1,4 @@
 import { FC, useState } from "react";
-import { useParams } from "react-router";
 import { useLocalStorage } from "usehooks-ts";
 
 import * as Headless from "@headlessui/react";
@@ -23,6 +22,7 @@ import {
   DEFAULT_SIGNALING_URL,
   DEFAULT_STUN_URLS,
 } from "../../hooks/useRoom";
+import { roomPqModeParameterSet } from "../../protocol/v3";
 
 // import { Checkbox, CheckboxField } from "../checkbox";
 import { Description, Label } from "../fieldset";
@@ -48,8 +48,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     stunServerUrls,
     setStunServerUrls,
     roomPolicy,
+    roomUrl,
   } = useRoom({ subscribeToMessages: false });
-  const { roomUrl } = useParams();
 
   const [chunks, setChunks] = useLocalStorage("chunksToSplitMessage", 1);
   const [percentageFilledChunk, setPercentageFilledChunk] = useLocalStorage(
@@ -200,7 +200,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
           <Divider className='my-3' />
 
           <SwitchGroup>
-            {roomUrl && roomUrl.length === 64 && (
+            {roomUrl && (
               <>
                 <SwitchField>
                   <Label>Connected to signaling server</Label>
@@ -269,7 +269,8 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
               {roomPolicy.authMode === "pin"
                 ? "CPace PIN authentication"
                 : "no room PIN"}{" "}
-              · ML-KEM-768 hybrid root · legacy signaling rendezvous.
+              · ML-KEM-{roomPqModeParameterSet(roomPolicy.pqMode)} hybrid root ·
+              legacy signaling rendezvous.
             </Description>
             <div className='grid gap-2 sm:grid-cols-2'>
               <div className='rounded-lg border-2 border-orange-500 bg-orange-50/70 p-3 dark:bg-orange-950/25'>
@@ -289,7 +290,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
                   Scheduled · not wired
                 </p>
                 <p className='mt-1 text-xs text-zinc-600 dark:text-zinc-400'>
-                  Future room-wide presets: 10 s, 60 s, or 5 min. v0.10.0
+                  Future room-wide presets: 10 s, 60 s, or 5 min. v0.11.0
                   rejects these policies until the scheduler exists.
                 </p>
               </div>

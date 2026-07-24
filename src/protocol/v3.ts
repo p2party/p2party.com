@@ -8,6 +8,7 @@ import type {
 export type { RoomPolicyV1 };
 export type RoomAuthMode = RoomPolicyV1["authMode"];
 export type RoomCoverMode = RoomPolicyV1["coverMode"];
+export type RoomPqMode = RoomPolicyV1["pqMode"];
 export type MessageTransferHandle = PackageMessageTransferHandle;
 export type SendMessageResult = Exclude<
   Awaited<PackageMessageTransferHandle["done"]>,
@@ -26,12 +27,13 @@ export const protocolV3 = {
 
 export const immediateRoomPolicy = (
   authMode: RoomAuthMode,
+  pqMode: RoomPqMode = "hybrid-mlkem768",
 ): RoomPolicyV1 => ({
   version: 1,
   revision: 0,
   wireVersion: 3,
   authMode,
-  pqMode: "hybrid-mlkem768",
+  pqMode,
   rendezvousMode: "legacy-signaling",
   coverMode: "immediate",
   coverCadenceMs: 0,
@@ -39,3 +41,11 @@ export const immediateRoomPolicy = (
   coverFramesPerCell: 0,
   coverDurationEpochs: 0,
 });
+
+export const roomPqModeParameterSet = (
+  pqMode: RoomPqMode,
+): 512 | 768 | 1024 => {
+  if (pqMode === "hybrid-mlkem512") return 512;
+  if (pqMode === "hybrid-mlkem768") return 768;
+  return 1024;
+};
