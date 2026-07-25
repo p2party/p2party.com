@@ -37,23 +37,21 @@ const PRESET = { cadence: 10_000, lanes: 2, frames: 16, epochs: 1 };
 const log = (...a) =>
   console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
 
-const encodePolicyParam = (policy) => {
-  // Mirrors the frontend's canonical 32-byte RoomPolicyV1 wire form.
-  const bytes = Buffer.alloc(32);
-  bytes.write("P2PR", 0, "ascii");
-  bytes[4] = 1; // format
-  bytes[5] = 4; // wireVersion
-  bytes[6] = policy.pin ? 1 : 0;
-  bytes[7] = 1; // hybrid-mlkem768
-  bytes[8] = 0; // legacy-signaling
-  bytes[9] = 1; // scheduled
-  bytes.writeUInt32BE(0, 10); // revision
-  bytes.writeUInt32BE(policy.cadence, 14);
-  bytes.writeUInt16BE(policy.lanes, 18);
-  bytes.writeUInt16BE(policy.frames, 20);
-  bytes.writeUInt16BE(policy.epochs, 22);
-  return bytes.toString("base64url");
-};
+/**
+ * Build the ?policy= parameter with the LIBRARY's own codec rather than a
+ * hand-rolled byte layout — a guessed layout silently produces an invalid
+ * invitation, and the app then never reaches the connect flow.
+ */
+const encodePolicyParam = async (page, policy) =>
+  page.evaluate((p) => {
+    const bytes = window.p2party.encodeRoomPolicyV1(p);
+    let binary = "";
+    for (const b of bytes) binary += String.fromCharCode(b);
+    return btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }, policy);
 
 const stats = (values) => {
   if (values.length === 0) return null;
@@ -96,8 +94,19 @@ const run = async () => {
   if (existsSync(PCAP)) unlinkSync(PCAP);
   const capability = randomBytes(32);
   const roomUrl = capability.toString("hex");
-  const policyParam = encodePolicyParam({ ...PRESET, pin: false });
-  const roomPath = `${APP}/r?policy=${policyParam}#v1.${capability.toString("base64url")}`;
+  const scheduledPolicy = {
+    version: 1,
+    revision: 0,
+    wireVersion: 4,
+    authMode: "nopin",
+    pqMode: "hybrid-mlkem768",
+    rendezvousMode: "legacy-signaling",
+    coverMode: "scheduled",
+    coverCadenceMs: PRESET.cadence,
+    coverLanes: PRESET.lanes,
+    coverFramesPerCell: PRESET.frames,
+    coverDurationEpochs: PRESET.epochs,
+  };
 
   log("starting loopback capture …");
   const tcpdump = spawn(
@@ -117,6 +126,15 @@ const run = async () => {
   let phaseBoundary = 0;
   let sendStart = 0;
   try {
+    // Derive the invite parameter from the app's own encoder.
+    const probe = await browser.newContext();
+    const probePage = await probe.newPage();
+    await probePage.goto(APP, { waitUntil: "networkidle" });
+    const policyParam = await encodePolicyParam(probePage, scheduledPolicy);
+    await probe.close();
+    const roomPath = `${APP}/r?policy=${policyParam}#v1.${capability.toString("base64url")}`;
+    log(`scheduled-cover invite: /r?policy=${policyParam.slice(0, 12)}…`);
+
     const contexts = [];
     for (const tag of ["A", "B"]) {
       const context = await browser.newContext();
@@ -185,6 +203,34 @@ const run = async () => {
     log("real 512 KiB transfer started — sending phase begins");
     await contexts[0].page.waitForTimeout(SEND_MS);
     log("sending phase captured");
+
+    // The comparison is only meaningful if the payload REALLY moved: a send
+    // that silently failed would make the two phases identical for the wrong
+    // reason.
+    const deliveredBytes = await contexts[1].page.evaluate(
+      async ({ url, expect }) => {
+        const P = window.p2party;
+        const room = (P.roomSelector(P.store.getState()) || []).find(
+          (r) => r.url === url,
+        );
+        if (!room) return 0;
+        let best = 0;
+        for (const m of room.messages) {
+          if (!m.merkleRootHex || m.totalSize !== expect) continue;
+          const res = await P.readMessage(m.merkleRootHex, undefined, false);
+          best = Math.max(best, Math.round((res.percentage / 100) * expect));
+        }
+        return best;
+      },
+      { url: roomUrl, expect: 512 * 1024 },
+    );
+    log(
+      `receiver holds ${String(deliveredBytes)} / ${String(512 * 1024)} bytes of the real payload`,
+    );
+    if (deliveredBytes === 0)
+      throw new Error(
+        "the real transfer never reached the peer — the phase comparison would be meaningless",
+      );
 
     for (const { context } of contexts) await context.close();
   } finally {

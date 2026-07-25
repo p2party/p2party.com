@@ -6,6 +6,7 @@ import p2party from "p2party";
 
 import { Button } from "../components/button";
 import { Link } from "../components/link";
+import HeroDemo from "../components/custom/HeroDemo";
 
 const RoomSetupAlert = lazy(() => import("../components/RoomSetupAlert"));
 
@@ -134,18 +135,10 @@ const HomePage = () => {
       />
 
       {/* Hero */}
-      <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-4 pt-8 pb-12 sm:gap-6 sm:pt-16 sm:pb-20 md:grid-cols-2 md:gap-8 lg:gap-12'>
-        {/* Visual */}
+      <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-8 pb-10 sm:gap-8 sm:pt-14 sm:pb-14 md:grid-cols-2 md:gap-10 lg:gap-12'>
+        {/* Visual: a looping demonstration of one message on the wire */}
         <div className='order-first flex justify-center md:order-last md:justify-end'>
-          {/* The square asset carries ~44% empty margin; logo-cat-tight.svg is
-              the same art cropped to its bounding box, so the mark fills the
-              space it reserves. */}
-          <img
-            src='/logo-cat-tight.svg'
-            alt=''
-            aria-hidden
-            className='animate-float h-52 w-auto select-none motion-reduce:animate-none sm:h-72 md:h-80 lg:h-[26rem]'
-          />
+          <HeroDemo />
         </div>
 
         {/* Copy + CTAs */}
@@ -162,9 +155,9 @@ const HomePage = () => {
           </h1>
 
           <p className='animate-slide-up mt-4 max-w-lg text-lg leading-relaxed text-balance text-zinc-500 dark:text-zinc-400'>
-            Peer-to-peer rooms with post-quantum-hardened ratchets.{" "}
-            <br className='hidden lg:block' />
-            Sniffers get uniform cells. You get privacy. No accounts.
+            Share text and files straight from your browser to theirs. Whoever
+            is watching the wire sees identical encrypted blocks — not who
+            spoke, not when, not how much.
           </p>
 
           <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-center md:justify-start'>
@@ -175,7 +168,7 @@ const HomePage = () => {
             >
               Generate Room
             </Button>
-            <div className='-ml-3 flex items-center justify-center gap-1 sm:gap-0'>
+            <div className='flex items-center justify-center gap-1 sm:-ml-3 sm:gap-0'>
               <Link
                 href='/blog'
                 className='inline-flex items-center justify-center gap-1.5 rounded-none px-3 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 sm:px-5 dark:text-zinc-400 dark:hover:text-orange-300'
@@ -213,7 +206,7 @@ const HomePage = () => {
       </Suspense>
 
       {/* Feature cards */}
-      <div className='relative mx-auto mb-16 grid w-full max-w-6xl gap-5 sm:grid-cols-2 xl:grid-cols-4'>
+      <div className='relative mx-auto mb-14 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4'>
         {features.map((f, i) => (
           <div
             key={f.title}
