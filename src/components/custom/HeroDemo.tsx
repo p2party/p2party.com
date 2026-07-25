@@ -104,7 +104,7 @@ const HeroDemo = () => {
         src='/logo-cat-tight.svg'
         alt=''
         aria-hidden
-        className='pointer-events-none absolute top-4 left-1/2 h-48 -translate-x-1/2 opacity-[0.15] select-none sm:h-56 dark:opacity-[0.18]'
+        className='pointer-events-none absolute top-6 left-1/2 h-44 -translate-x-1/2 opacity-[0.15] select-none sm:h-52 dark:opacity-[0.18]'
       />
 
       <figcaption className='relative flex items-center justify-between border-b-2 border-zinc-950 px-3 py-1.5 font-mono text-[10px] font-bold tracking-[0.15em] uppercase dark:border-zinc-200'>
@@ -115,7 +115,7 @@ const HeroDemo = () => {
       </figcaption>
 
       {/* Chat */}
-      <div className='relative flex min-h-56 flex-col justify-end gap-2 px-4 py-4 sm:min-h-64'>
+      <div className='relative flex min-h-64 flex-col justify-end gap-2 px-4 py-4 sm:min-h-72'>
         {bubbles.map((bubble, index) => (
           <p
             key={`${bubble.from}-${String(index)}`}
@@ -149,12 +149,12 @@ const HeroDemo = () => {
           })}
         </div>
         <p
-          className='mt-2 font-mono text-[11px] leading-relaxed text-zinc-300'
+          className='mt-2 flex min-h-[2.5rem] items-start gap-1.5 font-mono text-[11px] leading-relaxed text-zinc-300'
           aria-live='polite'
         >
           <span className='text-orange-400'>›</span> {current.note}
         </p>
-        <p className='mt-1 font-mono text-[10px] text-zinc-500 sm:text-[11px]'>
+        <p className='mt-1 flex min-h-[2.25rem] items-start font-mono text-[10px] leading-relaxed text-zinc-500 sm:min-h-[1.5rem] sm:text-[11px]'>
           {REAL_CELLS.size} of {TOTAL_CELLS} cells carry your bytes — the wire
           cannot tell which
         </p>
