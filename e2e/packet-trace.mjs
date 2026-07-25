@@ -125,6 +125,8 @@ const run = async () => {
   const browser = await chromium.launch({ headless: true });
   let phaseBoundary = 0;
   let sendStart = 0;
+  let sendEnd = 0;
+  let idleStart = 0;
   try {
     // Derive the invite parameter from the app's own encoder.
     const probe = await browser.newContext();
@@ -167,14 +169,20 @@ const run = async () => {
           (r) => r.url === url,
         );
         const cover = Object.values(room?.coverStatusByPeer ?? {});
-        return cover.some((s) => s === "active" || s === "starting");
+        // "starting" is set synchronously inside CoverScheduler.start(); the
+        // first cell is not emitted until the next cycle boundary, up to a
+        // full cadence later. Only "active" means cells are actually flowing.
+        return cover.some((s) => s === "active");
       }, roomUrl);
       if (!covered) await contexts[0].page.waitForTimeout(500);
     }
     if (!covered) throw new Error("scheduled cover never started");
-    log("cover runtime active — idle phase begins");
+    // Let one full cycle elapse so the idle window contains only steady-state
+    // cover, never the pre-first-boundary silence.
+    await contexts[0].page.waitForTimeout(PRESET.cadence * PRESET.epochs);
+    log("cover steady — idle phase begins");
 
-    const idleStart = Date.now();
+    idleStart = Date.now();
     await contexts[0].page.waitForTimeout(IDLE_MS);
     phaseBoundary = Date.now();
     log(`idle phase captured (${String(phaseBoundary - idleStart)} ms)`);
@@ -202,6 +210,7 @@ const run = async () => {
     );
     log("real 512 KiB transfer started — sending phase begins");
     await contexts[0].page.waitForTimeout(SEND_MS);
+    sendEnd = Date.now();
     log("sending phase captured");
 
     // The comparison is only meaningful if the payload REALLY moved: a send
@@ -245,8 +254,10 @@ const run = async () => {
     ["-r", PCAP, "-T", "fields", "-e", "frame.time_epoch", "-e", "udp.length"],
     { maxBuffer: 256 * 1024 * 1024, encoding: "utf8" },
   );
+  const idleStartSec = idleStart / 1000;
   const boundarySec = phaseBoundary / 1000;
   const sendSec = sendStart / 1000;
+  const sendEndSec = sendEnd / 1000;
   const idle = [];
   const sending = [];
   for (const line of raw.split("\n")) {
@@ -255,8 +266,8 @@ const run = async () => {
     const ts = Number(t);
     const size = Number(len);
     if (!Number.isFinite(ts) || !Number.isFinite(size)) continue;
-    if (ts < boundarySec) idle.push({ ts, size });
-    else if (ts >= sendSec) sending.push({ ts, size });
+    if (ts >= idleStartSec && ts < boundarySec) idle.push({ ts, size });
+    else if (ts >= sendSec && ts < sendEndSec) sending.push({ ts, size });
   }
   const gaps = (rows) => {
     const g = [];
@@ -287,16 +298,31 @@ const run = async () => {
       idle: new Set(idleSizes).size,
       sending: new Set(sendSizes).size,
     },
-    packetRateRatio:
-      idle.length > 0
-        ? Number(
-            (
-              sending.length /
-              Math.max(1, SEND_MS / 1000) /
-              (idle.length / Math.max(1, IDLE_MS / 1000))
-            ).toFixed(3),
-          )
-        : null,
+    // Rates are computed from the OBSERVED span of each bucket, so a bucket
+    // that starts late or runs long cannot masquerade as a rate change.
+    packetRateRatio: (() => {
+      const span = (rows) =>
+        rows.length > 1 ? rows[rows.length - 1].ts - rows[0].ts : 0;
+      const idleSpan = span(idle);
+      const sendSpan = span(sending);
+      if (idleSpan <= 0 || sendSpan <= 0) return null;
+      return Number(
+        (sending.length / sendSpan / (idle.length / idleSpan)).toFixed(3),
+      );
+    })(),
+    observedSpansSec: {
+      idle: Number(
+        (idle.length > 1 ? idle[idle.length - 1].ts - idle[0].ts : 0).toFixed(
+          2,
+        ),
+      ),
+      sending: Number(
+        (sending.length > 1
+          ? sending[sending.length - 1].ts - sending[0].ts
+          : 0
+        ).toFixed(2),
+      ),
+    },
   };
   console.log(JSON.stringify(report, null, 2));
 
