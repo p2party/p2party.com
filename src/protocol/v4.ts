@@ -10,6 +10,7 @@ export type { RoomPolicyV1 };
 export type RoomAuthMode = RoomPolicyV1["authMode"];
 export type RoomCoverMode = RoomPolicyV1["coverMode"];
 export type RoomPqMode = RoomPolicyV1["pqMode"];
+export type RoomRendezvousMode = RoomPolicyV1["rendezvousMode"];
 export type MessageTransferHandle = PackageMessageTransferHandle;
 export type SendMessageResult = Exclude<
   Awaited<PackageMessageTransferHandle["done"]>,
@@ -155,3 +156,105 @@ export const coverModeSummary = (policy: RoomPolicyV1): string => {
   if (preset) return `scheduled cover, ${preset.label}`;
   return `scheduled cover, ${String(policy.coverCadenceMs)} ms cadence`;
 };
+
+/**
+ * Protocol limits for a scheduled cover schedule, as enforced by the
+ * library's validateRoomPolicyV1. Mirrored here so the form can validate
+ * before it builds a policy; the library remains the authority.
+ */
+export const COVER_LIMITS = {
+  minCadenceMs: 1_000,
+  maxCadenceMs: 3_600_000,
+  maxLanes: 16,
+  maxFramesPerCell: 1_024,
+  minSlotMs: 25,
+} as const;
+
+/** The bytes a fixed 65,490-byte cell occupies once framed. */
+export const CELL_BYTES = 65_490;
+
+export interface CoverSchedule {
+  coverCadenceMs: number;
+  coverLanes: number;
+  coverFramesPerCell: number;
+  coverDurationEpochs: number;
+}
+
+/**
+ * Reject a schedule the library would reject, with a message that names the
+ * offending field. Returns "" when the schedule is valid.
+ */
+export const validateCoverSchedule = (schedule: CoverSchedule): string => {
+  const {
+    coverCadenceMs,
+    coverLanes,
+    coverFramesPerCell,
+    coverDurationEpochs,
+  } = schedule;
+  if (!Number.isInteger(coverCadenceMs) || !Number.isInteger(coverLanes))
+    return "Schedule values must be whole numbers.";
+  if (
+    coverCadenceMs < COVER_LIMITS.minCadenceMs ||
+    coverCadenceMs > COVER_LIMITS.maxCadenceMs
+  )
+    return `Cycle length must be between ${String(COVER_LIMITS.minCadenceMs)} ms and ${String(COVER_LIMITS.maxCadenceMs)} ms.`;
+  if (coverLanes < 1 || coverLanes > COVER_LIMITS.maxLanes)
+    return `Lanes must be between 1 and ${String(COVER_LIMITS.maxLanes)}.`;
+  if (
+    coverFramesPerCell < 1 ||
+    coverFramesPerCell > COVER_LIMITS.maxFramesPerCell
+  )
+    return `Cells per lane must be between 1 and ${String(COVER_LIMITS.maxFramesPerCell)}.`;
+  if (coverDurationEpochs < 1) return "Epochs per cycle must be at least 1.";
+  const slotMs = coverCadenceMs / (coverLanes * coverFramesPerCell);
+  if (slotMs < COVER_LIMITS.minSlotMs)
+    return `That leaves ${slotMs.toFixed(1)} ms per cell, below the ${String(COVER_LIMITS.minSlotMs)} ms the transport timer can hold. Lengthen the cycle or reduce lanes/cells.`;
+  return "";
+};
+
+/** Milliseconds between consecutive cells on one lane. */
+export const coverSlotMs = (schedule: CoverSchedule): number =>
+  schedule.coverCadenceMs / (schedule.coverLanes * schedule.coverFramesPerCell);
+
+/** Bytes this schedule puts on the wire per cycle, per peer edge. */
+export const coverBytesPerCycle = (schedule: CoverSchedule): number =>
+  schedule.coverLanes *
+  schedule.coverFramesPerCell *
+  schedule.coverDurationEpochs *
+  CELL_BYTES;
+
+export const scheduledRoomPolicyFrom = (
+  authMode: RoomAuthMode,
+  pqMode: RoomPqMode,
+  schedule: CoverSchedule,
+  rendezvousMode: RoomRendezvousMode = "legacy-signaling",
+  revision = 0,
+): RoomPolicyV1 => ({
+  version: 1,
+  revision,
+  wireVersion: 4,
+  authMode,
+  pqMode,
+  rendezvousMode,
+  coverMode: "scheduled",
+  ...schedule,
+});
+
+export const immediateRoomPolicyFrom = (
+  authMode: RoomAuthMode,
+  pqMode: RoomPqMode,
+  rendezvousMode: RoomRendezvousMode = "legacy-signaling",
+  revision = 0,
+): RoomPolicyV1 => ({
+  version: 1,
+  revision,
+  wireVersion: 4,
+  authMode,
+  pqMode,
+  rendezvousMode,
+  coverMode: "immediate",
+  coverCadenceMs: 0,
+  coverLanes: 0,
+  coverFramesPerCell: 0,
+  coverDurationEpochs: 0,
+});

@@ -54,8 +54,27 @@ const SCRIPT: Step[] = [
   { note: "receipt per cell — real and cover alike", cells: 8, ms: 2000 },
 ];
 
+/**
+ * Every number below is derived from the library's constants for the ONE
+ * scenario this illustration depicts — there is no generic answer, because
+ * cell counts depend on the payload and on the room's settings.
+ *
+ *   WIRE_CHUNK_FRAME_LEN  = 65,490 B  (the complete cell on the wire)
+ *   CHUNK_PLAINTEXT_LEN   = 65,405 B  (authenticated plaintext)
+ *   METADATA_LEN+PROOF_LEN=  3,493 B  (header + Merkle proof)
+ *   → CHUNK_LEN           = 61,912 B  of your bytes per cell, at most
+ *
+ * Scenario: a 256 KiB file, the app's default 90% real-data fill, and
+ * "minimum cells per message" set to 8.
+ *   ceil(262,144 / (0.9 x 61,912)) = 5 cells carry payload
+ *   the remaining 3 are pure cover → 8 cells total
+ *   each cell fragments into ~54 datagrams (65,490 / 1,210 B of UDP payload,
+ *   the packet size measured on the wire)
+ */
+const SCENARIO = "256 KiB file · 90% fill · min 8 cells";
+const CELL_WIRE_BYTES = 65_490;
+const PAYLOAD_BYTES_PER_CELL = 61_912;
 const TOTAL_CELLS = 8;
-/** One 65,490-byte cell fragments into this many datagrams on the wire. */
 const PACKETS_PER_CELL = 54;
 const HEX = "0123456789abcdef";
 
@@ -75,9 +94,9 @@ const cellHex = (cell: number, length: number): string => {
   }
   return out;
 };
-// Which strip positions carry real bytes. The point of the illustration is
-// that this is not observable — the marker only appears on the legend.
-const REAL_CELLS = new Set([1, 4, 6]);
+// Five of the eight cells carry payload (derived above); which five is not
+// observable, so the positions are arbitrary by design.
+const REAL_CELLS = new Set([0, 2, 3, 5, 6]);
 
 const HeroDemo = () => {
   const [step, setStep] = useState(0);
@@ -181,7 +200,8 @@ const HeroDemo = () => {
         {/* What an observer actually collects: opaque bytes, and counts. */}
         <div className='mt-2 border-t border-zinc-800 pt-2'>
           <p className='truncate font-mono text-[10px] text-zinc-600 sm:text-[11px]'>
-            {cellHex(Math.max(0, current.cells - 1), 24)}
+            <span className='text-zinc-700'>sample</span>{" "}
+            {cellHex(Math.max(0, current.cells - 1), 20)}
           </p>
           <dl className='mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 font-mono text-[10px] sm:text-[11px]'>
             <div className='flex items-baseline gap-1.5'>
@@ -197,14 +217,16 @@ const HeroDemo = () => {
               </dd>
             </div>
             <div className='flex items-baseline gap-1.5'>
-              <dt className='text-zinc-500'>carrying your bytes</dt>
+              <dt className='text-zinc-500'>carrying payload</dt>
               <dd className='text-orange-400'>
-                {[...REAL_CELLS].filter((cell) => cell < current.cells).length}
+                {[...REAL_CELLS].filter((cell) => cell < current.cells).length}/
+                {REAL_CELLS.size}
               </dd>
             </div>
           </dl>
-          <p className='mt-1 min-h-[1.5rem] font-mono text-[10px] leading-relaxed text-zinc-500'>
-            every cell is the same size — the wire cannot tell which
+          <p className='mt-1 min-h-[2rem] font-mono text-[10px] leading-relaxed text-zinc-500 sm:min-h-[1.5rem]'>
+            {SCENARIO} · every cell {CELL_WIRE_BYTES.toLocaleString()} B, ≤{" "}
+            {PAYLOAD_BYTES_PER_CELL.toLocaleString()} B of it yours
           </p>
         </div>
       </div>

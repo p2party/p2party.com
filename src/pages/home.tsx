@@ -60,7 +60,7 @@ const features = [
       </svg>
     ),
     title: "Offensive Cryptography",
-    desc: "Every message is split into uniform 64 KB chunks padded with cryptographic noise. Eavesdroppers harvest mountains of junk.",
+    desc: "Every message is split into uniform 65,490-byte cells padded with cryptographic noise. Eavesdroppers harvest mountains of junk.",
   },
   {
     icon: (
@@ -87,7 +87,7 @@ const steps = [
   {
     num: "01",
     title: "Chunk & Flood",
-    body: "Your message is split into fixed-size 64 KiB wire cells. Real bytes sit at randomized offsets and the remaining space is filled with cryptographic noise, so every emitted cell has the same outer size.",
+    body: "Your message is split into fixed-size 65,490-byte wire cells. Real bytes sit at randomized offsets and the remaining space is filled with cryptographic noise, so every emitted cell has the same outer size.",
   },
   {
     num: "02",
@@ -97,7 +97,7 @@ const steps = [
   {
     num: "03",
     title: "Verify & Reassemble",
-    body: "The recipient decrypts each cell, checks its Merkle proof, and reassembles the payload. Immediate delivery is the default; timed room-wide cover is an explicit future policy, not a claim about today’s network.",
+    body: "The recipient decrypts each cell, checks its Merkle proof, and reassembles the payload. Immediate delivery is the default; a room can instead fix a timed cover schedule, which every peer then follows.",
   },
 ];
 
