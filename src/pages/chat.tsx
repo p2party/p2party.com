@@ -342,8 +342,26 @@ const ChatPage = () => {
       <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
         <HandshakeStatusBanner />
 
+        {/* The socket is open but the server has not accepted our signed
+            identity challenge yet. The library will not request the room's
+            peer list until it does, so without this the user sits on
+            "Waiting for peers" forever and blames the other person for a
+            fault that is entirely on this side. */}
+        {signalingServerConnectionState.isConnected &&
+          !signalingServerConnectionState.isVerified && (
+            <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
+              <Badge
+                color='yellow'
+                className='shadow-brutal-sm min-h-11 w-full items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase dark:border-zinc-200'
+              >
+                Verifying identity{dots}
+              </Badge>
+            </div>
+          )}
+
         {peers.length === 0 &&
           signalingServerConnectionState.isConnected &&
+          signalingServerConnectionState.isVerified &&
           !hasHandshakeFailure && (
             <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
               <Badge

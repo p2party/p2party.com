@@ -104,7 +104,15 @@ const DiagnosticsAlert = ({ isOpen, setIsOpen }: DiagnosticsAlertProps) => {
           />
           <Row
             label='Signaling'
-            value={`${signalingServerConnectionState.isConnected ? "connected" : "disconnected"} · ${signalingServerUrl}`}
+            // An open socket is not an authenticated one: the library gates the
+            // peer-list request on isVerified, so the two states differ.
+            value={`${
+              signalingServerConnectionState.isConnected
+                ? signalingServerConnectionState.isVerified
+                  ? "connected · identity verified"
+                  : "connected · NOT verified"
+                : "disconnected"
+            } · ${signalingServerUrl}`}
           />
         </Section>
 
