@@ -135,9 +135,9 @@ const HomePage = () => {
       />
 
       {/* Hero */}
-      <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-8 pb-10 sm:gap-8 sm:pt-14 sm:pb-14 md:grid-cols-2 md:items-center md:gap-x-10 md:gap-y-5 lg:gap-x-12'>
+      <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-8 pb-10 sm:gap-8 sm:pt-14 sm:pb-14 md:grid-cols-2 md:items-center md:gap-x-10 md:gap-y-4 lg:gap-x-12'>
         {/* Headline — first on every screen */}
-        <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-1 md:items-start md:text-left'>
+        <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-1 md:items-start md:justify-end md:self-end md:text-left'>
           <span className='animate-fade-in mb-4 inline-flex max-w-full items-center gap-2 border-2 border-zinc-950 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] whitespace-nowrap text-zinc-950 uppercase sm:px-3 sm:text-xs sm:tracking-[0.18em] md:text-[10px] md:tracking-[0.08em] lg:text-xs lg:tracking-[0.18em] dark:border-zinc-200 dark:text-white'>
             <span className='bg-darkOrange inline-block size-1.5' />
             no accounts · peer-to-peer · no cloud storage
@@ -156,7 +156,7 @@ const HomePage = () => {
         </div>
 
         {/* Copy + CTAs */}
-        <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:text-left'>
+        <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:self-start md:text-left'>
           <p className='animate-slide-up max-w-lg text-justify text-lg leading-relaxed hyphens-auto text-zinc-500 dark:text-zinc-400'>
             Share text and files straight from your browser to theirs. Whoever
             is watching the wire sees identical encrypted blocks — not who
@@ -171,7 +171,7 @@ const HomePage = () => {
             >
               Generate Room
             </Button>
-            <div className='-ml-3 flex items-center justify-center gap-1 sm:gap-0 md:justify-start'>
+            <div className='-mx-3 flex w-[calc(100%+1.5rem)] items-center justify-between gap-1 sm:gap-0'>
               <Link
                 href='/blog'
                 className='inline-flex items-center justify-center gap-1.5 rounded-none px-3 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 sm:px-5 dark:text-zinc-400 dark:hover:text-orange-300'

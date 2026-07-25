@@ -155,13 +155,13 @@ const HeroDemo = () => {
       </figcaption>
 
       {/* Chat */}
-      <div className='relative flex min-h-64 flex-col justify-end gap-2 px-4 py-4 sm:min-h-72'>
+      <div className='relative flex min-h-52 flex-col justify-end gap-2 px-4 py-3.5 sm:min-h-60'>
         {/* The mark is the backdrop of the screen, centred within it. */}
         <img
           src='/logo-cat-tight.svg'
           alt=''
           aria-hidden
-          className='pointer-events-none absolute top-1/2 left-1/2 h-44 -translate-x-1/2 -translate-y-1/2 opacity-[0.15] select-none sm:h-52 dark:opacity-[0.18]'
+          className='pointer-events-none absolute top-1/2 left-1/2 h-36 -translate-x-1/2 -translate-y-1/2 opacity-[0.15] select-none sm:h-44 dark:opacity-[0.2]'
         />
 
         {showFile && (
