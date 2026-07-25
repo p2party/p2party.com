@@ -134,7 +134,7 @@ const ChatLayout: FC<PropsWithChildren> = () => {
         <main className='flex min-h-0 flex-1 items-center justify-center p-6'>
           <div
             role='alert'
-            className='max-w-xl border-2 border-red-700 bg-red-50 p-5 font-mono text-sm text-red-900 shadow-[6px_6px_0_0_rgba(185,28,28,0.25)] dark:bg-red-950/40 dark:text-red-100'
+            className='shadow-brutal max-w-xl border-2 border-red-700 bg-red-50 p-5 font-mono text-sm text-red-900 dark:bg-red-950/40 dark:text-red-100'
           >
             <p className='font-black uppercase'>Invalid room invitation</p>
             <p className='mt-2'>{roomInviteError}</p>

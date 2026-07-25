@@ -115,7 +115,7 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
             <div className='truncate font-medium'>
               Room {room.roomId.slice(0, 8)}
               {!inviteHref && (
-                <span className='ml-2 rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'>
+                <span className='ml-2 border-2 border-zinc-400 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-[0.1em] text-zinc-600 uppercase dark:border-zinc-600 dark:text-zinc-400'>
                   protocol v3 — retired
                 </span>
               )}

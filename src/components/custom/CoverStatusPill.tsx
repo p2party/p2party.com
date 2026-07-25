@@ -60,7 +60,7 @@ const CoverStatusPill = () => {
           : "No peer edge is on the cover schedule yet"
       }
       aria-live='polite'
-      className='font-mono text-xs whitespace-nowrap'
+      className='rounded-none border-2 border-zinc-950 font-mono text-[10px] font-bold tracking-[0.1em] whitespace-nowrap uppercase dark:border-zinc-200'
     >
       {pill.text}
     </Badge>

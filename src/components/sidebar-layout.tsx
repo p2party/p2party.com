@@ -29,13 +29,13 @@ function MobileSidebar({
     <Headless.Dialog open={open} onClose={close} className='lg:hidden'>
       <Headless.DialogBackdrop
         transition
-        className='fixed inset-0 bg-black/30 transition data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in'
+        className='fixed inset-0 bg-zinc-950/60 transition data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in'
       />
       <Headless.DialogPanel
         transition
-        className='fixed inset-y-0 w-full max-w-80 p-2 transition duration-300 ease-in-out data-closed:-translate-x-full'
+        className='fixed inset-y-0 w-full max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full'
       >
-        <div className='flex h-full flex-col rounded-lg bg-white pt-(--safe-area-inset-top) shadow-xs ring-1 ring-zinc-950/5 dark:bg-zinc-900 dark:ring-white/10'>
+        <div className='flex h-full flex-col border-r-2 border-zinc-950 bg-zinc-50 pt-(--safe-area-inset-top) dark:border-zinc-200 dark:bg-zinc-950'>
           <div className='-mb-3 px-4 pt-3'>
             <Headless.CloseButton as={NavbarItem} aria-label='Close navigation'>
               <CloseMenuIcon />
@@ -59,7 +59,7 @@ export function SidebarLayout({
   const [showSidebar, setShowSidebar] = useState(false);
 
   return (
-    <div className='relative isolate flex h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full bg-white max-lg:flex-col lg:bg-zinc-100 dark:bg-black dark:lg:bg-zinc-950'>
+    <div className='relative isolate flex h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full bg-white max-lg:flex-col lg:bg-zinc-50 dark:bg-black dark:lg:bg-zinc-950'>
       {/* Sidebar on desktop */}
       <div className='fixed inset-y-0 left-0 w-64 max-lg:hidden'>{sidebar}</div>
 
@@ -69,7 +69,7 @@ export function SidebarLayout({
       </MobileSidebar>
 
       {/* Navbar on mobile */}
-      <header className='fixed top-0 right-0 left-0 z-50 flex items-center bg-white px-4 lg:hidden dark:bg-black'>
+      <header className='fixed top-0 right-0 left-0 z-50 flex items-center border-b-2 border-zinc-950 bg-white px-4 lg:hidden dark:border-zinc-200 dark:bg-black'>
         <div className='py-2'>
           <NavbarItem
             onClick={() => setShowSidebar(true)}
@@ -83,7 +83,7 @@ export function SidebarLayout({
 
       {/* Content */}
       <main className='flex flex-1 flex-col pb-2 lg:min-w-0 lg:pt-2 lg:pr-2 lg:pl-64'>
-        <div className='flex grow flex-col bg-white px-1 py-2 lg:rounded-lg lg:px-10 lg:shadow-sm lg:ring-1 lg:ring-zinc-950/5 dark:bg-black dark:lg:ring-white/10'>
+        <div className='flex grow flex-col bg-white px-1 py-2 lg:border-2 lg:border-zinc-950 lg:px-10 dark:bg-black dark:lg:border-zinc-200'>
           <div className='mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col'>
             {children}
           </div>

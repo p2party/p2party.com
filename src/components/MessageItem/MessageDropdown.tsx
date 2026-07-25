@@ -184,13 +184,13 @@ const MessageDropdown = ({
 
   return (
     <div
-      className={`relative my-1 w-auto max-w-full overflow-hidden rounded-2xl border p-2 shadow-md transition-shadow hover:shadow-lg md:max-w-lg ${message.fromPeerId === peerId ? "bg-mediumOrange ml-3 border-orange-300/50 lg:ml-0 dark:border-orange-700/40" : "border-darkOrange/30 mr-3 bg-zinc-900 lg:mr-0 dark:border-orange-800/30"}`}
+      className={`relative my-1 w-auto max-w-full overflow-hidden border-2 p-2.5 transition-transform md:max-w-lg ${message.fromPeerId === peerId ? "bg-darkOrange ml-3 border-zinc-950 text-white lg:ml-0 dark:border-zinc-200" : "mr-3 border-zinc-950 bg-white text-zinc-950 lg:mr-0 dark:border-zinc-200 dark:bg-zinc-950 dark:text-white"}`}
     >
       <Dropdown>
         <DropdownButton plain className='size-fit cursor-pointer'>
           {msgCategory === p2party.MessageCategory.Text && url.length === 0 && (
             <Text
-              className={`text-left tracking-wide wrap-break-word whitespace-pre-line ${message.fromPeerId === peerId ? "font-medium text-black dark:font-semibold dark:text-black" : "font-normal text-white dark:text-white"} text-pretty wrap-break-word text-clip hyphens-auto antialiased select-text`}
+              className={`text-left tracking-wide wrap-break-word whitespace-pre-line ${message.fromPeerId === peerId ? "font-medium text-white" : "font-normal text-zinc-950 dark:text-white"} text-pretty wrap-break-word text-clip hyphens-auto antialiased select-text`}
             >
               {msg as string}
             </Text>
@@ -207,7 +207,7 @@ const MessageDropdown = ({
           {msgCategory !== p2party.MessageCategory.Text && (
             <div className='flex w-full items-center justify-between px-2'>
               <Text
-                className={`text-left tracking-wide wrap-break-word whitespace-pre-wrap ${message.fromPeerId === peerId ? "font-medium text-black dark:font-semibold dark:text-black" : "font-normal text-white dark:text-white"} antialiased`}
+                className={`text-left tracking-wide wrap-break-word whitespace-pre-wrap ${message.fromPeerId === peerId ? "font-medium text-white" : "font-normal text-zinc-950 dark:text-white"} antialiased`}
               >
                 {truncateFilename(`${msgFilename}`, 20)}
               </Text>
@@ -308,7 +308,7 @@ const MessageDropdown = ({
               and how many resend rounds it took. Receiver-side counters are
               absent on messages you sent. */}
           {message.chunksReceivedTotal !== undefined && (
-            <div className='border-t border-zinc-950/10 px-3.5 pt-2 pb-1 font-mono text-[11px] leading-relaxed text-zinc-500 sm:px-3 dark:border-white/10 dark:text-zinc-400'>
+            <div className='border-t-2 border-zinc-950/15 px-3.5 pt-2 pb-1 font-mono text-[11px] leading-relaxed text-zinc-500 sm:px-3 dark:border-white/15 dark:text-zinc-400'>
               <div>
                 {message.chunksReceivedTotal} cells received ·{" "}
                 {message.chunksReceivedReal ?? 0} real ·{" "}
@@ -327,7 +327,7 @@ const MessageDropdown = ({
       {fileError && (
         <p
           role='alert'
-          className='mt-1 rounded-lg border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
+          className='mt-1 border-2 border-red-700 bg-red-50 px-2 py-1 font-mono text-xs text-red-800 dark:bg-red-950 dark:text-red-300'
         >
           {fileError}
         </p>
@@ -337,7 +337,7 @@ const MessageDropdown = ({
       {/*
       {msgPercentage < 100 && (
         <div className='absolute bottom-0 left-0 w-full'>
-          <div className='whitespace-no-wrap absolute -top-7 left-1/2 max-w-xs -translate-x-1/2 animate-pulse truncate rounded-md bg-gray-800 px-4 py-2 text-xs text-white shadow-md'>
+          <div className='whitespace-no-wrap absolute -top-7 left-1/2 max-w-xs -translate-x-1/2 truncate border-2 border-zinc-950 bg-zinc-900 px-4 py-2 font-mono text-xs text-white'>
             {msgLoadingText}
           </div>
 

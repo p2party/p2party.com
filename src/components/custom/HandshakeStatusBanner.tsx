@@ -93,12 +93,12 @@ const HandshakeStatusBanner = () => {
     <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-sm flex-col items-center gap-1 px-3 pb-4 lg:left-64'>
       <Badge
         color='red'
-        className='min-h-11 w-full items-center justify-center px-4 py-2 text-center text-sm shadow-sm'
+        className='shadow-brutal-sm min-h-11 w-full items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase dark:border-zinc-200'
         role='status'
       >
         {text}
       </Badge>
-      <p className='rounded bg-white/95 px-3 py-1.5 text-center text-xs leading-relaxed text-zinc-600 shadow-sm dark:bg-black/95 dark:text-zinc-400'>
+      <p className='border-2 border-zinc-950 bg-white px-3 py-1.5 text-center text-xs leading-relaxed text-zinc-700 dark:border-zinc-200 dark:bg-black dark:text-zinc-300'>
         {detail}
       </p>
     </div>

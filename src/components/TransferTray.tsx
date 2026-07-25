@@ -73,14 +73,14 @@ const TransferTray = ({
         return (
           <section
             key={transfer.handle.transferId}
-            className='rounded-xl border border-zinc-300/90 bg-white/95 p-3 shadow-[4px_4px_0_0_rgba(0,0,0,0.18)] backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-950/95'
+            className='shadow-brutal-sm border-2 border-zinc-950 bg-white p-3 dark:border-zinc-200 dark:bg-zinc-950'
           >
             <div className='flex items-start justify-between gap-3'>
               <div className='min-w-0'>
                 <p className='truncate font-mono text-xs font-bold text-zinc-950 dark:text-white'>
                   {transfer.label}
                 </p>
-                <p className='mt-0.5 font-mono text-[10px] text-zinc-500 uppercase dark:text-zinc-400'>
+                <p className='mt-0.5 font-mono text-[10px] font-bold tracking-[0.15em] text-orange-700 uppercase dark:text-orange-400'>
                   {transfer.status === "preparing" &&
                     (preparationProgress < 100
                       ? `packing uniform cells · ${preparationProgress}%`

@@ -58,7 +58,15 @@ const SideBar = () => {
             <Suspense>
               <CatAvatar />
             </Suspense>
-            <SidebarLabel>p2party</SidebarLabel>
+            <SidebarLabel>
+              <span className='font-mono font-bold'>
+                p2party
+                <span className='text-orange-600 dark:text-orange-400'>
+                  ://
+                </span>
+                room
+              </span>
+            </SidebarLabel>
           </SidebarItem>
         </Link>
       </SidebarHeader>

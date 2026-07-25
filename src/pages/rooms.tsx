@@ -60,7 +60,7 @@ const RoomsPage = () => {
       <div className='relative flex min-h-0 flex-1 flex-col items-center justify-center'>
         <Table
           dense
-          className='h-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg bg-white dark:bg-black'
+          className='h-full overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-black'
         >
           <TableHead>
             <TableRow>
@@ -87,7 +87,7 @@ const RoomsPage = () => {
 
       <div className='fixed bottom-4 left-1/2 -translate-x-1/2 lg:right-4 lg:left-auto lg:translate-x-0'>
         <Button
-          className='bg-darkOrange cursor-pointer rounded-xl px-6 py-2.5 text-lg font-semibold text-white shadow-[4px_4px_0_0_rgba(0,0,0,0.18)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-black hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.24)] active:translate-x-0 active:translate-y-0'
+          className='bg-darkOrange shadow-brutal-sm cursor-pointer rounded-none border-2 border-zinc-950 px-6 py-2.5 text-lg font-semibold text-white transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
           onClick={() => setRoomSetupOpen(true)}
         >
           Generate Room

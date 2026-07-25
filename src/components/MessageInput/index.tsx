@@ -132,7 +132,7 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
         <div
           ref={inputBarRef}
           style={{ bottom: bottomOffset }}
-          className='fixed right-0 left-0 z-50 mb-1 shrink-0 border-t border-zinc-200/60 bg-white/95 px-4 py-3 backdrop-blur-md lg:mr-2 lg:ml-64 lg:rounded-b-lg lg:border-t-0 lg:px-14 dark:border-zinc-800/60 dark:bg-black/95'
+          className='fixed right-0 left-0 z-50 mb-1 shrink-0 border-t-2 border-zinc-950 bg-white px-4 py-3 lg:mr-2 lg:ml-64 lg:px-14 dark:border-zinc-200 dark:bg-black'
         >
           <div className='flex max-w-full items-end gap-1'>
             <FileButton handleFiles={handleFiles} />
@@ -148,7 +148,7 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               placeholder='Type your message…'
               aria-describedby='message-input-hint'
               resizable={false}
-              className='mr-1 flex-1 overflow-hidden rounded-xl font-medium'
+              className='mr-1 flex-1 overflow-hidden rounded-none font-medium'
               rows={1}
             />
             <Button
@@ -157,7 +157,7 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               disabled={newMessage.length === 0}
               aria-label='Send message'
               title='Send message'
-              className='shrink-0 cursor-pointer rounded-xl'
+              className='shadow-brutal-sm shrink-0 cursor-pointer rounded-none border-2 border-zinc-950 dark:border-zinc-200'
             >
               <PaperAirplaneIcon />
             </Button>

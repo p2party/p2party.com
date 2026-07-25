@@ -348,7 +348,7 @@ const ChatPage = () => {
             <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
               <Badge
                 color='orange'
-                className='min-h-11 w-full cursor-pointer items-center justify-center px-4 py-2 text-center text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500'
+                className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-zinc-200'
                 role='button'
                 tabIndex={0}
                 onClick={disconnectFromSignalingServer}
@@ -368,7 +368,7 @@ const ChatPage = () => {
           <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
             <Badge
               color='red'
-              className='min-h-11 w-full cursor-pointer items-center justify-center px-4 py-2 text-center text-sm shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500'
+              className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-zinc-200'
               role='button'
               tabIndex={0}
               onClick={() => connectToSignalingServer(roomUrl ?? "")}
@@ -388,7 +388,7 @@ const ChatPage = () => {
           <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
             <Badge
               color='green'
-              className='min-h-11 w-full cursor-pointer items-center justify-center px-4 py-2 text-center text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500'
+              className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500 dark:border-zinc-200'
               role='button'
               tabIndex={0}
               onClick={() => {
@@ -416,7 +416,7 @@ const ChatPage = () => {
         )}
 
         {messages.length > 0 && (
-          <div className='mb-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg bg-white pb-24 dark:bg-black'>
+          <div className='mb-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white pb-24 dark:bg-black'>
             {selectedMessages.map((message) => (
               <Suspense key={`${message.sha512Hex}-${message.timestamp}`}>
                 <MessageItem message={message} roomId={roomId} />
@@ -442,7 +442,7 @@ const ChatPage = () => {
       {sendError && (
         <div
           role='alert'
-          className='fixed right-3 bottom-44 z-50 max-w-sm rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 shadow-md lg:right-5 lg:bottom-48 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
+          className='shadow-brutal-sm fixed right-3 bottom-44 z-50 max-w-sm border-2 border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800 lg:right-5 lg:bottom-48 dark:bg-red-950 dark:text-red-200'
         >
           {sendError}
         </div>
