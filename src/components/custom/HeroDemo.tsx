@@ -23,21 +23,35 @@ interface Step {
 const SCRIPT: Step[] = [
   {
     bubble: { from: "you", text: "the files are in the room" },
-    note: "3DH + ML-KEM-768 → per-peer Double Ratchet",
+    note: "X25519 3DH ⊕ ML-KEM-768 encaps → HKDF-SHA512 root",
     cells: 0,
-    ms: 1600,
+    ms: 1900,
   },
-  { note: "split into fixed 65,490-byte cells", cells: 2, ms: 900 },
-  { note: "padded with cover cells — same size", cells: 5, ms: 900 },
-  { note: "sealed · ChaCha20-Poly1305 · fresh nonce", cells: 8, ms: 900 },
-  { note: "sent in randomized order", cells: 8, ms: 800 },
+  { note: "Double Ratchet: DH step, chain key advance", cells: 0, ms: 1100 },
   {
-    bubble: { from: "them", text: "got them — nothing hit a server" },
-    note: "Merkle proof verified per cell",
+    note: "sparse PQ healing · OFFER → ADVANCE → ACK · epoch 1",
+    cells: 1,
+    ms: 1300,
+  },
+  { note: "split into fixed 65,490-byte cells", cells: 3, ms: 900 },
+  { note: "cover cells padded to the same length", cells: 6, ms: 900 },
+  {
+    note: "AEAD seal · ChaCha20-Poly1305 · PQ-combined key",
     cells: 8,
     ms: 1100,
   },
-  { note: "receipt per cell, real or cover", cells: 8, ms: 2000 },
+  {
+    note: "cells shuffled — emission order carries no meaning",
+    cells: 8,
+    ms: 900,
+  },
+  {
+    bubble: { from: "them", text: "got them — nothing hit a server" },
+    note: "SHA-512 Merkle proof verified per cell",
+    cells: 8,
+    ms: 1300,
+  },
+  { note: "receipt per cell — real and cover alike", cells: 8, ms: 2000 },
 ];
 
 const TOTAL_CELLS = 8;
@@ -82,7 +96,7 @@ const HeroDemo = () => {
 
   return (
     <figure
-      className='shadow-brutal relative w-full max-w-md overflow-hidden border-2 border-zinc-950 bg-white dark:border-zinc-200 dark:bg-zinc-950'
+      className='shadow-brutal relative w-full max-w-lg overflow-hidden border-2 border-zinc-950 bg-white dark:border-zinc-200 dark:bg-zinc-950'
       aria-label='Illustration of one message crossing the wire as uniform encrypted cells'
     >
       {/* The mark sits behind the demo rather than beside it. */}
@@ -90,7 +104,7 @@ const HeroDemo = () => {
         src='/logo-cat-tight.svg'
         alt=''
         aria-hidden
-        className='pointer-events-none absolute top-1/2 left-1/2 h-56 -translate-x-1/2 -translate-y-1/2 opacity-[0.13] select-none dark:opacity-[0.16]'
+        className='pointer-events-none absolute top-4 left-1/2 h-48 -translate-x-1/2 opacity-[0.15] select-none sm:h-56 dark:opacity-[0.18]'
       />
 
       <figcaption className='relative flex items-center justify-between border-b-2 border-zinc-950 px-3 py-1.5 font-mono text-[10px] font-bold tracking-[0.15em] uppercase dark:border-zinc-200'>
@@ -101,7 +115,7 @@ const HeroDemo = () => {
       </figcaption>
 
       {/* Chat */}
-      <div className='relative flex min-h-24 flex-col justify-end gap-1.5 px-3 py-3'>
+      <div className='relative flex min-h-56 flex-col justify-end gap-2 px-4 py-4 sm:min-h-64'>
         {bubbles.map((bubble, index) => (
           <p
             key={`${bubble.from}-${String(index)}`}
@@ -117,7 +131,7 @@ const HeroDemo = () => {
       </div>
 
       {/* The wire */}
-      <div className='relative border-t-2 border-zinc-950 bg-zinc-950 px-3 py-2.5 dark:border-zinc-200'>
+      <div className='relative border-t-2 border-zinc-950 bg-zinc-950 px-4 py-3 dark:border-zinc-200'>
         <div className='flex items-center gap-1' aria-hidden>
           {Array.from({ length: TOTAL_CELLS }, (_, index) => {
             const lit = index < current.cells;
@@ -125,7 +139,7 @@ const HeroDemo = () => {
               <span
                 key={index}
                 className={
-                  "h-5 flex-1 border transition-colors duration-300 motion-reduce:transition-none " +
+                  "h-6 flex-1 border transition-colors duration-300 motion-reduce:transition-none " +
                   (lit
                     ? "border-orange-400 bg-orange-500/80"
                     : "border-zinc-700 bg-zinc-900")
@@ -135,12 +149,12 @@ const HeroDemo = () => {
           })}
         </div>
         <p
-          className='mt-2 font-mono text-[10px] leading-relaxed text-zinc-400'
+          className='mt-2 font-mono text-[11px] leading-relaxed text-zinc-300'
           aria-live='polite'
         >
           <span className='text-orange-400'>›</span> {current.note}
         </p>
-        <p className='mt-1 font-mono text-[10px] text-zinc-500'>
+        <p className='mt-1 font-mono text-[10px] text-zinc-500 sm:text-[11px]'>
           {REAL_CELLS.size} of {TOTAL_CELLS} cells carry your bytes — the wire
           cannot tell which
         </p>
