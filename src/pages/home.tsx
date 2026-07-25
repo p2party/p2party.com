@@ -144,7 +144,7 @@ const HomePage = () => {
             src='/logo-cat-tight.svg'
             alt=''
             aria-hidden
-            className='animate-float h-40 w-auto select-none motion-reduce:animate-none sm:h-56 md:h-64 lg:h-88'
+            className='animate-float h-52 w-auto select-none motion-reduce:animate-none sm:h-72 md:h-80 lg:h-[26rem]'
           />
         </div>
 
