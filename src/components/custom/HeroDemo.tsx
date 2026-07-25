@@ -13,6 +13,8 @@ import { useEffect, useState } from "react";
 interface Step {
   /** Chat side, if this step adds a bubble. */
   bubble?: { from: "you" | "them"; text: string };
+  /** Adds the file attachment being transferred. */
+  file?: boolean;
   /** The technical line shown under the chat. */
   note: string;
   /** Cells lit on the wire strip at this step. */
@@ -22,7 +24,7 @@ interface Step {
 
 const SCRIPT: Step[] = [
   {
-    bubble: { from: "you", text: "the files are in the room" },
+    file: true,
     note: "X25519 3DH ⊕ ML-KEM-768 encaps → HKDF-SHA512 root",
     cells: 0,
     ms: 1900,
@@ -41,6 +43,7 @@ const SCRIPT: Step[] = [
     ms: 1100,
   },
   {
+    bubble: { from: "you", text: "the files are in the room" },
     note: "cells shuffled — emission order carries no meaning",
     cells: 8,
     ms: 900,
@@ -129,6 +132,8 @@ const HeroDemo = () => {
   }, [step, reduced]);
 
   const current = SCRIPT[step];
+  const showFile = SCRIPT.slice(0, step + 1).some((s) => s.file);
+  const transferPercent = Math.round((current.cells / TOTAL_CELLS) * 100);
   const bubbles = SCRIPT.slice(0, step + 1)
     .map((s) => s.bubble)
     .filter((b): b is NonNullable<Step["bubble"]> => b !== undefined);
@@ -158,6 +163,36 @@ const HeroDemo = () => {
           aria-hidden
           className='pointer-events-none absolute top-1/2 left-1/2 h-44 -translate-x-1/2 -translate-y-1/2 opacity-[0.15] select-none sm:h-52 dark:opacity-[0.18]'
         />
+
+        {showFile && (
+          <div className='animate-fade-in relative max-w-[85%] self-end border-2 border-zinc-950 bg-white p-2.5 dark:border-zinc-200 dark:bg-zinc-900'>
+            <div className='flex items-center gap-2'>
+              <span
+                aria-hidden
+                className='bg-darkOrange flex size-8 shrink-0 items-center justify-center font-mono text-[10px] font-bold text-white'
+              >
+                ZIP
+              </span>
+              <span className='min-w-0'>
+                <span className='block truncate font-mono text-xs font-bold text-zinc-950 dark:text-white'>
+                  field-photos.zip
+                </span>
+                <span className='block font-mono text-[10px] text-zinc-500 dark:text-zinc-400'>
+                  256 KiB · {transferPercent}%
+                </span>
+              </span>
+            </div>
+            <div
+              className='mt-2 h-1.5 w-full border border-zinc-300 dark:border-zinc-700'
+              aria-hidden
+            >
+              <div
+                className='bg-darkOrange h-full transition-[width] duration-300 motion-reduce:transition-none'
+                style={{ width: `${String(transferPercent)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {bubbles.map((bubble, index) => (
           <p

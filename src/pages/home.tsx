@@ -163,15 +163,15 @@ const HomePage = () => {
             spoke, not when, not how much.
           </p>
 
-          <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-center md:justify-start'>
+          <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7'>
             <Button
               onClick={() => setRoomSetupOpen(true)}
               color='orange'
-              className='shadow-brutal-sm rounded-none border-2 border-zinc-950 px-8 py-3 text-lg font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
+              className='shadow-brutal-sm w-full rounded-none border-2 border-zinc-950 px-8 py-3 text-lg font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
             >
               Generate Room
             </Button>
-            <div className='flex items-center justify-center gap-1 sm:-ml-3 sm:gap-0'>
+            <div className='-ml-3 flex items-center justify-center gap-1 sm:gap-0 md:justify-start'>
               <Link
                 href='/blog'
                 className='inline-flex items-center justify-center gap-1.5 rounded-none px-3 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 sm:px-5 dark:text-zinc-400 dark:hover:text-orange-300'
