@@ -137,36 +137,31 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
 
   // A live sample from the real BIP39 list: encode a throwaway capability and
   // show its first words, so the placeholder is never mistaken for a fixed
-  // prefix every room shares.
-  const refreshWordSample = async () => {
+  // prefix every room shares. Pure — it owns the capability's lifetime and
+  // returns the string, so the effect and the refresh button share one
+  // implementation without either duplicating the wipe or the formatting.
+  const buildWordSample = async (): Promise<string> => {
     let capability: Uint8Array | undefined;
     try {
       capability = p2party.generateRoomCapability();
       const words = await p2party.encodeRoomCapabilityWords(capability);
-      setWordSample(words.split(" ").slice(0, 3).join(" ") + " …");
+      return words.split(" ").slice(0, 3).join(" ") + " …";
     } catch {
-      setWordSample("");
+      // A sample is decoration; the field still works without one.
+      return "";
     } finally {
       capability?.fill(0);
     }
   };
 
+  const refreshWordSample = () => void buildWordSample().then(setWordSample);
+
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
-    const capability = p2party.generateRoomCapability();
-    p2party
-      .encodeRoomCapabilityWords(capability)
-      .then((words) => {
-        if (!cancelled)
-          setWordSample(words.split(" ").slice(0, 3).join(" ") + " …");
-      })
-      .catch(() => {
-        // A sample is decoration; the field still works without one.
-      })
-      .finally(() => {
-        capability.fill(0);
-      });
+    void buildWordSample().then((sample) => {
+      if (!cancelled) setWordSample(sample);
+    });
     return () => {
       cancelled = true;
     };

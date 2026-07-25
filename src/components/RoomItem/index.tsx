@@ -147,43 +147,11 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
   );
 
   // return (
-  //   <li
-  //     onClick={() => navigate("/rooms/" + room.roomUrl)}
-  //     className='group relative flex cursor-pointer items-center justify-between gap-x-6 px-4 py-4 transition hover:bg-gray-50/30 dark:hover:bg-zinc-800'
   //   >
-  //     {/* Left Section (Room ID & Timestamp) */}
-  //     <div className='min-w-0 flex-auto'>
-  //       <p className='text-base font-semibold text-gray-900 dark:text-white'>
-  //         <a href={room.roomUrl} className='hover:underline'>
-  //           {room.roomId}
-  //         </a>
-  //       </p>
-  //       <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-  //         Created: {new Date(room.createdAt).toLocaleString()}
-  //       </p>
-  //     </div>
-  //
-  //
-  //       <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-  //         Updated: {new Date(room.updatedAt).toLocaleString()}
-  //       </p>
-  //
-  //     {/* Right Section (Message Count & Last Hash) */}
-  //     <div className='flex flex-col items-end'>
-  //       <p className='text-sm font-medium text-gray-900 dark:text-white'>
-  //         {room.messageCount} messages
-  //       </p>
-  //       <p className='mt-1 max-w-[160px] truncate text-xs text-gray-500 dark:text-gray-400'>
-  //         {lastMessage.msgCategory === MessageCategory.Text
   //           ? lastMessage.msg.slice(0, 20) + "..."
   //           : lastMessage.msgFilename.slice(0, 15) +
   //             "..." +
   //             lastMessage.msgExtension}
-  //       </p>
-  //     </div>
-  //
-  //   </li>
-  // );
 };
 
 export default memo(RoomListItem);

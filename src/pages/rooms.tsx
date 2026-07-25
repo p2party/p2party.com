@@ -98,44 +98,9 @@ const RoomsPage = () => {
       </div>
     </div>
 
-    // <div className='flex max-h-[calc(94svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] min-h-0 flex-col overflow-y-auto scroll-smooth pt-14 lg:my-2 lg:pt-0'>
-    //   <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
-    //     <Suspense>
-    //       <CatAvatar className='w-2/3 w-full outline-white md:w-2/3 lg:w-2/5 dark:outline-zinc-900' />
-    //     </Suspense>
-    //   </div>
-    //
-    //   <div className='relative flex flex-1 flex-col px-6'>
-    //     {rooms.length === 0 && (
-    //       <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-36 items-center justify-center pb-4 lg:left-64'>
-    //         <Badge
-    //           color='orange'
-    //           className='w-full text-center'
-    //           onClick={async () => await goToRandomRoom()}
     //         >
-    //           No past rooms found
-    //         </Badge>
-    //       </div>
-    //     )}
-    //
-    //     <ul
-    //       role='list'
-    //       className='mb-10 divide-y divide-gray-200 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg bg-white/80 shadow-sm dark:bg-black/60'
     //     >
-    //       {rooms.map((room) => (
-    //         <RoomListItem key={room.roomId} {...room} />
-    //       ))}
-    //     </ul>
-    //   </div>
-    //
-    //   <Button
-    //       className='rounded-lg text-lg font-semibold text-white transition hover:bg-white/20'
-    //     // className='bg-darkOrange hover:bg-darkRed fixed right-0 bottom-0 left-0 z-50 flex cursor-pointer items-center justify-between gap-x-6 p-4 text-black transition hover:text-white lg:mb-2 lg:ml-64 lg:px-16'
-    //     onClick={async () => await goToRandomRoom()}
     //   >
-    //     New random room
-    //   </Button>
-    // </div>
   );
 };
 

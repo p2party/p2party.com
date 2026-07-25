@@ -12,6 +12,7 @@ const MicrophoneButton = ({ handleFiles }: MessageInputProps) => {
   const chunksRef = useRef<BlobPart[]>([]);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [error, setError] = useState("");
 
   const synthFileList = (file: File): FileList => {
     const dt = new DataTransfer();
@@ -37,17 +38,27 @@ const MicrophoneButton = ({ handleFiles }: MessageInputProps) => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     streamRef.current = stream;
 
-    const mimeType = pickMime();
-    const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    mediaRecorderRef.current = mr;
-    chunksRef.current = [];
+    try {
+      const mimeType = pickMime();
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
 
-    mr.ondataavailable = (e) => {
-      if (e.data?.size) chunksRef.current.push(e.data);
-    };
+      mr.ondataavailable = (e) => {
+        if (e.data?.size) chunksRef.current.push(e.data);
+      };
 
-    mr.start();
-    setIsRecording(true);
+      mr.start();
+      setIsRecording(true);
+    } catch (cause) {
+      // The microphone is already live at this point. If MediaRecorder cannot
+      // be constructed or started, release it rather than leaving the browser
+      // showing a recording indicator for a recorder that never ran.
+      stream.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      mediaRecorderRef.current = null;
+      throw cause;
+    }
   };
 
   const stopRecording = async () => {
@@ -91,8 +102,24 @@ const MicrophoneButton = ({ handleFiles }: MessageInputProps) => {
     } catch {
       /* empty */
     }
-    if (isRecording) await stopRecording();
-    else await startRecording();
+    // React drops this handler's promise, so an unhandled rejection here would
+    // be invisible — and a denied permission prompt is the single most common
+    // outcome, not an edge case.
+    try {
+      setError("");
+      if (isRecording) await stopRecording();
+      else await startRecording();
+    } catch (cause) {
+      setIsRecording(false);
+      const name = cause instanceof DOMException ? cause.name : "";
+      setError(
+        name === "NotAllowedError" || name === "SecurityError"
+          ? "Microphone access was denied. Allow it in your browser to record."
+          : name === "NotFoundError"
+            ? "No microphone was found."
+            : "Recording failed. Check that another app is not using the microphone.",
+      );
+    }
   };
 
   const onPointerUp: React.PointerEventHandler<HTMLButtonElement> = async (
@@ -112,19 +139,29 @@ const MicrophoneButton = ({ handleFiles }: MessageInputProps) => {
   };
 
   return (
-    <Button
-      ref={btnRef}
-      plain
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancelOrLeave}
-      onPointerLeave={onPointerCancelOrLeave}
-      aria-pressed={isRecording}
-      className={`mr-2 shrink-0 cursor-pointer touch-none select-none ${isRecording ? "animate-pulse bg-red-500! text-white! hover:bg-red-600!" : ""}`}
-      title={isRecording ? "Recording... press to stop" : "Hold to record"}
-    >
-      <MicrophoneIcon className='pointer-events-none select-none' />
-    </Button>
+    <div className='relative shrink-0'>
+      <Button
+        ref={btnRef}
+        plain
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancelOrLeave}
+        onPointerLeave={onPointerCancelOrLeave}
+        aria-pressed={isRecording}
+        className={`mr-2 shrink-0 cursor-pointer touch-none select-none ${isRecording ? "animate-pulse bg-red-500! text-white! hover:bg-red-600!" : ""}`}
+        title={isRecording ? "Recording... press to stop" : "Hold to record"}
+      >
+        <MicrophoneIcon className='pointer-events-none select-none' />
+      </Button>
+      {error.length > 0 && (
+        <p
+          role='alert'
+          className='absolute bottom-full left-0 z-10 mb-1 w-64 border border-red-500 bg-red-50 p-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-200'
+        >
+          {error}
+        </p>
+      )}
+    </div>
   );
 };
 

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { CELL_BYTES, PAYLOAD_BYTES_PER_CELL } from "../../protocol/v4";
+
 /**
  * A looping, honest demonstration of one message crossing the wire.
  *
@@ -75,8 +77,6 @@ const SCRIPT: Step[] = [
  *   the packet size measured on the wire)
  */
 const SCENARIO = "256 KiB file · 90% fill · min 8 cells";
-const CELL_WIRE_BYTES = 65_490;
-const PAYLOAD_BYTES_PER_CELL = 61_912;
 const TOTAL_CELLS = 8;
 const PACKETS_PER_CELL = 54;
 const HEX = "0123456789abcdef";
@@ -263,7 +263,7 @@ const HeroDemo = () => {
             </div>
           </dl>
           <p className='mt-1 min-h-[2rem] font-mono text-[10px] leading-relaxed text-zinc-500 sm:min-h-[1.5rem]'>
-            {SCENARIO} · every cell {CELL_WIRE_BYTES.toLocaleString()} B, ≤{" "}
+            {SCENARIO} · every cell {CELL_BYTES.toLocaleString()} B, ≤{" "}
             {PAYLOAD_BYTES_PER_CELL.toLocaleString()} B of it yours
           </p>
         </div>
