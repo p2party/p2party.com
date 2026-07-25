@@ -144,7 +144,15 @@ export const parseRoomPolicyInvite = (
       );
     if (!ENCODED_POLICY_PARAM_PATTERN.test(encodedPolicy))
       throw new Error("Room invitation has a malformed policy parameter");
-    const policy = p2party.decodeRoomPolicyV1(base64UrlDecode(encodedPolicy));
+    const policyBytes = base64UrlDecode(encodedPolicy);
+    // atob discards the final character's two unused bits, so distinct
+    // 43-char strings can decode to identical bytes — a per-recipient
+    // watermark channel on re-shared invites. Enforce the same canonical
+    // encoding rule the library applies to the capability fragment: the
+    // received parameter must BE the re-encoding of its own bytes.
+    if (base64UrlEncode(policyBytes) !== encodedPolicy)
+      throw new Error("Room invitation has a non-canonical policy parameter");
+    const policy = p2party.decodeRoomPolicyV1(policyBytes);
     return {
       policy,
       specified: {

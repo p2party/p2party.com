@@ -5,7 +5,7 @@ import p2party from "p2party";
 import { Avatar } from "../avatar";
 import { TableRow, TableCell } from "../table";
 import { roomInvitePath } from "../../protocol/roomAccess";
-import { immediateRoomPolicy } from "../../protocol/v3";
+import { immediateRoomPolicy } from "../../protocol/v4";
 
 import type { FC } from "react";
 import type { FileExtension, UniqueRoom } from "p2party";
@@ -49,10 +49,19 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
     msgCategory: p2party.MessageCategory.Text,
     msgExtension: "txt",
   });
-  const roomPolicy = room.roomPolicy
-    ? p2party.decodeRoomPolicyV1(new Uint8Array(room.roomPolicy))
-    : immediateRoomPolicy("nopin");
-  const inviteHref = roomInvitePath(room.roomUrl, roomPolicy);
+  // A room persisted by a pre-v4 build carries a wireVersion-3 policy blob
+  // that the 0.13.0 decoder (and roomInvitePath) reject. One legacy record
+  // must degrade to a row without an invite link — it must never unmount the
+  // whole saved-rooms list (there is no error boundary above this row).
+  let inviteHref: string | undefined;
+  try {
+    const roomPolicy = room.roomPolicy
+      ? p2party.decodeRoomPolicyV1(new Uint8Array(room.roomPolicy))
+      : immediateRoomPolicy("nopin");
+    inviteHref = roomInvitePath(room.roomUrl, roomPolicy);
+  } catch {
+    inviteHref = undefined;
+  }
 
   useEffect(() => {
     if (!room.lastMessageMerkleRoot || room.lastMessageMerkleRoot.length === 0)
@@ -105,6 +114,11 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
           <div className='min-w-0'>
             <div className='truncate font-medium'>
               Room {room.roomId.slice(0, 8)}
+              {!inviteHref && (
+                <span className='ml-2 rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'>
+                  protocol v3 — retired
+                </span>
+              )}
             </div>
             <div className='truncate font-normal'>
               {lastMessage.msgCategory === p2party.MessageCategory.Text

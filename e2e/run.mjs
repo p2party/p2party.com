@@ -7,6 +7,11 @@ import { readFileSync } from "fs";
 import { randomBytes } from "crypto";
 
 const APP = process.env.APP_URL ?? "http://localhost:5190";
+// Optional local v4 signaling relay (e.g. the p2party-js docs/e2e/appstack
+// relay). Unset → the app's default production signaling server. A v4 client
+// fails closed against a v3 signaling server, so until the production server
+// announces protocolVersion 4 this override is the only way to run the E2E.
+const SIGNALING = process.env.SIGNALING_URL ?? "";
 const WASM = readFileSync(
   new URL("../node_modules/p2party/lib/libcrypto.wasm", import.meta.url),
 );
@@ -22,10 +27,17 @@ const log = (...a) =>
 
 async function setupContext(browser, tag) {
   const context = await browser.newContext();
+  if (SIGNALING)
+    await context.addInitScript((url) => {
+      // usehooks-ts JSON-serializes its localStorage values.
+      localStorage.setItem("signalingServerUrl", JSON.stringify(url));
+    }, SIGNALING);
   // Instrument the WebRTC data channel so we can PROVE the transfer went over
   // WebRTC and not the WS-relay fallback: the relay path never calls
   // RTCDataChannel.send, so a 64KiB-frame send here is proof of the real path.
   await context.addInitScript(() => {
+    // count64 = 65-byte receipt frames; count65536 = 65,490-byte chunk frames
+    // (field names predate the 0.13.0 wire sizes).
     window.__dc = { sends: 0, bytes: 0, maxLen: 0, count64: 0, count65536: 0 };
     // Record bufferedAmount at the moment each data channel is closed — must be
     // 0, else close() wiped un-flushed writes (the drain-before-close race).
@@ -37,7 +49,7 @@ async function setupContext(browser, tag) {
       } catch {}
       return origClose.apply(this, arguments);
     };
-    // Loss injection: once armed, drop the first 65536-byte frame before it
+    // Loss injection: once armed, drop the first 65,490-byte chunk frame before it
     // reaches the wire (simulating a lost load-bearing chunk). Not counted,
     // because an on-path observer never sees it — retransmit must recover it.
     // Count RTCPeerConnection instances so a resume test can prove a FULL
@@ -84,7 +96,7 @@ async function setupContext(browser, tag) {
         data && data.byteLength != null
           ? data.byteLength
           : (data && data.length) || 0;
-      if (len === 65536 && window.__dropArmed && !window.__dropped) {
+      if (len === 65490 && window.__dropArmed && !window.__dropped) {
         window.__dropped = true;
         return; // dropped before the wire — not sent, not counted
       }
@@ -92,8 +104,8 @@ async function setupContext(browser, tag) {
         window.__dc.sends++;
         window.__dc.bytes += len;
         if (len > window.__dc.maxLen) window.__dc.maxLen = len;
-        if (len === 64) window.__dc.count64++;
-        else if (len === 65536) window.__dc.count65536++;
+        if (len === 65) window.__dc.count64++;
+        else if (len === 65490) window.__dc.count65536++;
       } catch {}
       return origSend.apply(this, arguments);
     };
@@ -254,7 +266,9 @@ const roomState = (url) => {
         const file = new File([bytes], "payload.bin", {
           type: "application/octet-stream",
         });
-        return window.p2party.sendMessage(file, "main", roomId).then(() => n);
+        return window.p2party
+          .sendMessage(file, "main", roomId)
+          .done.then(() => n);
       },
       { roomId, n: FILE_BYTES },
     );
@@ -339,7 +353,9 @@ const roomState = (url) => {
         const file = new File([bytes], "big.bin", {
           type: "application/octet-stream",
         });
-        return window.p2party.sendMessage(file, "main", roomId).then(() => n);
+        return window.p2party
+          .sendMessage(file, "main", roomId)
+          .done.then(() => n);
       },
       { roomId, n: BIG_BYTES },
     );
@@ -428,7 +444,9 @@ const roomState = (url) => {
         const file = new File([bytes], "huge.bin", {
           type: "application/octet-stream",
         });
-        return window.p2party.sendMessage(file, "main", roomId).then(() => n);
+        return window.p2party
+          .sendMessage(file, "main", roomId)
+          .done.then(() => n);
       },
       { roomId, n: HUGE_BYTES },
     );
@@ -541,7 +559,7 @@ const roomState = (url) => {
     const dcB = await B.page.evaluate(() => window.__dc);
     log("A datachannel stats:", JSON.stringify(dcA));
     log("B datachannel stats:", JSON.stringify(dcB));
-    if (!(dcA.sends > 0 && dcA.maxLen >= 65536)) {
+    if (!(dcA.sends > 0 && dcA.maxLen >= 65490)) {
       throw new Error(
         `no 64KiB frames sent over the data channel — transfer used the relay fallback (dcA=${JSON.stringify(dcA)})`,
       );
@@ -599,7 +617,11 @@ const roomState = (url) => {
         });
         // Fire-and-forget: sendMessage resolves only when the WHOLE transfer
         // completes, so awaiting it would defeat mid-flight injection.
-        window.__resumeSend = window.p2party.sendMessage(file, "main", roomId);
+        window.__resumeSend = window.p2party.sendMessage(
+          file,
+          "main",
+          roomId,
+        ).done;
         return true;
       },
       { roomId, n: RES_BYTES },
@@ -695,16 +717,20 @@ const roomState = (url) => {
       throw new Error(
         `no P2P resend after reconnect (framesAtCut=${framesAtCut} framesAfter=${framesAfter}) — resume did not carry data`,
       );
-    if (!(relayBlockedA > 0))
+    // p2party >= 0.13.0 has NO WS-relay fallback for data frames (only
+    // signaling rides the WebSocket), so zero blocked relay sends is the
+    // EXPECTED strongest outcome: the app never even attempted a relay path.
+    // A positive count would mean a legacy relay send slipped back in.
+    if (relayBlockedA > 0)
       throw new Error(
-        "relay was never exercised — cannot conclude the transfer avoided the relay fallback",
+        `unexpected WS-relay data sends were attempted (and blocked): ${relayBlockedA}`,
       );
     if (!(resumeRetransmits >= 1))
       throw new Error(
         `resume not surfaced in sender telemetry (retransmits=${resumeRetransmits}) — expected >= 1`,
       );
     log(
-      "✅ RESUME-ON-RECONNECT: in-flight transfer completed byte-exact over a re-established P2P channel (new pc, relay blocked)",
+      "✅ RESUME-ON-RECONNECT: in-flight transfer completed byte-exact over a re-established P2P channel (new pc, zero relay attempts)",
     );
 
     // 10. No send-buffer leak: after every send completes, the sender's

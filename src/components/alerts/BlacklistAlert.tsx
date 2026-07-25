@@ -56,9 +56,11 @@ const BlacklistAlert: FC<BlacklistAlertProps> = ({ isOpen, setIsOpen }) => {
 
     if (blacklistedIndex > -1) {
       await p2party.removePeerFromBlacklist(peerId, peerPublicKey);
-      const p = blacklistedPeers;
-      p.splice(blacklistedIndex, 1);
-      setBlacklistedPeers(p);
+      // Splicing the state array in place keeps the same reference, so React
+      // bails out of the re-render and the row appears undeletable.
+      setBlacklistedPeers((previous) =>
+        previous.filter((entry) => entry.peerId !== peerId),
+      );
     }
   };
 

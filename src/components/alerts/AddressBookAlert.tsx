@@ -53,10 +53,12 @@ const AddressBookAlert: FC<AddressBookAlertProps> = ({ isOpen, setIsOpen }) => {
     );
 
     if (addressBookIndex > -1) {
-      await p2party.deletePeerFromAddressBook(peerId, peerPublicKey);
-      const p = addressBookPeers;
-      p.splice(addressBookIndex, 1);
-      setAddressBookPeers(p);
+      // Signature is (username?, peerId?, peerPublicKey?): the username slot
+      // must stay empty or the delete silently matches nothing.
+      await p2party.deletePeerFromAddressBook(undefined, peerId, peerPublicKey);
+      setAddressBookPeers((previous) =>
+        previous.filter((entry) => entry.peerId !== peerId),
+      );
     }
   };
 

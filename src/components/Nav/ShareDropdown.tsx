@@ -22,7 +22,7 @@ export interface ShareProps {
 const Share: FC<ShareProps> = ({ inviteUrl, setShowQRCode }) => {
   const shareData: ShareData = {
     title: "P2Party room invitation",
-    text: "Join this protocol-v3 room. If it uses a PIN, send the PIN separately.",
+    text: "Join this protocol-v4 room. If it uses a PIN, send the PIN separately.",
     url: inviteUrl,
   };
 

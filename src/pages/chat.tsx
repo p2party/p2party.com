@@ -13,7 +13,7 @@ import {
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
 
-import type { SendMessageResult, MessageTransferHandle } from "../protocol/v3";
+import type { SendMessageResult, MessageTransferHandle } from "../protocol/v4";
 import type { TrackedTransfer } from "../components/TransferTray";
 
 const CatAvatar = lazy(() => import("../components/avatars/cat"));

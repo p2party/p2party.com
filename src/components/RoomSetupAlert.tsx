@@ -1,4 +1,10 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useRef,
+  useState,
+  type Dispatch,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
 import { useNavigate } from "react-router-dom";
 
 import p2party from "p2party";
@@ -19,9 +25,12 @@ import { rememberRoomAccess, roomInvitePath } from "../protocol/roomAccess";
 import {
   immediateRoomPolicy,
   roomPqModeParameterSet,
+  scheduledCoverPresetById,
+  scheduledRoomPolicy,
+  SCHEDULED_COVER_PRESETS,
   type RoomPqMode,
   type RoomPolicyV1,
-} from "../protocol/v3";
+} from "../protocol/v4";
 
 interface RoomSetupAlertProps {
   isOpen: boolean;
@@ -33,6 +42,30 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
   const [pinEnabled, setPinEnabled] = useState(false);
   const [pin, setPin] = useState("");
   const [pqMode, setPqMode] = useState<RoomPqMode>("hybrid-mlkem768");
+  const [coverEnabled, setCoverEnabled] = useState(false);
+  const [coverPresetId, setCoverPresetId] = useState("60s");
+  const immediateCardRef = useRef<HTMLButtonElement>(null);
+  const scheduledCardRef = useRef<HTMLButtonElement>(null);
+
+  const selectCoverCard = (enabled: boolean) => {
+    setCoverEnabled(enabled);
+    setError("");
+    (enabled ? scheduledCardRef : immediateCardRef).current?.focus();
+  };
+
+  // ARIA radio-group keyboard contract: one tab stop (the checked radio) and
+  // arrow keys move the selection.
+  const handleCoverGroupKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight" ||
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown"
+    ) {
+      event.preventDefault();
+      selectCoverCard(!coverEnabled);
+    }
+  };
   const [inviteWords, setInviteWords] = useState("");
   const [error, setError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -46,8 +79,13 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
     setIsOpen(false);
   };
 
-  const selectedPolicy = (): RoomPolicyV1 =>
-    immediateRoomPolicy(pinEnabled ? "pin" : "nopin", pqMode);
+  const selectedPolicy = (): RoomPolicyV1 => {
+    const authMode = pinEnabled ? "pin" : "nopin";
+    if (!coverEnabled) return immediateRoomPolicy(authMode, pqMode);
+    const preset = scheduledCoverPresetById(coverPresetId);
+    if (!preset) throw new Error("Unknown scheduled cover cadence");
+    return scheduledRoomPolicy(authMode, pqMode, preset);
+  };
 
   const enterRoom = (
     capability: Uint8Array,
@@ -115,7 +153,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
 
   return (
     <Alert open={isOpen} onClose={close} size='lg'>
-      <AlertTitle>Create or join a protocol-v3 room</AlertTitle>
+      <AlertTitle>Create or join a protocol-v4 room</AlertTitle>
       <AlertDescription>
         Room security settings are authenticated at the first connection and
         cannot be silently changed later.
@@ -194,54 +232,127 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           <legend className='text-sm font-semibold text-zinc-950 dark:text-white'>
             Room-wide traffic policy
           </legend>
-          <div className='mt-2 grid gap-2 sm:grid-cols-2'>
-            <div className='rounded-xl border-2 border-orange-500 bg-white p-3 dark:bg-zinc-950'>
+          <div
+            role='radiogroup'
+            aria-label='Room-wide traffic policy'
+            onKeyDown={handleCoverGroupKeyDown}
+            className='mt-2 grid gap-2 sm:grid-cols-2'
+          >
+            <button
+              type='button'
+              role='radio'
+              ref={immediateCardRef}
+              aria-checked={!coverEnabled}
+              aria-label='Immediate'
+              aria-describedby='cover-immediate-description'
+              tabIndex={!coverEnabled ? 0 : -1}
+              onClick={() => selectCoverCard(false)}
+              className={
+                !coverEnabled
+                  ? "rounded-xl border-2 border-orange-500 bg-white p-3 text-left dark:bg-zinc-950"
+                  : "rounded-xl border-2 border-zinc-300 bg-white p-3 text-left hover:border-orange-400 dark:border-zinc-700 dark:bg-zinc-950"
+              }
+            >
               <div className='flex items-center justify-between gap-2'>
                 <span className='font-mono text-sm font-semibold'>
                   Immediate
                 </span>
-                <span className='rounded bg-orange-500 px-2 py-0.5 font-mono text-[10px] font-bold text-white uppercase'>
-                  default
+                <span
+                  className={
+                    "rounded bg-orange-500 px-2 py-0.5 font-mono text-[10px] font-bold text-white uppercase" +
+                    (!coverEnabled ? "" : " invisible")
+                  }
+                >
+                  selected
                 </span>
               </div>
-              <p className='mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'>
+              <p
+                id='cover-immediate-description'
+                className='mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'
+              >
                 Send now. Uniform cells and per-message padding remain active,
                 but there is no timed cover stream.
               </p>
-            </div>
+            </button>
 
-            <div
-              className='rounded-xl border border-dashed border-zinc-300 bg-zinc-100/70 p-3 opacity-70 dark:border-zinc-700 dark:bg-zinc-900/70'
-              aria-disabled='true'
+            <button
+              type='button'
+              role='radio'
+              ref={scheduledCardRef}
+              aria-checked={coverEnabled}
+              aria-label='Scheduled cover'
+              aria-describedby='cover-scheduled-description'
+              tabIndex={coverEnabled ? 0 : -1}
+              onClick={() => selectCoverCard(true)}
+              className={
+                coverEnabled
+                  ? "rounded-xl border-2 border-orange-500 bg-white p-3 text-left dark:bg-zinc-950"
+                  : "rounded-xl border-2 border-zinc-300 bg-white p-3 text-left hover:border-orange-400 dark:border-zinc-700 dark:bg-zinc-950"
+              }
             >
               <div className='flex items-center justify-between gap-2'>
                 <span className='font-mono text-sm font-semibold'>
                   Scheduled cover
                 </span>
-                <span className='rounded bg-zinc-700 px-2 py-0.5 font-mono text-[10px] font-bold text-white uppercase'>
-                  not wired
+                <span
+                  className={
+                    "rounded bg-orange-500 px-2 py-0.5 font-mono text-[10px] font-bold text-white uppercase" +
+                    (coverEnabled ? "" : " invisible")
+                  }
+                >
+                  selected
                 </span>
               </div>
-              <p className='mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'>
-                10 s, 60 s, and 5 min room cadences are reserved in the public
-                policy, but v0.12.0 refuses them until the scheduler ships.
+              <p
+                id='cover-scheduled-description'
+                className='mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'
+              >
+                Every peer edge streams authenticated uniform cells on a fixed
+                cadence; real traffic substitutes into already-scheduled slots,
+                so message timing is not observable.
               </p>
-            </div>
+            </button>
           </div>
+
+          {coverEnabled && (
+            <div className='mt-3'>
+              <Label htmlFor='room-cover-cadence'>Cover cadence</Label>
+              <Description>
+                The cycle length is authenticated in the room policy and shared
+                inside the room link; every peer follows the same schedule.
+              </Description>
+              <Select
+                id='room-cover-cadence'
+                name='room-cover-cadence'
+                value={coverPresetId}
+                onChange={(event) => setCoverPresetId(event.target.value)}
+                className='mt-2'
+              >
+                {SCHEDULED_COVER_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.label} — {preset.description}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
         </fieldset>
 
         <p className='font-mono text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'>
           Fixed suite: interactive 3DH + ML-KEM-
           {roomPqModeParameterSet(pqMode)} + Double Ratchet
-          {pinEnabled ? " + CPace" : ""}. No downgrade negotiation.
+          {pinEnabled ? " + CPace" : ""}
+          {coverEnabled ? " + scheduled timing cover" : ""}. No downgrade
+          negotiation.
         </p>
 
         <div className='border-t border-zinc-300 pt-5 dark:border-zinc-700'>
           <Label htmlFor='room-invite-words'>Enter 24 invitation words</Label>
           <Description>
             Words carry the full 256-bit room capability plus a checksum. Match
-            the sender&apos;s ML-KEM and PIN settings above; the words never
-            enter the URL.
+            the sender&apos;s ML-KEM, PIN, and traffic-policy settings above
+            exactly — a mismatch fails the authenticated handshake. The words
+            never enter the URL.
           </Description>
           <textarea
             id='room-invite-words'

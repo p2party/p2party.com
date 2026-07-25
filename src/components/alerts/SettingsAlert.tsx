@@ -22,7 +22,7 @@ import {
   DEFAULT_SIGNALING_URL,
   DEFAULT_STUN_URLS,
 } from "../../hooks/useRoom";
-import { roomPqModeParameterSet } from "../../protocol/v3";
+import { coverModeSummary, roomPqModeParameterSet } from "../../protocol/v4";
 
 // import { Checkbox, CheckboxField } from "../checkbox";
 import { Description, Label } from "../fieldset";
@@ -269,13 +269,26 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
               {roomPolicy.authMode === "pin"
                 ? "CPace PIN authentication"
                 : "no room PIN"}{" "}
-              · ML-KEM-{roomPqModeParameterSet(roomPolicy.pqMode)} hybrid root ·
-              legacy signaling rendezvous.
+              · ML-KEM-{roomPqModeParameterSet(roomPolicy.pqMode)} hybrid root ·{" "}
+              {coverModeSummary(roomPolicy)} · legacy signaling rendezvous.
             </Description>
             <div className='grid gap-2 sm:grid-cols-2'>
-              <div className='rounded-lg border-2 border-orange-500 bg-orange-50/70 p-3 dark:bg-orange-950/25'>
-                <p className='font-mono text-xs font-bold text-orange-800 uppercase dark:text-orange-300'>
-                  Immediate · active
+              <div
+                className={
+                  roomPolicy.coverMode === "scheduled"
+                    ? "rounded-lg border border-zinc-300 bg-zinc-100/70 p-3 opacity-70 dark:border-zinc-700 dark:bg-zinc-900/70"
+                    : "rounded-lg border-2 border-orange-500 bg-orange-50/70 p-3 dark:bg-orange-950/25"
+                }
+              >
+                <p
+                  className={
+                    roomPolicy.coverMode === "scheduled"
+                      ? "font-mono text-xs font-bold text-zinc-600 uppercase dark:text-zinc-400"
+                      : "font-mono text-xs font-bold text-orange-800 uppercase dark:text-orange-300"
+                  }
+                >
+                  Immediate
+                  {roomPolicy.coverMode === "scheduled" ? "" : " · active"}
                 </p>
                 <p className='mt-1 text-xs text-zinc-600 dark:text-zinc-400'>
                   Cells leave as soon as the app can send them. No timed cover
@@ -283,15 +296,30 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
                 </p>
               </div>
               <div
-                className='rounded-lg border border-dashed border-zinc-300 bg-zinc-100/70 p-3 opacity-70 dark:border-zinc-700 dark:bg-zinc-900/70'
-                aria-disabled='true'
+                className={
+                  roomPolicy.coverMode === "scheduled"
+                    ? "rounded-lg border-2 border-orange-500 bg-orange-50/70 p-3 dark:bg-orange-950/25"
+                    : "rounded-lg border border-zinc-300 bg-zinc-100/70 p-3 opacity-70 dark:border-zinc-700 dark:bg-zinc-900/70"
+                }
               >
-                <p className='font-mono text-xs font-bold text-zinc-600 uppercase dark:text-zinc-400'>
-                  Scheduled · not wired
+                <p
+                  className={
+                    roomPolicy.coverMode === "scheduled"
+                      ? "font-mono text-xs font-bold text-orange-800 uppercase dark:text-orange-300"
+                      : "font-mono text-xs font-bold text-zinc-600 uppercase dark:text-zinc-400"
+                  }
+                >
+                  Scheduled
+                  {roomPolicy.coverMode === "scheduled" ? " · active" : ""}
                 </p>
                 <p className='mt-1 text-xs text-zinc-600 dark:text-zinc-400'>
-                  Future room-wide presets: 10 s, 60 s, or 5 min. v0.12.0
-                  rejects these policies until the scheduler exists.
+                  {roomPolicy.coverMode === "scheduled"
+                    ? `Every peer edge streams uniform cells on a fixed ${String(
+                        roomPolicy.coverCadenceMs / 1000,
+                      )} s cycle (${String(roomPolicy.coverLanes)} lanes × ${String(
+                        roomPolicy.coverFramesPerCell,
+                      )} cells); real traffic substitutes into scheduled slots.`
+                    : "Pick this at room creation: 10 s, 60 s, or 5 min cycles of authenticated cover traffic. The policy is immutable once the room exists."}
                 </p>
               </div>
             </div>

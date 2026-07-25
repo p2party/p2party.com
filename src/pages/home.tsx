@@ -153,7 +153,7 @@ const HomePage = () => {
         <div className='flex flex-col items-center text-center lg:items-start lg:text-left'>
           <span className='animate-fade-in mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/50 bg-orange-50/70 px-3 py-1 font-mono text-xs font-medium tracking-tight text-orange-700 shadow-[2px_2px_0_0_rgba(249,115,22,0.35)] dark:border-orange-700/50 dark:bg-orange-950/40 dark:text-orange-300'>
             <span className='inline-block size-1.5 animate-pulse rounded-full bg-orange-500' />
-            direct mesh · protocol v3 · no accounts
+            direct mesh · protocol v4 · no accounts
           </span>
           <h1 className='animate-fade-in text-4xl leading-tight font-extrabold tracking-tight text-balance text-zinc-900 sm:text-5xl lg:text-6xl dark:text-white'>
             Privacy That{" "}

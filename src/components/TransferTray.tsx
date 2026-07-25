@@ -5,7 +5,7 @@ import { XMarkIcon, StopIcon } from "@heroicons/react/20/solid";
 import { Button } from "./button";
 
 import type { Message } from "p2party";
-import type { MessageTransferHandle, SendMessageResult } from "../protocol/v3";
+import type { MessageTransferHandle, SendMessageResult } from "../protocol/v4";
 
 export type TransferStatus =
   "preparing" | "cancelling" | "delivered" | "partial" | "failed" | "cancelled";

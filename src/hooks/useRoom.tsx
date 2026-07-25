@@ -154,6 +154,18 @@ export const useRoom = ({
           rtcConfig,
           { policy, pin },
         );
+      } catch (cause) {
+        // The library fail-closes on a persisted pre-v4 room policy (it will
+        // not silently discard a stored policy — that could downgrade a PIN
+        // room). Translate the raw codec error into an actionable message.
+        if (
+          cause instanceof Error &&
+          /unsupported wire version|invalid encoded policy/i.test(cause.message)
+        )
+          throw new Error(
+            "This room was saved by the retired protocol v3 build and cannot reconnect under protocol v4. Create a fresh room, or purge this one from the saved rooms list.",
+          );
+        throw cause;
       } finally {
         pin?.fill(0);
       }

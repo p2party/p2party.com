@@ -4,6 +4,7 @@ import { Cog8ToothIcon, PlusIcon } from "@heroicons/react/20/solid";
 import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from "../navbar";
 
 import Spinner from "../custom/spinner";
+import CoverStatusPill from "../custom/CoverStatusPill";
 
 import { useRoom } from "../../hooks/useRoom";
 import { absoluteRoomInviteUrl } from "../../protocol/roomAccess";
@@ -59,6 +60,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
 
         {roomUrl.length > 0 && (
           <>
+            <CoverStatusPill />
             <Suspense fallback={<Spinner />}>
               <PeerDropdown
                 setAddressBookIsOpen={setShowAddressBook}

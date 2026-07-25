@@ -7,7 +7,7 @@ import QRCode from "qrcode";
 
 import { Alert, AlertActions, AlertTitle, AlertBody } from "../alert";
 import { Button } from "../button";
-import { roomPqModeParameterSet } from "../../protocol/v3";
+import { coverModeSummary, roomPqModeParameterSet } from "../../protocol/v4";
 
 import type { Dispatch, SetStateAction } from "react";
 import type { RoomPolicyV1 } from "p2party";
@@ -184,7 +184,8 @@ const QRCodeAlert = ({
         </div>
         <p className='mt-4 font-mono text-xs text-zinc-600 dark:text-zinc-300'>
           ML-KEM-{roomPqModeParameterSet(roomPolicy.pqMode)} ·{" "}
-          {roomPolicy.authMode === "pin" ? "PIN required" : "no room PIN"}
+          {roomPolicy.authMode === "pin" ? "PIN required" : "no room PIN"} ·{" "}
+          {coverModeSummary(roomPolicy)}
         </p>
         <label
           htmlFor='room-invite-words-copy'

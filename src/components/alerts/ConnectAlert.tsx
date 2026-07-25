@@ -16,7 +16,7 @@ import {
   hasTransientRoomPin,
   rememberRoomAccess,
 } from "../../protocol/roomAccess";
-import { roomPqModeParameterSet } from "../../protocol/v3";
+import { coverModeSummary, roomPqModeParameterSet } from "../../protocol/v4";
 
 import type { Dispatch, SetStateAction } from "react";
 
@@ -118,7 +118,7 @@ const ConnectAlert = ({
 
         <p>
           Room policy: hybrid ML-KEM-{roomPqModeParameterSet(roomPolicy.pqMode)}{" "}
-          + interactive 3DH, immediate delivery
+          + interactive 3DH, {coverModeSummary(roomPolicy)}
           {pinRequired ? ", CPace PIN authentication" : ""}.
         </p>
 

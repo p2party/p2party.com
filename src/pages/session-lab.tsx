@@ -38,6 +38,10 @@ interface DemoResult {
   frameCount: number;
   frameBytes: number;
   snapshotBytes: number;
+  pqEpochBefore: string;
+  pqEpochAfter: string;
+  healingGateObserved: boolean;
+  healedPlaintext: string;
 }
 
 const SessionLabPage = () => {
@@ -123,6 +127,36 @@ const SessionLabPage = () => {
         await restoredAlice.decrypt(reverseEnvelope),
       );
 
+      // protocol-v4 sparse post-quantum healing over the store-free control
+      // API. Contract: whenever a call returns a frame, the caller MUST
+      // persist serialize() BEFORE sending it, so a crash cannot fork the
+      // OFFER → ADVANCE → ACK sequence. Drive one exchange to epoch 1.
+      const pqEpochBefore = String(restoredAlice.pqEpoch);
+      for (let index = 0; index < 64; index += 1)
+        await bob.decrypt(
+          await restoredAlice.encrypt(
+            encoder.encode(`traffic ${String(index)}`),
+          ),
+        );
+      let healingGateObserved = false;
+      const offer = await restoredAlice.prepareHealing();
+      if (offer.frame) {
+        (await restoredAlice.serialize()).fill(0);
+        healingGateObserved = restoredAlice.healingInProgress;
+        const advance = await bob.acceptControlFrame(offer.frame);
+        if (!advance.frame) throw new Error("healing expected ADVANCE");
+        (await bob.serialize()).fill(0);
+        const ack = await restoredAlice.acceptControlFrame(advance.frame);
+        if (!ack.frame) throw new Error("healing expected ACK");
+        (await restoredAlice.serialize()).fill(0);
+        await bob.acceptControlFrame(ack.frame);
+      }
+      const healedPlaintext = decoder.decode(
+        await bob.decrypt(
+          await restoredAlice.encrypt(encoder.encode("post-quantum healed")),
+        ),
+      );
+
       setResult({
         protocolVersion: envelope.protocolVersion,
         forwardPlaintext,
@@ -133,6 +167,10 @@ const SessionLabPage = () => {
           0,
         ),
         snapshotBytes: snapshot.byteLength,
+        pqEpochBefore,
+        pqEpochAfter: String(bob.pqEpoch),
+        healingGateObserved,
+        healedPlaintext,
       });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Session demo failed");
@@ -172,15 +210,17 @@ const SessionLabPage = () => {
 
         <div className='mt-6 border-2 border-zinc-950 bg-zinc-50 p-5 shadow-[8px_8px_0_0_#eb5e28] sm:p-8 dark:border-zinc-200 dark:bg-zinc-950'>
           <p className='font-mono text-xs font-bold tracking-[0.2em] text-orange-700 uppercase dark:text-orange-300'>
-            protocol-v3 / standalone lab
+            protocol-v4 / standalone lab
           </p>
           <h1 className='mt-3 text-3xl font-black tracking-tight sm:text-5xl'>
             Bring your own transport.
           </h1>
           <p className='mt-4 max-w-3xl leading-relaxed text-zinc-600 dark:text-zinc-300'>
             This runs two <code>createSession()</code> peers in this tab,
-            encrypts a message, serializes one Double Ratchet, restores it, and
-            proves the reverse direction still decrypts.
+            encrypts a message, serializes one Double Ratchet, restores it,
+            proves the reverse direction still decrypts, then drives one sparse
+            post-quantum healing exchange (OFFER → ADVANCE → ACK) to PQ epoch 1
+            under the persist-before-send contract.
           </p>
           <div className='mt-4 rounded-lg border border-amber-400 bg-amber-50 p-3 font-mono text-xs leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200'>
             Honest boundary: this is an in-process byte-pipe demo. It does not
@@ -240,6 +280,15 @@ const SessionLabPage = () => {
                 </dd>
                 <dt>plaintext snapshot</dt>
                 <dd>{result.snapshotBytes.toLocaleString()} bytes, wiped</dd>
+                <dt>sparse-PQ epoch</dt>
+                <dd>
+                  {result.pqEpochBefore} → {result.pqEpochAfter}
+                  {result.healingGateObserved
+                    ? " (healingInProgress gated traffic mid-exchange)"
+                    : ""}
+                </dd>
+                <dt>post-heal round-trip</dt>
+                <dd className='break-words'>{result.healedPlaintext}</dd>
               </dl>
             </section>
           )}
@@ -256,7 +305,16 @@ const SessionLabPage = () => {
 const session = await createSession({ transport, identity, ...binding });
 const envelope = await session.encrypt(plaintext);
 const snapshot = await session.serialize(); // secret: encrypt at rest
-const restored = await restoreSession(snapshot);`}</code>
+const restored = await restoreSession(snapshot);
+
+// protocol-v4 sparse-PQ healing (store-free): persist BEFORE sending.
+const { frame } = await restored.prepareHealing();
+if (frame) {
+  await persist(await restored.serialize()); // crash cannot fork the exchange
+  send(frame); // peer answers via acceptControlFrame() → ADVANCE → ACK
+}
+restored.pqEpoch;            // 0n → 1n after the exchange
+restored.healingInProgress;  // true while the exchange gates traffic`}</code>
         </pre>
       </div>
     </main>
