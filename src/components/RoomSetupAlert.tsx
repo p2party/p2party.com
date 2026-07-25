@@ -28,7 +28,6 @@ import {
   coverSlotMs,
   COVER_LIMITS,
   immediateRoomPolicyFrom,
-  roomPqModeParameterSet,
   scheduledCoverPresetById,
   scheduledRoomPolicyFrom,
   SCHEDULED_COVER_PRESETS,
@@ -241,8 +240,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
     <Alert open={isOpen} onClose={close} size='3xl'>
       <AlertTitle>Create or join a protocol-v4 room</AlertTitle>
       <AlertDescription>
-        Room security settings are authenticated at the first connection and
-        cannot be silently changed later.
+        These settings are locked in when the room is created.
       </AlertDescription>
 
       <div
@@ -251,7 +249,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
         className='mt-4 flex border-2 border-zinc-950 dark:border-zinc-200'
       >
         {[
-          { id: false, label: "Default" },
+          { id: false, label: "Simple" },
           { id: true, label: "Advanced" },
         ].map((view) => (
           <button
@@ -274,13 +272,10 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           </button>
         ))}
       </div>
-      <AlertBody className='space-y-5'>
+      <AlertBody className='space-y-4'>
         <Field>
           <Label htmlFor='room-mlkem-suite'>Room-wide ML-KEM suite</Label>
-          <Description>
-            Every peer uses this exact suite. It is authenticated in the room
-            policy; there is no negotiation or downgrade fallback.
-          </Description>
+          <Description>Everyone in the room uses this exact suite.</Description>
           <Select
             id='room-mlkem-suite'
             name='room-mlkem-suite'
@@ -304,8 +299,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           <SwitchField>
             <Label>Require a room PIN</Label>
             <Description>
-              Adds CPace password authentication to every peer handshake. The
-              PIN stays in memory only; share it separately from the room link.
+              Share it separately from the link. Never stored.
             </Description>
             <Switch
               name='Require a room PIN'
@@ -334,12 +328,6 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
                 placeholder='Shared secret'
                 aria-describedby='new-room-pin-help'
               />
-              <p
-                id='new-room-pin-help'
-                className='mt-2 font-mono text-xs text-zinc-500 dark:text-zinc-400'
-              >
-                Never added to the URL, Redux, IndexedDB, logs, or analytics.
-              </p>
             </Field>
           )}
         </div>
@@ -423,9 +411,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
                 id='cover-scheduled-description'
                 className='mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'
               >
-                Every peer edge streams authenticated uniform cells on a fixed
-                cadence; real traffic substitutes into already-scheduled slots,
-                so message timing is not observable.
+                Send on a fixed rhythm, so nobody can tell when you sent.
               </p>
             </button>
           </div>
@@ -433,10 +419,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           {coverEnabled && !advanced && (
             <Field className='mt-3'>
               <Label htmlFor='room-cover-cadence'>Cover cadence</Label>
-              <Description>
-                The cycle length is authenticated in the room policy and shared
-                inside the room link; every peer follows the same schedule.
-              </Description>
+              <Description>Everyone follows the same rhythm.</Description>
               <Select
                 id='room-cover-cadence'
                 name='room-cover-cadence'
@@ -513,8 +496,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
               </div>
             ) : (
               <p className='text-xs text-zinc-500 dark:text-zinc-400'>
-                The schedule fields apply to scheduled cover; this room sends
-                immediately, so the policy stores them as zero.
+                Schedule fields apply to scheduled cover only.
               </p>
             )}
 
@@ -535,8 +517,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
             <Field>
               <Label htmlFor='room-rendezvous'>Rendezvous</Label>
               <Description>
-                How peers find each other. Private rendezvous has a reserved
-                policy code but no implementation yet, so it cannot be selected.
+                Private options are reserved but not implemented yet.
               </Description>
               <Select
                 id='room-rendezvous'
@@ -562,8 +543,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
             <Field>
               <Label htmlFor='room-revision'>Policy revision</Label>
               <Description>
-                Authenticated with the policy. Both sides must use the same
-                number; it exists to distinguish otherwise identical rooms.
+                Distinguishes otherwise identical rooms. Both sides must match.
               </Description>
               <Input
                 id='room-revision'
@@ -581,21 +561,11 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           </div>
         )}
 
-        <p className='font-mono text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          Fixed suite: interactive 3DH + ML-KEM-
-          {roomPqModeParameterSet(pqMode)} + Double Ratchet
-          {pinEnabled ? " + CPace" : ""}
-          {coverEnabled ? " + scheduled timing cover" : ""}. No downgrade
-          negotiation.
-        </p>
-
-        <Field className='block border-t border-zinc-300 pt-5 dark:border-zinc-700'>
+        <Field className='block border-t border-zinc-300 pt-4 dark:border-zinc-700'>
           <Label htmlFor='room-invite-words'>Enter 24 invitation words</Label>
           <Description>
-            Words carry the full 256-bit room capability plus a checksum. Match
-            the sender&apos;s ML-KEM, PIN, and traffic-policy settings above
-            exactly — a mismatch fails the authenticated handshake. The words
-            never enter the URL.
+            Match the sender&apos;s settings above, or the connection is
+            refused.
           </Description>
           <textarea
             id='room-invite-words'
