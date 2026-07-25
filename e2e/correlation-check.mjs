@@ -89,13 +89,11 @@ const run = async () => {
     const probePage = await probe.newPage();
     await probePage.goto(APP, { waitUntil: "networkidle" });
     const policyParam = await probePage.evaluate((p) => {
-      const bytes = window.p2party.encodeRoomPolicyV1(p);
-      let binary = "";
-      for (const b of bytes) binary += String.fromCharCode(b);
-      return btoa(binary)
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
+      // Use the library's canonical codec — the same one the app decodes
+      // with — so the harness can never build a policy param the app rejects.
+      return window.p2party.encodeRoomCapabilityBase64Url(
+        window.p2party.encodeRoomPolicyV1(p),
+      );
     }, scheduledPolicy);
     await probe.close();
     const roomPath = `${APP}/r?policy=${policyParam}#v1.${capability.toString("base64url")}`;
@@ -115,7 +113,9 @@ const run = async () => {
     }
     for (const { page, tag } of contexts) {
       await page.goto(roomPath, { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: "Connect" }).click({ timeout: 30000 });
+      await page
+        .getByRole("button", { name: "Connect" })
+        .click({ timeout: 30000 });
       log(`${tag} connected`);
     }
 
@@ -232,7 +232,8 @@ const run = async () => {
   }
   const windowSpan = merged.reduce(
     (total, [lo, hi]) =>
-      total + (Math.min(hi, endSec) - Math.max(lo, startSec) > 0
+      total +
+      (Math.min(hi, endSec) - Math.max(lo, startSec) > 0
         ? Math.min(hi, endSec) - Math.max(lo, startSec)
         : 0),
     0,

@@ -87,28 +87,11 @@ const pqModeToQuery = (pqMode: RoomPqMode): string => {
   return "1024";
 };
 
-// The full-policy invite parameter is the base64url of the canonical 32-byte
-// RoomPolicyV1 wire form (invite policy transport is frontend-owned).
-const ENCODED_POLICY_PARAM_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
-
-const base64UrlEncode = (bytes: Uint8Array): string => {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replace(/\+/gu, "-")
-    .replace(/\//gu, "_")
-    .replace(/=+$/u, "");
-};
-
-const base64UrlDecode = (text: string): Uint8Array => {
-  const normalized = text.replace(/-/gu, "+").replace(/_/gu, "/");
-  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-};
-
+// The policy parameter is the canonical base64url of the 32-byte RoomPolicyV1
+// wire form. The library's capability codec is exactly that — a strict
+// 32-byte base64url codec that rejects non-canonical spellings (it checks the
+// final sextet's unused bits and re-encodes to compare), so the policy
+// parameter reuses it rather than carrying a second implementation.
 export const parseRoomPolicyInvite = (
   search: string,
 ): ParsedRoomPolicyInvite => {
@@ -142,17 +125,21 @@ export const parseRoomPolicyInvite = (
       throw new Error(
         "Room invitation cannot combine a full policy with auth/pq parameters",
       );
-    if (!ENCODED_POLICY_PARAM_PATTERN.test(encodedPolicy))
-      throw new Error("Room invitation has a malformed policy parameter");
-    const policyBytes = base64UrlDecode(encodedPolicy);
-    // atob discards the final character's two unused bits, so distinct
-    // 43-char strings can decode to identical bytes — a per-recipient
-    // watermark channel on re-shared invites. Enforce the same canonical
-    // encoding rule the library applies to the capability fragment: the
-    // received parameter must BE the re-encoding of its own bytes.
-    if (base64UrlEncode(policyBytes) !== encodedPolicy)
-      throw new Error("Room invitation has a non-canonical policy parameter");
-    const policy = p2party.decodeRoomPolicyV1(policyBytes);
+    let policy: RoomPolicyV1;
+    try {
+      policy = p2party.decodeRoomPolicyV1(
+        p2party.decodeRoomCapabilityBase64Url(encodedPolicy),
+      );
+    } catch (cause) {
+      throw Object.assign(
+        new Error(
+          `Room invitation has a malformed policy parameter: ${
+            cause instanceof Error ? cause.message : "unreadable"
+          }`,
+        ),
+        { cause },
+      );
+    }
     return {
       policy,
       specified: {
@@ -201,7 +188,12 @@ export const roomInvitePath = (
     if (policy.coverMode === "scheduled") {
       // A scheduled room MUST share its complete policy: a joiner that guesses
       // the schedule fails the authenticated handshake (policy hash mismatch).
-      params.set("policy", base64UrlEncode(p2party.encodeRoomPolicyV1(policy)));
+      params.set(
+        "policy",
+        p2party.encodeRoomCapabilityBase64Url(
+          p2party.encodeRoomPolicyV1(policy),
+        ),
+      );
     } else {
       if (policy.authMode === "pin") params.set("auth", "pin");
       if (policy.pqMode !== "hybrid-mlkem768")

@@ -44,13 +44,11 @@ const log = (...a) =>
  */
 const encodePolicyParam = async (page, policy) =>
   page.evaluate((p) => {
-    const bytes = window.p2party.encodeRoomPolicyV1(p);
-    let binary = "";
-    for (const b of bytes) binary += String.fromCharCode(b);
-    return btoa(binary)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
+    // Use the library's canonical codec — the same one the app decodes
+    // with — so the harness can never build a policy param the app rejects.
+    return window.p2party.encodeRoomCapabilityBase64Url(
+      window.p2party.encodeRoomPolicyV1(p),
+    );
   }, policy);
 
 const stats = (values) => {

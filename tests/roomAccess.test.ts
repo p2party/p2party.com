@@ -144,7 +144,34 @@ describe("room invitation routing", () => {
     expect(() => parseRoomPolicyInvite("?policy=not-base64url")).toThrow(
       "malformed policy parameter",
     );
-    expect(() => parseRoomPolicyInvite(`?policy=${"A".repeat(43)}`)).toThrow();
+    // 43 valid base64url characters that are not a valid policy: the length
+    // and alphabet pass, the policy codec rejects the bytes.
+    expect(() => parseRoomPolicyInvite(`?policy=${"A".repeat(43)}`)).toThrow(
+      "malformed policy parameter",
+    );
+
+    // Canonicality is enforced by the library codec the parameter now shares
+    // with the capability fragment: the final base64url character carries two
+    // unused bits, so a spelling that sets them decodes to the same bytes and
+    // would otherwise be an undetectable per-recipient watermark.
+    const scheduled = scheduledRoomPolicy(
+      "nopin",
+      "hybrid-mlkem768",
+      SCHEDULED_COVER_PRESETS[0],
+    );
+    const canonical = roomInvitePath(canonicalRoomUrl, scheduled)
+      .split("#")[0]
+      .slice("/r?policy=".length);
+    expect(() => parseRoomPolicyInvite(`?policy=${canonical}`)).not.toThrow();
+    const alphabet =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const lastIndex = alphabet.indexOf(canonical.at(-1)!);
+    const smuggled =
+      canonical.slice(0, -1) + alphabet[(lastIndex & ~0x03) | 0x01];
+    expect(smuggled).not.toBe(canonical);
+    expect(() => parseRoomPolicyInvite(`?policy=${smuggled}`)).toThrow(
+      "malformed policy parameter",
+    );
   });
 
   test("rejects every capability-bearing HTTP room path", () => {
