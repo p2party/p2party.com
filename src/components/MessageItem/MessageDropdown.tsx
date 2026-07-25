@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capawesome-team/capacitor-file-opener";
@@ -71,23 +73,47 @@ const MessageDropdown = ({
 
   // Materialize the file only on user action (not on render). For a big file
   // this streams the IndexedDB chunks to a disk-backed OPFS File in the worker.
-  const materializeFile = async (): Promise<Blob | null> => {
+  const [fileError, setFileError] = useState("");
+
+  const describeFailure = (error: unknown): string =>
+    error instanceof Error && error.message.length > 0
+      ? error.message
+      : "Something went wrong opening this file.";
+
+  /**
+   * Returns the reassembled file, or throws with a reason the user can act
+   * on. readMessage yields a string (not a Blob) for a text message and for
+   * a transfer that has not finished arriving.
+   */
+  const materializeFile = async (): Promise<Blob> => {
     const m = await p2party.readMessage(
       message.merkleRootHex,
       message.sha512Hex,
     );
-    return m.message instanceof Blob ? m.message : null;
+    if (m.message instanceof Blob) return m.message;
+    if (m.percentage < 100)
+      throw new Error(
+        `This file is still arriving (${String(Math.floor(m.percentage))}%). Try again once it completes.`,
+      );
+    throw new Error("This message has no file attached.");
   };
 
   const handleOpen = async () => {
+    setFileError("");
     try {
       const blob = await materializeFile();
-      if (!blob) return;
       const objectUrl = URL.createObjectURL(blob);
-      window.open(objectUrl, "_blank");
+      // Reassembly consumed the user gesture, so a popup blocker can reject
+      // this — window.open returns null and nothing would otherwise happen.
+      const opened = window.open(objectUrl, "_blank");
+      if (!opened)
+        setFileError(
+          "Your browser blocked the new tab. Allow pop-ups for this site, or use Download.",
+        );
       setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } catch (error) {
       console.error(error);
+      setFileError(describeFailure(error));
     }
   };
 
@@ -98,6 +124,7 @@ const MessageDropdown = ({
     typeof window !== "undefined" && "showSaveFilePicker" in window;
 
   const handleSaveAs = async () => {
+    setFileError("");
     try {
       // The picker must be invoked within the click gesture, before any await.
       const handle = await (
@@ -108,19 +135,21 @@ const MessageDropdown = ({
         }
       ).showSaveFilePicker({ suggestedName: msgFilename });
       const blob = await materializeFile();
-      if (!blob) return;
       const writable = await handle.createWritable();
       await blob.stream().pipeTo(writable);
     } catch (error) {
       // A user cancelling the picker throws AbortError — not an error.
-      if ((error as Error)?.name !== "AbortError") console.error(error);
+      if ((error as Error)?.name !== "AbortError") {
+        console.error(error);
+        setFileError(describeFailure(error));
+      }
     }
   };
 
   const handleDownload = async () => {
+    setFileError("");
     try {
       const blob = await materializeFile();
-      if (!blob) return;
 
       if (Capacitor.getPlatform() === "web") {
         const objectUrl = URL.createObjectURL(blob);
@@ -149,6 +178,7 @@ const MessageDropdown = ({
       }
     } catch (error) {
       console.error(error);
+      setFileError(describeFailure(error));
     }
   };
 
@@ -272,8 +302,36 @@ const MessageDropdown = ({
             <TrashIcon />
             Delete
           </DropdownItem>
+
+          {/* The privacy machinery this app markets, per message: how many
+              uniform cells actually arrived, how many carried real bytes,
+              and how many resend rounds it took. Receiver-side counters are
+              absent on messages you sent. */}
+          {message.chunksReceivedTotal !== undefined && (
+            <div className='border-t border-zinc-950/10 px-3.5 pt-2 pb-1 font-mono text-[11px] leading-relaxed text-zinc-500 sm:px-3 dark:border-white/10 dark:text-zinc-400'>
+              <div>
+                {message.chunksReceivedTotal} cells received ·{" "}
+                {message.chunksReceivedReal ?? 0} real ·{" "}
+                {message.chunksReceivedTotal -
+                  (message.chunksReceivedReal ?? 0)}{" "}
+                cover
+              </div>
+              {(message.retransmits ?? 0) > 0 && (
+                <div>{message.retransmits} resend rounds</div>
+              )}
+            </div>
+          )}
         </DropdownMenu>
       </Dropdown>
+
+      {fileError && (
+        <p
+          role='alert'
+          className='mt-1 rounded-lg border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
+        >
+          {fileError}
+        </p>
+      )}
 
       {/* Loading Line */}
       {/*

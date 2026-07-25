@@ -24,6 +24,11 @@ export type PeerDeliveryOutcome = SendMessageResult["outcomes"][number];
  */
 export type RoomCoverStatus = NonNullable<Room["coverStatusByPeer"]>[string];
 
+/** Live authenticated-handshake state for one peer edge. */
+export type PeerHandshakeStatus = NonNullable<
+  Room["handshakeStatusByPeer"]
+>[string];
+
 /**
  * Keep the version-specific calls visible at the integration boundary. These
  * are direct, declaration-checked 0.13.0 exports—not a compatibility shim.

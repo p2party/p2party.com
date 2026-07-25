@@ -1,5 +1,9 @@
 import { useState, lazy, Suspense } from "react";
-import { Cog8ToothIcon, PlusIcon } from "@heroicons/react/20/solid";
+import {
+  ChartBarSquareIcon,
+  Cog8ToothIcon,
+  PlusIcon,
+} from "@heroicons/react/20/solid";
 
 import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from "../navbar";
 
@@ -13,6 +17,7 @@ const SettingsAlert = lazy(() => import("../alerts/SettingsAlert"));
 const QRCodeAlert = lazy(() => import("../alerts/QRCodeAlert"));
 const AddressBookAlert = lazy(() => import("../alerts/AddressBookAlert"));
 const BlacklistAlert = lazy(() => import("../alerts/BlacklistAlert"));
+const DiagnosticsAlert = lazy(() => import("../alerts/DiagnosticsAlert"));
 
 // const SignalingDropdown = lazy(() => import("./SignalingDropdown"));
 const PeerDropdown = lazy(() => import("./PeerDropdown"));
@@ -37,6 +42,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
   const [showBlacklist, setShowBlacklist] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showRoomSetup, setShowRoomSetup] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   return (
     <Navbar>
@@ -91,6 +97,22 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
               />
             </Suspense>
           </>
+        )}
+
+        {roomUrl.length > 0 && (
+          <NavbarItem
+            aria-label='advanced diagnostics'
+            title='Advanced diagnostics'
+            onClick={() => setShowDiagnostics(true)}
+          >
+            <ChartBarSquareIcon />
+            <Suspense fallback={<Spinner />}>
+              <DiagnosticsAlert
+                isOpen={showDiagnostics}
+                setIsOpen={setShowDiagnostics}
+              />
+            </Suspense>
+          </NavbarItem>
         )}
 
         <NavbarItem aria-label='settings' onClick={() => setShowSettings(true)}>

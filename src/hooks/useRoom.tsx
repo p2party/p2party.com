@@ -26,6 +26,7 @@ const EMPTY_PEERS: Room["peers"] = [];
 const EMPTY_CHANNELS: Room["channels"] = [];
 const EMPTY_MESSAGES: Message[] = [];
 const EMPTY_COVER_STATUS: NonNullable<Room["coverStatusByPeer"]> = {};
+const EMPTY_HANDSHAKE_STATUS: NonNullable<Room["handshakeStatusByPeer"]> = {};
 
 interface UseRoomOptions {
   /**
@@ -69,6 +70,8 @@ export const useRoom = ({
       peers: room?.peers ?? EMPTY_PEERS,
       channels: room?.channels ?? EMPTY_CHANNELS,
       coverStatusByPeer: room?.coverStatusByPeer ?? EMPTY_COVER_STATUS,
+      handshakeStatusByPeer:
+        room?.handshakeStatusByPeer ?? EMPTY_HANDSHAKE_STATUS,
     };
   }, shallowEqual);
   const messages = useSelector((state: State) => {
@@ -162,8 +165,11 @@ export const useRoom = ({
           cause instanceof Error &&
           /unsupported wire version|invalid encoded policy/i.test(cause.message)
         )
-          throw new Error(
-            "This room was saved by the retired protocol v3 build and cannot reconnect under protocol v4. Create a fresh room, or purge this one from the saved rooms list.",
+          throw Object.assign(
+            new Error(
+              "This room was saved by the retired protocol v3 build and cannot reconnect under protocol v4. Create a fresh room, or purge this one from the saved rooms list.",
+            ),
+            { cause },
           );
         throw cause;
       } finally {
@@ -227,6 +233,7 @@ export const useRoom = ({
     peers: roomView.peers,
     channels: roomView.channels,
     coverStatusByPeer: roomView.coverStatusByPeer,
+    handshakeStatusByPeer: roomView.handshakeStatusByPeer,
     messages,
     selectedChannel,
     connect: connectToRoom,

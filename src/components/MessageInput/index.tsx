@@ -114,9 +114,14 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        handleSend();
-      }
+      // Chat convention: Enter sends, Shift+Enter starts a new line. Ctrl/Cmd
+      // +Enter keeps working for anyone used to it. Never send mid-composition
+      // — an IME candidate selection also fires Enter.
+      if (e.key !== "Enter") return;
+      if (e.nativeEvent.isComposing) return;
+      if (e.shiftKey) return;
+      e.preventDefault();
+      handleSend();
     },
     [handleSend],
   );
@@ -140,7 +145,8 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               disabled={channels.length === 0}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e)}
-              placeholder='Type your message...'
+              placeholder='Type your message…'
+              aria-describedby='message-input-hint'
               resizable={false}
               className='mr-1 flex-1 overflow-hidden rounded-xl font-medium'
               rows={1}
@@ -148,6 +154,7 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
             <Button
               onClick={handleSend}
               color='orange'
+              disabled={newMessage.length === 0}
               aria-label='Send message'
               title='Send message'
               className='shrink-0 cursor-pointer rounded-xl'

@@ -12,6 +12,7 @@ import {
 
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
+import HandshakeStatusBanner from "../components/custom/HandshakeStatusBanner";
 
 import type { SendMessageResult, MessageTransferHandle } from "../protocol/v4";
 import type { TrackedTransfer } from "../components/TransferTray";
@@ -53,11 +54,18 @@ const ChatPage = () => {
     disconnectFromSignalingServer,
     roomUrl,
     roomId,
+    handshakeStatusByPeer,
     // purgeRoom,
   } = useRoom();
 
+  // A failed handshake is reported by its own banner; showing "waiting for
+  // peers" alongside it would contradict the real state.
+  const hasHandshakeFailure = Object.values(handshakeStatusByPeer).some(
+    (status) => status.status === "failed",
+  );
+
   const [messageCount, setMessageCount] = useState(0);
-  const [, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [dots, setDots] = useState("");
   const [transfers, setTransfers] = useState<TrackedTransfer[]>([]);
   const [sendError, setSendError] = useState("");
@@ -158,6 +166,9 @@ const ChatPage = () => {
 
   const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    // dragleave also fires when moving between children; ignore those.
+    if (event.currentTarget.contains(event.relatedTarget as Node | null))
+      return;
     setIsDragging(false);
   };
 
@@ -167,6 +178,8 @@ const ChatPage = () => {
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    // A drop ends the drag: without this the overlay stays up forever.
+    setIsDragging(false);
     const files = event.dataTransfer.files;
     if (files) {
       handleFiles(files);
@@ -313,26 +326,43 @@ const ChatPage = () => {
         </Suspense>
       </div>
 
-      <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
-        {peers.length === 0 && signalingServerConnectionState.isConnected && (
-          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
-            <Badge
-              color='orange'
-              className='min-h-11 w-full cursor-pointer items-center justify-center px-4 py-2 text-center text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500'
-              role='button'
-              tabIndex={0}
-              onClick={disconnectFromSignalingServer}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  disconnectFromSignalingServer();
-                }
-              }}
-            >
-              Waiting for peers{dots}
-            </Badge>
+      {isDragging && (
+        <div className='pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-white/85 lg:left-64 dark:bg-black/85'>
+          <div className='border-2 border-dashed border-orange-500 px-8 py-6 text-center'>
+            <p className='font-mono text-sm font-bold tracking-[0.15em] text-orange-700 uppercase dark:text-orange-400'>
+              Drop to send
+            </p>
+            <p className='mt-1 text-xs text-zinc-600 dark:text-zinc-400'>
+              Files go straight to your peers — never to a server.
+            </p>
           </div>
-        )}
+        </div>
+      )}
+
+      <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
+        <HandshakeStatusBanner />
+
+        {peers.length === 0 &&
+          signalingServerConnectionState.isConnected &&
+          !hasHandshakeFailure && (
+            <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
+              <Badge
+                color='orange'
+                className='min-h-11 w-full cursor-pointer items-center justify-center px-4 py-2 text-center text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500'
+                role='button'
+                tabIndex={0}
+                onClick={disconnectFromSignalingServer}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    disconnectFromSignalingServer();
+                  }
+                }}
+              >
+                Waiting for peers{dots}
+              </Badge>
+            </div>
+          )}
 
         {!signalingServerConnectionState.isConnected && (
           <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
