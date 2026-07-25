@@ -20,7 +20,7 @@ const BlogPage = () => (
 
         <aside
           aria-label='Series status'
-          className='border border-zinc-900 bg-zinc-950 p-5 font-mono text-xs leading-6 text-zinc-300 shadow-[7px_7px_0_0_#f97316] dark:border-zinc-700'
+          className='shadow-brutal border border-zinc-900 bg-zinc-950 p-5 font-mono text-xs leading-6 text-zinc-300 dark:border-zinc-700'
         >
           <p className='text-orange-400'>$ ./threat-model --honest</p>
           <p className='mt-3'>
@@ -45,7 +45,7 @@ const BlogPage = () => (
             key={post.slug}
             className='group grid gap-4 border-b border-zinc-900/20 py-8 sm:grid-cols-[5rem_1fr_auto] sm:items-start dark:border-white/20'
           >
-            <span className='font-mono text-3xl font-black text-orange-600'>
+            <span className='font-mono text-3xl font-black text-orange-600 dark:text-orange-500'>
               {String(post.order).padStart(2, "0")}
             </span>
             <div>

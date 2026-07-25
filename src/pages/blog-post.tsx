@@ -152,7 +152,7 @@ const BlogPostPage = () => {
               href={previous.href}
               className='rounded border border-zinc-900/20 p-5 text-sm hover:border-orange-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:border-white/20'
             >
-              <span className='block font-mono text-xs text-zinc-500'>
+              <span className='block font-mono text-xs text-zinc-500 dark:text-zinc-400'>
                 ← previous
               </span>
               <span className='mt-2 block font-bold'>{previous.title}</span>
@@ -165,7 +165,7 @@ const BlogPostPage = () => {
               href={next.href}
               className='rounded border border-zinc-900/20 p-5 text-right text-sm hover:border-orange-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:border-white/20'
             >
-              <span className='block font-mono text-xs text-zinc-500'>
+              <span className='block font-mono text-xs text-zinc-500 dark:text-zinc-400'>
                 next →
               </span>
               <span className='mt-2 block font-bold'>{next.title}</span>

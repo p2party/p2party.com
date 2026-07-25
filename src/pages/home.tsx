@@ -123,10 +123,6 @@ const HomePage = () => {
 
   return (
     <div className='relative isolate flex min-h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col items-center overflow-hidden bg-white px-6 dark:bg-black'>
-      {/* Decorative blobs */}
-      <div className='pointer-events-none absolute -top-40 -right-40 h-120 w-120 rounded-full bg-orange-200/40 blur-3xl dark:bg-orange-900/20' />
-      <div className='pointer-events-none absolute -bottom-32 -left-32 h-95 w-95 rounded-full bg-amber-100/50 blur-3xl dark:bg-amber-900/15' />
-
       {/* Retro dot grid */}
       <div
         className='pointer-events-none absolute inset-0 text-orange-500 opacity-[0.08] dark:opacity-[0.05]'
@@ -145,25 +141,25 @@ const HomePage = () => {
           <Suspense
             fallback={<div className='h-56 sm:h-80 lg:h-100' aria-hidden />}
           >
-            <CatAvatar className='animate-float m-0 w-56 p-0 opacity-90 drop-shadow-2xl sm:w-80 lg:w-100' />
+            <CatAvatar className='animate-float m-0 w-56 p-0 motion-reduce:animate-none sm:w-80 lg:w-100' />
           </Suspense>
         </div>
 
         {/* Copy + CTAs */}
         <div className='flex flex-col items-center text-center lg:items-start lg:text-left'>
-          <span className='animate-fade-in mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/50 bg-orange-50/70 px-3 py-1 font-mono text-xs font-medium tracking-tight text-orange-700 shadow-[2px_2px_0_0_rgba(249,115,22,0.35)] dark:border-orange-700/50 dark:bg-orange-950/40 dark:text-orange-300'>
-            <span className='inline-block size-1.5 animate-pulse rounded-full bg-orange-500' />
+          <span className='animate-fade-in mb-4 inline-flex items-center gap-2 border-2 border-zinc-950 bg-white px-3 py-1 font-mono text-xs font-bold tracking-[0.2em] text-zinc-950 uppercase dark:border-zinc-200 dark:bg-zinc-950 dark:text-white'>
+            <span className='bg-darkOrange inline-block size-1.5' />
             direct mesh · protocol v4 · no accounts
           </span>
-          <h1 className='animate-fade-in text-4xl leading-tight font-extrabold tracking-tight text-balance text-zinc-900 sm:text-5xl lg:text-6xl dark:text-white'>
+          <h1 className='animate-fade-in text-4xl leading-tight font-black tracking-[-0.055em] text-balance text-zinc-950 sm:text-5xl lg:text-6xl dark:text-white'>
             Privacy That{" "}
-            <span className='from-darkOrange to-mediumOrange bg-linear-to-r bg-clip-text text-transparent'>
+            <span className='text-orange-600 dark:text-orange-500'>
               Fights Back
             </span>
           </h1>
 
           <p className='animate-slide-up mt-4 max-w-lg text-lg leading-relaxed text-balance text-zinc-500 dark:text-zinc-400'>
-            Peer-to-peer rooms with post-quantum-hardened ratchets.
+            Peer-to-peer rooms with post-quantum-hardened ratchets.{" "}
             <br className='hidden sm:block' />
             Sniffers get uniform cells. You get privacy. No accounts.
           </p>
@@ -172,19 +168,19 @@ const HomePage = () => {
             <Button
               onClick={() => setRoomSetupOpen(true)}
               color='orange'
-              className='rounded-xl px-8 py-3 text-lg font-semibold shadow-[4px_4px_0_0_rgba(0,0,0,0.18)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.24)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_0_rgba(0,0,0,0.2)]'
+              className='shadow-brutal-sm rounded-none border-2 border-zinc-950 px-8 py-3 text-lg font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
             >
               Generate Room
             </Button>
             <Link
               href='/session-lab'
-              className='inline-flex items-center gap-1.5 rounded-xl border border-orange-300/70 bg-orange-50/60 px-5 py-2.5 font-mono text-sm font-semibold text-orange-800 shadow-[2px_2px_0_0_rgba(249,115,22,0.18)] transition-colors hover:bg-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-orange-800/70 dark:bg-orange-950/30 dark:text-orange-300 dark:hover:bg-orange-950/60'
+              className='inline-flex items-center gap-1.5 rounded-none border-2 border-zinc-950 bg-white px-5 py-2.5 font-mono text-sm font-semibold text-zinc-950 transition-colors hover:bg-orange-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-zinc-200 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900'
             >
               createSession() lab
             </Link>
             <Link
               href='/blog'
-              className='inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 font-mono text-sm font-semibold text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-orange-300'
+              className='inline-flex items-center gap-1.5 rounded-none px-5 py-2.5 font-mono text-sm font-semibold text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-orange-300'
             >
               protocol field notes
             </Link>
@@ -192,7 +188,7 @@ const HomePage = () => {
               href='https://github.com/p2party/p2party-js'
               target='_blank'
               rel='noopener noreferrer'
-              className='inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-white'
+              className='inline-flex items-center gap-1.5 rounded-none px-5 py-2.5 font-mono text-sm font-semibold text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-white'
             >
               <svg className='size-4' fill='currentColor' viewBox='0 0 24 24'>
                 <path
@@ -212,17 +208,17 @@ const HomePage = () => {
       </Suspense>
 
       {/* Feature cards */}
-      <div className='relative mx-auto mb-16 grid w-full max-w-7xl gap-5 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className='relative mx-auto mb-16 grid w-full max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4'>
         {features.map((f, i) => (
           <div
             key={f.title}
-            className='group rounded-2xl border border-zinc-200/70 bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all duration-150 hover:-translate-y-1 hover:border-orange-400/70 hover:shadow-[6px_6px_0_0_rgba(249,115,22,0.22)] dark:border-zinc-800/70 dark:bg-zinc-900/60 dark:hover:border-orange-600/60'
+            className='group shadow-brutal-sm hover:shadow-brutal border-2 border-zinc-950 bg-white p-6 transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 motion-reduce:transition-none dark:border-zinc-200 dark:bg-zinc-950'
             style={{ animationDelay: `${i * 120}ms` }}
           >
-            <div className='from-darkOrange to-mediumOrange mb-3 inline-flex rounded-lg bg-linear-to-br p-2 text-white shadow-sm'>
+            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
               {f.icon}
             </div>
-            <h3 className='text-base font-semibold text-zinc-900 dark:text-white'>
+            <h3 className='font-mono text-base font-bold text-zinc-950 dark:text-white'>
               {f.title}
             </h3>
             <p className='mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
@@ -233,10 +229,10 @@ const HomePage = () => {
       </div>
 
       {/* How it works — the offensive protocol */}
-      <div className='relative mb-20 w-full max-w-7xl'>
-        <h2 className='mb-2 text-center text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl dark:text-white'>
+      <div className='relative mb-20 w-full max-w-6xl'>
+        <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
           How&nbsp;
-          <span className='from-darkOrange to-mediumOrange bg-linear-to-r bg-clip-text text-transparent'>
+          <span className='text-orange-600 dark:text-orange-500'>
             Offensive
           </span>
           &nbsp;Cryptography Works
@@ -251,12 +247,12 @@ const HomePage = () => {
           {steps.map((s) => (
             <div
               key={s.num}
-              className='relative rounded-2xl border border-zinc-200/70 bg-white/80 p-6 backdrop-blur-sm dark:border-zinc-800/70 dark:bg-zinc-900/60'
+              className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'
             >
-              <span className='from-darkOrange to-mediumOrange mb-3 block bg-linear-to-r bg-clip-text text-3xl font-black text-transparent'>
+              <span className='text-darkOrange mb-3 block font-mono text-3xl font-black'>
                 {s.num}
               </span>
-              <h3 className='mb-2 text-base font-semibold text-zinc-900 dark:text-white'>
+              <h3 className='mb-2 font-mono text-base font-bold text-zinc-950 dark:text-white'>
                 {s.title}
               </h3>
               <p className='text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
@@ -268,10 +264,10 @@ const HomePage = () => {
       </div>
 
       {/* Infrastructure */}
-      <div className='relative mb-20 w-full max-w-7xl'>
-        <h2 className='mb-2 text-center text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl dark:text-white'>
+      <div className='relative mb-20 w-full max-w-6xl'>
+        <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
           Minimal&nbsp;
-          <span className='from-darkOrange to-mediumOrange bg-linear-to-r bg-clip-text text-transparent'>
+          <span className='text-orange-600 dark:text-orange-500'>
             Infrastructure
           </span>
         </h2>
@@ -282,8 +278,8 @@ const HomePage = () => {
         </p>
 
         <div className='grid gap-6 sm:grid-cols-3'>
-          <div className='relative rounded-2xl border border-zinc-200/70 bg-white/80 p-6 backdrop-blur-sm dark:border-zinc-800/70 dark:bg-zinc-900/60'>
-            <div className='from-darkOrange to-mediumOrange mb-3 inline-flex rounded-lg bg-linear-to-br p-2 text-white shadow-sm'>
+          <div className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'>
+            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 viewBox='0 0 24 24'
@@ -298,7 +294,7 @@ const HomePage = () => {
                 />
               </svg>
             </div>
-            <h3 className='mb-2 text-base font-semibold text-zinc-900 dark:text-white'>
+            <h3 className='mb-2 font-mono text-base font-bold text-zinc-950 dark:text-white'>
               Signaling Server
             </h3>
             <p className='text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
@@ -308,8 +304,8 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className='relative rounded-2xl border border-zinc-200/70 bg-white/80 p-6 backdrop-blur-sm dark:border-zinc-800/70 dark:bg-zinc-900/60'>
-            <div className='from-darkOrange to-mediumOrange mb-3 inline-flex rounded-lg bg-linear-to-br p-2 text-white shadow-sm'>
+          <div className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'>
+            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 viewBox='0 0 24 24'
@@ -323,7 +319,7 @@ const HomePage = () => {
                 />
               </svg>
             </div>
-            <h3 className='mb-2 text-base font-semibold text-zinc-900 dark:text-white'>
+            <h3 className='mb-2 font-mono text-base font-bold text-zinc-950 dark:text-white'>
               STUN Server
             </h3>
             <p className='text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
@@ -333,8 +329,8 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className='relative rounded-2xl border border-zinc-200/70 bg-white/80 p-6 backdrop-blur-sm dark:border-zinc-800/70 dark:bg-zinc-900/60'>
-            <div className='from-darkOrange to-mediumOrange mb-3 inline-flex rounded-lg bg-linear-to-br p-2 text-white shadow-sm'>
+          <div className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'>
+            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 viewBox='0 0 24 24'
@@ -348,7 +344,7 @@ const HomePage = () => {
                 />
               </svg>
             </div>
-            <h3 className='mb-2 text-base font-semibold text-zinc-900 dark:text-white'>
+            <h3 className='mb-2 font-mono text-base font-bold text-zinc-950 dark:text-white'>
               TURN Relay
             </h3>
             <p className='text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>

@@ -208,7 +208,7 @@ const SessionLabPage = () => {
           ← p2party.com
         </Link>
 
-        <div className='mt-6 border-2 border-zinc-950 bg-zinc-50 p-5 shadow-[8px_8px_0_0_#eb5e28] sm:p-8 dark:border-zinc-200 dark:bg-zinc-950'>
+        <div className='shadow-brutal mt-6 border-2 border-zinc-950 bg-zinc-50 p-5 sm:p-8 dark:border-zinc-200 dark:bg-zinc-950'>
           <p className='font-mono text-xs font-bold tracking-[0.2em] text-orange-700 uppercase dark:text-orange-300'>
             protocol-v4 / standalone lab
           </p>
@@ -246,7 +246,7 @@ const SessionLabPage = () => {
             color='orange'
             onClick={runDemo}
             disabled={isRunning}
-            className='mt-4 rounded-none font-mono shadow-[4px_4px_0_0_rgba(0,0,0,0.25)]'
+            className='shadow-brutal-sm mt-4 rounded-none font-mono'
           >
             {isRunning ? "handshaking…" : "run local crypto proof"}
           </Button>
@@ -294,7 +294,7 @@ const SessionLabPage = () => {
           )}
         </div>
 
-        <pre className='mt-10 overflow-x-auto border border-zinc-700 bg-zinc-950 p-5 text-xs leading-relaxed text-orange-200 shadow-[6px_6px_0_0_rgba(235,94,40,0.45)]'>
+        <pre className='shadow-brutal mt-10 overflow-x-auto border border-zinc-700 bg-zinc-950 p-5 text-xs leading-relaxed text-orange-200'>
           <code>{`import {
   createSession,
   generateSessionIdentity,

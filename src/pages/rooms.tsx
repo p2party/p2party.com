@@ -60,7 +60,7 @@ const RoomsPage = () => {
       <div className='relative flex min-h-0 flex-1 flex-col items-center justify-center'>
         <Table
           dense
-          className='h-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg bg-white/90 backdrop-blur-sm dark:bg-black/80'
+          className='h-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg bg-white dark:bg-black'
         >
           <TableHead>
             <TableRow>
