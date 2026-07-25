@@ -46,15 +46,7 @@ export interface SideBarProps {
  * gets the room to breathe (two lines of mono) and a copy control — a
  * truncated id you cannot select is decoration, not information.
  */
-const IdentityField = ({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-}) => {
+const IdentityField = ({ value, icon }: { value: string; icon: ReactNode }) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -72,10 +64,7 @@ const IdentityField = ({
   return (
     <div className='px-2 py-1.5'>
       <div className='flex items-center justify-between gap-2'>
-        <span className='flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-[0.15em] text-orange-400 uppercase'>
-          {icon}
-          {label}
-        </span>
+        <span className='text-orange-400'>{icon}</span>
         {present && (
           <button
             type='button'
@@ -141,17 +130,12 @@ const SideBar = () => {
 
         {roomUrl && (
           <IdentityField
-            label='Room'
             value={roomId}
             icon={<HomeIcon className='size-4' />}
           />
         )}
 
-        <IdentityField
-          label='You'
-          value={peerId}
-          icon={<UserIcon className='size-4' />}
-        />
+        <IdentityField value={peerId} icon={<UserIcon className='size-4' />} />
 
         <SidebarItem onClick={() => setShowSettings(true)}>
           <span className='flex min-w-0 items-center gap-3'>

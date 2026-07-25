@@ -42,19 +42,7 @@ export const protocolV4 = {
 export const immediateRoomPolicy = (
   authMode: RoomAuthMode,
   pqMode: RoomPqMode = "hybrid-mlkem768",
-): RoomPolicyV1 => ({
-  version: 1,
-  revision: 0,
-  wireVersion: 4,
-  authMode,
-  pqMode,
-  rendezvousMode: "legacy-signaling",
-  coverMode: "immediate",
-  coverCadenceMs: 0,
-  coverLanes: 0,
-  coverFramesPerCell: 0,
-  coverDurationEpochs: 0,
-});
+): RoomPolicyV1 => immediateRoomPolicyFrom(authMode, pqMode);
 
 export interface ScheduledCoverPreset {
   id: "10s" | "60s" | "5min";
@@ -123,23 +111,18 @@ export const scheduledCoverPresetOfPolicy = (
       )
     : undefined;
 
+/** Preset form of scheduledRoomPolicyFrom, kept for the tests' convenience. */
 export const scheduledRoomPolicy = (
   authMode: RoomAuthMode,
   pqMode: RoomPqMode,
   preset: ScheduledCoverPreset,
-): RoomPolicyV1 => ({
-  version: 1,
-  revision: 0,
-  wireVersion: 4,
-  authMode,
-  pqMode,
-  rendezvousMode: "legacy-signaling",
-  coverMode: "scheduled",
-  coverCadenceMs: preset.coverCadenceMs,
-  coverLanes: preset.coverLanes,
-  coverFramesPerCell: preset.coverFramesPerCell,
-  coverDurationEpochs: preset.coverDurationEpochs,
-});
+): RoomPolicyV1 =>
+  scheduledRoomPolicyFrom(authMode, pqMode, {
+    coverCadenceMs: preset.coverCadenceMs,
+    coverLanes: preset.coverLanes,
+    coverFramesPerCell: preset.coverFramesPerCell,
+    coverDurationEpochs: preset.coverDurationEpochs,
+  });
 
 export const roomPqModeParameterSet = (
   pqMode: RoomPqMode,
@@ -158,20 +141,21 @@ export const coverModeSummary = (policy: RoomPolicyV1): string => {
 };
 
 /**
- * Protocol limits for a scheduled cover schedule, as enforced by the
- * library's validateRoomPolicyV1. Mirrored here so the form can validate
- * before it builds a policy; the library remains the authority.
+ * The library owns these; we re-export so the UI has one import site and no
+ * copy of its own. A mirrored bound drifts silently.
  */
 export const COVER_LIMITS = {
-  minCadenceMs: 1_000,
-  maxCadenceMs: 3_600_000,
-  maxLanes: 16,
-  maxFramesPerCell: 1_024,
-  minSlotMs: 25,
+  minCadenceMs: p2party.MIN_COVER_CADENCE_MS,
+  maxCadenceMs: p2party.MAX_COVER_CADENCE_MS,
+  maxLanes: p2party.MAX_COVER_LANES,
+  maxFramesPerCell: p2party.MAX_COVER_FRAMES_PER_CELL,
+  minSlotMs: p2party.MIN_COVER_SLOT_MS,
 } as const;
 
-/** The bytes a fixed 65,490-byte cell occupies once framed. */
-export const CELL_BYTES = 65_490;
+/** The exact size of one cell on the wire. */
+export const CELL_BYTES = p2party.WIRE_CHUNK_FRAME_LEN;
+/** How many of those bytes can be yours, after header and Merkle proof. */
+export const PAYLOAD_BYTES_PER_CELL = p2party.MAX_CHUNK_SIZE;
 
 export interface CoverSchedule {
   coverCadenceMs: number;
@@ -209,6 +193,15 @@ export const validateCoverSchedule = (schedule: CoverSchedule): string => {
   const slotMs = coverCadenceMs / (coverLanes * coverFramesPerCell);
   if (slotMs < COVER_LIMITS.minSlotMs)
     return `That leaves ${slotMs.toFixed(1)} ms per cell, below the ${String(COVER_LIMITS.minSlotMs)} ms the transport timer can hold. Lengthen the cycle or reduce lanes/cells.`;
+  // Final word belongs to the library: the messages above are friendlier, but
+  // legality is decided in exactly one place.
+  try {
+    p2party.validateRoomPolicyV1(
+      scheduledRoomPolicyFrom("nopin", "hybrid-mlkem768", schedule),
+    );
+  } catch (error) {
+    return error instanceof Error ? error.message : "Invalid cover schedule.";
+  }
   return "";
 };
 

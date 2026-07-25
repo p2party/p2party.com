@@ -92,9 +92,9 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
   return (
     <Alert open={isOpen} onClose={setIsOpen} size='3xl'>
       <AlertTitle>Settings</AlertTitle>
-      <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
-        Connectivity can change locally. The authenticated room policy is
-        room-wide and immutable after first contact.
+      <AlertDescription>
+        Connection settings are yours alone. The room policy is fixed for
+        everyone.
       </AlertDescription>
       <AlertBody>
         <Divider className='mb-3' />
@@ -102,9 +102,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
         <Fieldset>
           <Headless.Field className='flex flex-col gap-2'>
             <Label>Signaling Server URL</Label>
-            <Description>
-              The WebSocket URL of the signaling server used to discover peers.
-            </Description>
+            <Description>Used only to find peers.</Description>
             <div className='flex items-center gap-2'>
               <Input
                 type='url'
@@ -131,8 +129,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
           <Headless.Field className='flex flex-col gap-2'>
             <Label>ICE Servers (STUN/TURN)</Label>
             <Description>
-              Server URLs used for WebRTC NAT traversal. Changes take effect on
-              next connection.
+              For NAT traversal. Applies on next connection.
             </Description>
             <div className='space-y-2'>
               {stunServerUrls.map((url, i) => (
@@ -205,8 +202,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
                 <SwitchField>
                   <Label>Connected to signaling server</Label>
                   <Description>
-                    To be discoverable you need to be connected to the signaling
-                    server {signalingServerUrl}
+                    Required to be discoverable by other peers.
                   </Description>
                   <Switch
                     name='Signaling server connection'
@@ -329,20 +325,23 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
 
           <Headless.Field className='justify-left flex items-center gap-12'>
             <div>
-              <Label>Real data per message cell</Label>
-              <Description>
-                Per-message random padding; this is not room cover cadence.
-              </Description>
+              <Label>Real data per cell (%)</Label>
+              <Description>The rest is random padding.</Description>
             </div>
-            <Input
-              type='number'
-              name='chunks'
-              min={1}
-              max={99}
-              className='max-w-24'
-              value={percentageFilledChunk}
-              onChange={handlePercentageFilledChunk}
-            />
+            <div className='flex items-center gap-2'>
+              <Input
+                type='number'
+                name='percentageFilledChunk'
+                min={1}
+                max={99}
+                className='max-w-20'
+                value={percentageFilledChunk}
+                onChange={handlePercentageFilledChunk}
+              />
+              <span className='font-mono text-sm text-zinc-500 dark:text-zinc-400'>
+                %
+              </span>
+            </div>
           </Headless.Field>
 
           <Divider className='my-3' />
@@ -350,9 +349,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
           <Headless.Field className='justify-left flex items-center gap-12'>
             <div>
               <Label>Minimum cells per message</Label>
-              <Description>
-                Adds intra-message padding only; immediate mode still sends now.
-              </Description>
+              <Description>Pads short messages with cover cells.</Description>
             </div>
             <Input
               type='number'
