@@ -5,7 +5,7 @@ import {
   type RoomAuthMode,
   type RoomPqMode,
   type RoomPolicyV1,
-} from "./v3";
+} from "./v4";
 
 const transientPins = new Map<string, Uint8Array>();
 const transientPolicies = new Map<string, RoomPolicyV1>();
@@ -71,6 +71,7 @@ export interface ParsedRoomPolicyInvite {
     wireVersion: boolean;
     authMode: boolean;
     pqMode: boolean;
+    coverMode: boolean;
   };
 }
 
@@ -86,11 +87,33 @@ const pqModeToQuery = (pqMode: RoomPqMode): string => {
   return "1024";
 };
 
+// The full-policy invite parameter is the base64url of the canonical 32-byte
+// RoomPolicyV1 wire form (invite policy transport is frontend-owned).
+const ENCODED_POLICY_PARAM_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
+
+const base64UrlEncode = (bytes: Uint8Array): string => {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replace(/\+/gu, "-")
+    .replace(/\//gu, "_")
+    .replace(/=+$/u, "");
+};
+
+const base64UrlDecode = (text: string): Uint8Array => {
+  const normalized = text.replace(/-/gu, "+").replace(/_/gu, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+};
+
 export const parseRoomPolicyInvite = (
   search: string,
 ): ParsedRoomPolicyInvite => {
   const params = new URLSearchParams(search);
-  const allowed = new Set(["v", "auth", "pq"]);
+  const allowed = new Set(["v", "auth", "pq", "policy"]);
   for (const key of params.keys()) {
     if (!allowed.has(key))
       throw new Error(`Unsupported room invitation parameter: ${key}`);
@@ -104,8 +127,34 @@ export const parseRoomPolicyInvite = (
   };
 
   const version = single("v");
-  if (version !== undefined && version !== "3")
-    throw new Error("Room invitation requires protocol v3");
+  if (version === "3")
+    throw new Error(
+      "Room invitation is for the retired protocol v3; ask the sender for a fresh protocol v4 invitation",
+    );
+  if (version !== undefined && version !== "4")
+    throw new Error("Room invitation requires protocol v4");
+
+  const encodedPolicy = single("policy");
+  if (encodedPolicy !== undefined) {
+    // A full-policy invitation is the single source of truth: the compact
+    // auth/pq shorthands must not contradict it, so they may not co-occur.
+    if (single("auth") !== undefined || single("pq") !== undefined)
+      throw new Error(
+        "Room invitation cannot combine a full policy with auth/pq parameters",
+      );
+    if (!ENCODED_POLICY_PARAM_PATTERN.test(encodedPolicy))
+      throw new Error("Room invitation has a malformed policy parameter");
+    const policy = p2party.decodeRoomPolicyV1(base64UrlDecode(encodedPolicy));
+    return {
+      policy,
+      specified: {
+        wireVersion: true,
+        authMode: true,
+        pqMode: true,
+        coverMode: true,
+      },
+    };
+  }
 
   const auth = single("auth");
   if (auth !== undefined && auth !== "pin" && auth !== "nopin")
@@ -126,23 +175,30 @@ export const parseRoomPolicyInvite = (
       wireVersion: version !== undefined,
       authMode: auth !== undefined,
       pqMode: pq !== undefined,
+      coverMode: false,
     },
   };
 };
 
 export const roomInvitePath = (
   roomUrl: string,
-  policy: Pick<RoomPolicyV1, "authMode" | "pqMode" | "wireVersion">,
+  policy: RoomPolicyV1,
 ): string => {
-  if (policy.wireVersion !== 3)
-    throw new Error("Room invitation requires protocol v3");
+  if (policy.wireVersion !== 4)
+    throw new Error("Room invitation requires protocol v4");
   const capability = p2party.decodeRoomCapability(roomUrl);
   try {
     const fragment = p2party.encodeRoomInviteFragment(capability);
     const params = new URLSearchParams();
-    if (policy.authMode === "pin") params.set("auth", "pin");
-    if (policy.pqMode !== "hybrid-mlkem768")
-      params.set("pq", pqModeToQuery(policy.pqMode));
+    if (policy.coverMode === "scheduled") {
+      // A scheduled room MUST share its complete policy: a joiner that guesses
+      // the schedule fails the authenticated handshake (policy hash mismatch).
+      params.set("policy", base64UrlEncode(p2party.encodeRoomPolicyV1(policy)));
+    } else {
+      if (policy.authMode === "pin") params.set("auth", "pin");
+      if (policy.pqMode !== "hybrid-mlkem768")
+        params.set("pq", pqModeToQuery(policy.pqMode));
+    }
     const query = params.size > 0 ? `?${params.toString()}` : "";
     return `/r${query}#${fragment}`;
   } finally {
@@ -152,7 +208,7 @@ export const roomInvitePath = (
 
 export const absoluteRoomInviteUrl = (
   roomUrl: string,
-  policy: Pick<RoomPolicyV1, "authMode" | "pqMode" | "wireVersion">,
+  policy: RoomPolicyV1,
 ): string => {
   const path = roomInvitePath(roomUrl, policy);
   return new URL(path, window.location.origin).toString();
@@ -196,7 +252,10 @@ export const resolveRoomInvite = (
       kind: "valid",
       roomUrl,
       policy: parsedPolicy.policy,
-      specifiedPolicy: { wireVersion: true, authMode: true, pqMode: true },
+      // Report what the invitation actually pinned down: a bare /r#fragment
+      // link to a saved PIN/non-768 room must not trip the policy-conflict
+      // path merely because defaults were treated as explicit choices.
+      specifiedPolicy: parsedPolicy.specified,
     };
   } catch (cause) {
     capability?.fill(0);

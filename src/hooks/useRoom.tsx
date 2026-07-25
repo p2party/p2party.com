@@ -10,10 +10,10 @@ import {
 } from "../protocol/roomAccess";
 import {
   immediateRoomPolicy,
-  protocolV3,
+  protocolV4,
   type MessageTransferHandle,
   type RoomPolicyV1,
-} from "../protocol/v3";
+} from "../protocol/v4";
 import { useRoomInvite } from "./useRoomInvite";
 
 import type { Message, Room, State } from "p2party";
@@ -25,6 +25,7 @@ export interface MessageWithData extends Message {
 const EMPTY_PEERS: Room["peers"] = [];
 const EMPTY_CHANNELS: Room["channels"] = [];
 const EMPTY_MESSAGES: Message[] = [];
+const EMPTY_COVER_STATUS: NonNullable<Room["coverStatusByPeer"]> = {};
 
 interface UseRoomOptions {
   /**
@@ -67,6 +68,7 @@ export const useRoom = ({
       policy: room?.policy,
       peers: room?.peers ?? EMPTY_PEERS,
       channels: room?.channels ?? EMPTY_CHANNELS,
+      coverStatusByPeer: room?.coverStatusByPeer ?? EMPTY_COVER_STATUS,
     };
   }, shallowEqual);
   const messages = useSelector((state: State) => {
@@ -100,6 +102,17 @@ export const useRoom = ({
       retainedPolicy.wireVersion !== roomInvite.policy.wireVersion
     )
       return "Room invitation protocol version conflicts with the saved room policy";
+    if (
+      roomInvite.specifiedPolicy.coverMode &&
+      (retainedPolicy.coverMode !== roomInvite.policy.coverMode ||
+        retainedPolicy.coverCadenceMs !== roomInvite.policy.coverCadenceMs ||
+        retainedPolicy.coverLanes !== roomInvite.policy.coverLanes ||
+        retainedPolicy.coverFramesPerCell !==
+          roomInvite.policy.coverFramesPerCell ||
+        retainedPolicy.coverDurationEpochs !==
+          roomInvite.policy.coverDurationEpochs)
+    )
+      return "Room invitation traffic-cover schedule conflicts with the saved room policy";
     return "";
   }, [retainedPolicy, roomInvite]);
   const roomInviteError =
@@ -135,7 +148,7 @@ export const useRoom = ({
         throw new Error("Enter the room PIN before connecting");
 
       try {
-        await protocolV3.connect(
+        await protocolV4.connect(
           canonicalRoomUrl,
           signalingServerUrl,
           rtcConfig,
@@ -175,7 +188,7 @@ export const useRoom = ({
     (message: string | File, channel: string): MessageTransferHandle => {
       if (!roomView.id) throw new Error("No room was selected");
 
-      return protocolV3.sendMessage(
+      return protocolV4.sendMessage(
         message,
         channel,
         roomView.id,
@@ -201,6 +214,7 @@ export const useRoom = ({
     signalingServerConnectionState: signalingServerConnection,
     peers: roomView.peers,
     channels: roomView.channels,
+    coverStatusByPeer: roomView.coverStatusByPeer,
     messages,
     selectedChannel,
     connect: connectToRoom,

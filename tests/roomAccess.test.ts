@@ -27,7 +27,8 @@ const {
   resolveRoomInvite,
   roomInvitePath,
 } = await import("../src/protocol/roomAccess");
-const { immediateRoomPolicy } = await import("../src/protocol/v3");
+const { immediateRoomPolicy, scheduledRoomPolicy, SCHEDULED_COVER_PRESETS } =
+  await import("../src/protocol/v4");
 
 describe("room invitation routing", () => {
   const capability = Uint8Array.from(
@@ -52,13 +53,22 @@ describe("room invitation routing", () => {
     const resolved = resolveRoomInvite(
       "/r",
       `#${fragment}`,
-      "?v=3&auth=pin&pq=1024",
+      "?v=4&auth=pin&pq=1024",
     );
     expect(resolved.kind).toBe("valid");
     if (resolved.kind !== "valid") throw new Error("invite did not resolve");
     expect(resolved.roomUrl).toBe(canonicalRoomUrl);
     expect(resolved.policy.authMode).toBe("pin");
     expect(resolved.policy.pqMode).toBe("hybrid-mlkem1024");
+
+    const retired = resolveRoomInvite(
+      "/r",
+      `#${fragment}`,
+      "?v=3&auth=pin&pq=1024",
+    );
+    expect(retired.kind).toBe("invalid");
+    if (retired.kind !== "invalid") throw new Error("v3 invite resolved");
+    expect(retired.error).toContain("retired protocol v3");
   });
 
   test("uses the shortest fragment URL for the exact default policy", () => {
@@ -73,11 +83,68 @@ describe("room invitation routing", () => {
     if (resolved.kind !== "valid") throw new Error("invite did not resolve");
     expect(resolved.policy.authMode).toBe("nopin");
     expect(resolved.policy.pqMode).toBe("hybrid-mlkem768");
+    // A bare fragment link pins nothing down: defaults must not be reported
+    // as explicit choices, or saved PIN/non-768 rooms hit the conflict path.
     expect(resolved.specifiedPolicy).toEqual({
-      wireVersion: true,
-      authMode: true,
-      pqMode: true,
+      wireVersion: false,
+      authMode: false,
+      pqMode: false,
+      coverMode: false,
     });
+  });
+
+  test("a scheduled room invite carries the complete policy and round-trips", () => {
+    for (const preset of SCHEDULED_COVER_PRESETS) {
+      const policy = scheduledRoomPolicy("pin", "hybrid-mlkem1024", preset);
+      // The preset must satisfy the library's canonical validation.
+      expect(
+        p2party.decodeRoomPolicyV1(p2party.encodeRoomPolicyV1(policy)),
+      ).toEqual(policy);
+
+      const path = roomInvitePath(canonicalRoomUrl, policy);
+      const [publicRequest, fragment] = path.split("#");
+      expect(publicRequest).toMatch(/^\/r\?policy=[A-Za-z0-9_-]{43}$/u);
+      expect(publicRequest).not.toContain("auth=");
+      expect(publicRequest).not.toContain(compact);
+
+      const resolved = resolveRoomInvite(
+        "/r",
+        `#${fragment}`,
+        publicRequest.slice("/r".length),
+      );
+      expect(resolved.kind).toBe("valid");
+      if (resolved.kind !== "valid") throw new Error("invite did not resolve");
+      expect(resolved.roomUrl).toBe(canonicalRoomUrl);
+      expect(resolved.policy).toEqual(policy);
+      expect(resolved.specifiedPolicy).toEqual({
+        wireVersion: true,
+        authMode: true,
+        pqMode: true,
+        coverMode: true,
+      });
+    }
+  });
+
+  test("rejects contradictory or malformed full-policy invitations", () => {
+    const policy = scheduledRoomPolicy(
+      "nopin",
+      "hybrid-mlkem768",
+      SCHEDULED_COVER_PRESETS[0],
+    );
+    const search = roomInvitePath(canonicalRoomUrl, policy)
+      .split("#")[0]
+      .slice("/r".length);
+
+    expect(() => parseRoomPolicyInvite(`${search}&auth=pin`)).toThrow(
+      "cannot combine",
+    );
+    expect(() => parseRoomPolicyInvite(`${search}&pq=1024`)).toThrow(
+      "cannot combine",
+    );
+    expect(() => parseRoomPolicyInvite("?policy=not-base64url")).toThrow(
+      "malformed policy parameter",
+    );
+    expect(() => parseRoomPolicyInvite(`?policy=${"A".repeat(43)}`)).toThrow();
   });
 
   test("rejects every capability-bearing HTTP room path", () => {
@@ -107,15 +174,16 @@ describe("room invitation routing", () => {
       "must occur once",
     );
     expect(() => parseRoomPolicyInvite("?pq=2048")).toThrow("unsupported");
-    expect(() => parseRoomPolicyInvite("?v=2")).toThrow("protocol v3");
+    expect(() => parseRoomPolicyInvite("?v=2")).toThrow("protocol v4");
+    expect(() => parseRoomPolicyInvite("?v=3")).toThrow("retired protocol v3");
     expect(() => parseRoomPolicyInvite("?secret=value")).toThrow(
       "Unsupported room invitation parameter",
     );
     expect(() =>
       roomInvitePath(canonicalRoomUrl, {
         ...immediateRoomPolicy("nopin"),
-        wireVersion: 2 as 3,
+        wireVersion: 2 as 4,
       }),
-    ).toThrow("protocol v3");
+    ).toThrow("protocol v4");
   });
 });
