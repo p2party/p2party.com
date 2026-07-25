@@ -51,13 +51,15 @@ The tempting patches were worse:
 
 Commit [`92b07e8`](https://github.com/p2party/p2party-js/commit/92b07e8) moved to a fresh random 12-byte nonce in the clear frame header. The nonce is not secret. It must be unique for the message key, available before decryption, and authenticated as part of the AEAD operation.
 
-The current v3 frame starts with:
+The current v4 frame starts with:
 
 ```text
-type(1) || dhPub(32) || N(8) || PN(8) || pqEpoch(1) || nonce(12)
+type(1) || dhPub(32) || N(8) || PN(8) || pqEpoch(8) || nonce(12)
 ```
 
-This gives a 61-byte clear header and puts encrypted content at byte 62. If a chunk is resealed, it gets a fresh nonce. The invariant is simple: never repeat a `(message key, nonce)` pair.
+This gives a 69-byte clear header and puts encrypted content at byte 69. The first 57 bytes, everything except the nonce, are authenticated as associated data. If a chunk is resealed, it gets a fresh nonce. The invariant is simple: never repeat a `(message key, nonce)` pair.
+
+The epoch field is eight bytes because v3's single byte was a latent bug: sparse post-quantum healing advances that counter for the life of a session, and a one-byte counter wraps. Widening it was part of why v4 is a wire break rather than an extension.
 
 ## Correct primitives can still compose into the wrong protocol
 

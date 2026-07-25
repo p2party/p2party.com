@@ -31,9 +31,9 @@ The defensible claim is narrower: if a cover-enabled room was going to transmit 
 
 This distinction is the line between a paper question and a slogan.
 
-## The grant promise was an ongoing ratchet, not a fancy first handshake
+## The promise was an ongoing ratchet, not a fancy first handshake
 
-The number one NLnet/TrustChain promise was to land the Double Ratchet in p2party. The bootstrap matters, but post-compromise security comes from state that keeps moving after session establishment.
+The number one commitment for this cycle was to land the Double Ratchet in p2party. The bootstrap matters, but post-compromise security comes from state that keeps moving after session establishment.
 
 Commit [`749e3d2`](https://github.com/p2party/p2party-js/commit/749e3d2) introduced the pairwise Double Ratchet. Commit [`293ce4c`](https://github.com/p2party/p2party-js/commit/293ce4c) connected one ratchet step per logical message to per-chunk AEAD. Every message gets a message key. Every chunk under that message key gets a fresh random nonce.
 
@@ -51,7 +51,7 @@ The browser integration wraps ratchet secrets under a non-extractable WebCrypto 
 
 That is the shipped cryptographic spine.
 
-## The sparse post-quantum healing core exists, but the wire path is gated
+## The sparse post-quantum healing core existed before the wire path did
 
 The bootstrap already includes ML-KEM. Bootstrap PQ protection is not the same as post-quantum healing after compromise.
 
@@ -69,19 +69,23 @@ Commit [`a426490`](https://github.com/p2party/p2party-js/commit/a426490) impleme
 
 Commit [`f044286`](https://github.com/p2party/p2party-js/commit/f044286) hardened the acknowledgement boundary.
 
-This is implemented code, not a paper sketch. It is also not production PQ healing yet.
+This is implemented code, not a paper sketch.
 
-The live path still needs canonical authenticated ACK encoding, crash-safe encrypted checkpoint and restore, byte-exact sealed-record retransmission, a separate classical/PQ message-key combiner, WebRTC control routing, and cover-scheduler integration. Production correctly rejects nonzero PQ epochs until those pieces land.
+When this post was written the live path still needed canonical authenticated ACK encoding, crash-safe encrypted checkpoint and restore, byte-exact sealed-record retransmission, a separate classical/PQ message-key combiner, WebRTC control routing, and cover-scheduler integration, and production rejected nonzero PQ epochs until those pieces landed.
+
+> **Update, 0.13.0 (protocol v4).** All six landed. Sparse-PQ healing runs on the mesh path: `prepareHealing` / `acceptControlFrame` / `pendingControl` are wired through `pqHealingOrchestrator`, state is persisted before any frame is dispatched, and application traffic is blocked while an epoch is in flight. `messageChunkCrypto` now resolves a PQ context for a nonzero epoch rather than rejecting it. Room-wide scheduled cover shipped in the same release. The epoch field widened from one byte to eight, which is part of why v4 is a wire break.
+>
+> We are leaving the original paragraph above rather than editing it away. A series arguing that you should not collapse status buckets does not get to quietly rewrite its own.
 
 Our status vocabulary has three buckets:
 
-| Status                | Property                                                                                                                                          |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shipped               | Exact hybrid bootstrap, triple confirmation, pairwise Double Ratchet, fixed v3 cells, message-scoped channels, resumable transfer, immediate mode |
-| Implemented but gated | Sparse ML-KEM healing state-machine core                                                                                                          |
-| Research direction    | Scheduled room cover, L2 server-blind rendezvous, private BitTorrent extension                                                                    |
+| Status               | Property                                                                                                                                                                                                        |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shipped              | Exact hybrid bootstrap, triple confirmation, pairwise Double Ratchet, fixed 65,490-byte v4 cells, message-scoped channels, resumable transfer, immediate mode, room-wide scheduled cover, sparse ML-KEM healing |
+| Implemented, bounded | Timing cover, whose guarantee holds only while every edge in the room keeps emitting on the schedule, and which has been measured on loopback only                                                              |
+| Research direction   | L2 server-blind rendezvous, private BitTorrent extension, machine-checked formal analysis                                                                                                                       |
 
-Collapsing those buckets would make the roadmap look shorter and the security statement false.
+Collapsing those buckets would make the roadmap look shorter and the security statement false. Moving a row up when the code lands is the other half of the same discipline.
 
 ## The room schedule buys cover with delay and bandwidth
 
@@ -226,10 +230,33 @@ The honest venue class is applied privacy and systems security, not a CRYPTO pap
 
 ## Try what exists and inspect what does not
 
-Try the live browser mesh at [p2party.com](https://p2party.com). Run the transport-neutral ratchet with [`examples/standalone-e2ee.ts`](https://github.com/p2party/p2party-js/blob/master/examples/standalone-e2ee.ts). Read the [protocol-v3 security guide](https://github.com/p2party/p2party-js/blob/master/docs/protocol-v3-security.md) before treating a roadmap descriptor as a shipped guarantee.
+Try the live browser mesh at [p2party.com](https://p2party.com). Run the transport-neutral ratchet with [`examples/standalone-e2ee.ts`](https://github.com/p2party/p2party-js/blob/master/examples/standalone-e2ee.ts). Read the [protocol-v4 security guide](https://github.com/p2party/p2party-js/blob/master/docs/protocol-v4-security.md) before treating a roadmap descriptor as a shipped guarantee.
 
-The grant promise is no longer a slide: the pairwise Double Ratchet, exact ML-KEM bootstrap, triple confirmation, fixed cells, and store-free session API are code.
+The promise is no longer a slide: the pairwise Double Ratchet, exact ML-KEM bootstrap, triple confirmation, fixed cells, and store-free session API are code.
 
 The remaining promise is harder and more interesting. Finish crash-safe sparse PQ healing. Put it on the real WebRTC path. Build the room schedule and blind rendezvous. Capture the packets. Attack the traces. Publish the costs even when they hurt the headline.
 
 That is how "free" becomes a result instead of a word.
+
+## References
+
+The full citation set is in
+[docs/references.md](https://github.com/p2party/p2party-js/blob/master/docs/references.md).
+The work this post's cover-traffic argument answers to:
+
+- A. Piotrowska, J. Hayes, T. Elahi, S. Meiser, G. Danezis. _The Loopix
+  Anonymity System._ USENIX Security 2017.
+  [arXiv:1703.00536](https://arxiv.org/abs/1703.00536). cover traffic as a
+  Poisson schedule rather than a constant rate.
+- X. Cai et al. _A Systematic Approach to Developing and Evaluating Website
+  Fingerprinting Defenses (Tamaraw)._ ACM CCS 2014.
+  [doi.org/10.1145/2660267.2660362](https://doi.org/10.1145/2660267.2660362). the fixed-cell, fixed-cadence family this schedule belongs to.
+- T. Pulls, E. Witwer. _Maybenot: A Framework for Traffic Analysis Defenses._
+  WPES @ CCS 2023. [doi.org/10.1145/3603216.3624953](https://doi.org/10.1145/3603216.3624953). how to evaluate a defence instead of asserting one.
+- M. Weisenseel, C. Döpmann, F. Tschorsch. _The Last Hop Attack: Why Loop Cover
+  Traffic over Fixed Cascades Threatens Anonymity._ PoPETs 2025.
+  [doi.org/10.56553/popets-2025-0067](https://doi.org/10.56553/popets-2025-0067). the reason a schedule alone is not an anonymity result.
+- Signal Foundation. _SPQR: Signal Protocol and Post-Quantum Ratchets._ 2025.
+  [signal.org/blog/spqr](https://signal.org/blog/spqr/) ·
+  [github.com/signalapp/SparsePostQuantumRatchet](https://github.com/signalapp/SparsePostQuantumRatchet). the design sparse healing is modelled on; not the same construction, and
+  ours has not been independently analysed.

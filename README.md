@@ -10,32 +10,37 @@ not a generic component library.
 
 ## Protocol status
 
-The protocol-v3 release target consumes an immutable local `p2party` 0.12.0
+The protocol-v4 release target consumes an immutable local `p2party` 0.13.0
 tarball:
 
 ```text
-file:vendor/p2party-0.12.0.tgz
+file:vendor/p2party-0.13.0.tgz
 ```
 
 Artifact SHA-256:
-`436dd8533edc7f4d5a78450b5fc401df87d86c22c0c692d05940690325555944`.
+`cf578bb78c80f3381b439f5445ed1a92d971e2355430a9e028e7993afc8c6c3f`.
 
 The browser loads the matching committed
-`public/vendor/p2party-0.12.0/libcrypto.wasm`; the SDK's build-pinned SRI still
+`public/vendor/p2party-0.13.0/libcrypto.wasm`; the SDK's build-pinned SRI still
 applies. `npm run provenance:check` verifies the tarball, its embedded WASM
 provenance, the lockfile integrity, and the self-hosted bytes as one unit.
 
-Protocol v3 uses interactive 3DH combined with one exact room-wide ML-KEM suite:
+Protocol v4 uses interactive 3DH combined with one exact room-wide ML-KEM suite:
 ML-KEM-512, ML-KEM-768 (the default), or ML-KEM-1024. It also provides optional
 CPace room-PIN authentication, triple handshake confirmation, and a per-peer
 Double Ratchet. There is no suite negotiation, downgrade, or classical
-fallback; peers with conflicting room policy fail closed.
+fallback; peers with conflicting room policy fail closed. v4 is a clean wire
+break: v3 peers and persisted v3 crypto rows are not resumed.
 
-Immediate delivery is the only wired room-wide traffic policy and remains the
-default. The UI shows the reserved 10-second, 60-second, and 5-minute scheduled
-cover policies as unavailable; it does not claim that timed cover is deployed.
-Likewise, the standalone `createSession()` lab is an in-process cryptography
-demo, not a networking demo.
+Immediate delivery remains the default. Room-wide scheduled timing cover is
+wired: the room dialog offers 10-second, 60-second, and 5-minute presets plus a
+raw schedule editor, and `CoverStatusPill` reports live per-edge lane status.
+Sparse post-quantum healing runs on the same path. Timing cover has been
+measured on loopback only — it hides _when_ a peer sends for as long as every
+edge in the room keeps emitting, and it is not a claim of traffic-analysis
+resistance on a real network path. Private rendezvous modes are still rejected
+by `connect()`. The standalone `createSession()` lab is an in-process
+cryptography demo, not a networking demo.
 
 The implementation has not completed an independent security audit. Do not
 treat the research claims or current release as a substitute for one.
@@ -46,7 +51,7 @@ Prerequisites:
 
 - Node.js 24.11.1 and npm 11.6.2
 - Bun 1.3.14 for the unit-test runner
-- the committed, verified `vendor/p2party-0.12.0.tgz`
+- the committed, verified `vendor/p2party-0.13.0.tgz`
 
 Install and run:
 

@@ -177,4 +177,25 @@ The [formal-analysis README](https://github.com/p2party/p2party-js/blob/master/f
 
 Protocol-v3 establishes every live peer edge with a room-selected interactive-3DH and ML-KEM profile, optionally adds CPace for PIN authentication, chains three transcript confirmations, then seeds one pairwise Double Ratchet.
 
-The next and final chapter asks what happens after bootstrap. That is where the grant promise lives, and where the word "free" becomes dangerous.
+The next and final chapter asks what happens after bootstrap. That is where the hardest promise lives, and where the word "free" becomes dangerous.
+
+## References
+
+This post argues by comparison, so here is what it is comparing against. The
+full citation set (142 entries with venue confirmations) is in
+[docs/references.md](https://github.com/p2party/p2party-js/blob/master/docs/references.md).
+
+- E. Kret, R. Schmidt. _The PQXDH Key Agreement Protocol._ Signal, 2023.
+  [signal.org/docs/specifications/pqxdh](https://signal.org/docs/specifications/pqxdh/)
+- K. Bhargavan, C. Jacomme, F. Kiefer, R. Schmidt. _Formal Verification of the
+  PQXDH Post-Quantum Key Agreement Protocol._ USENIX Security 2024.
+  [usenix.org](https://www.usenix.org/system/files/usenixsecurity24-bhargavan.pdf). the analysis p2party's handshake has **not** had.
+- M. Barbosa et al. _X-Wing: The Hybrid KEM You've Been Looking For._ IACR
+  Communications in Cryptology, 2024. [eprint 2024/039](https://eprint.iacr.org/2024/039)
+- NIST. _FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard._ 2024. [csrc.nist.gov](https://csrc.nist.gov/pubs/fips/203/final)
+- M. Abdalla, B. Haase, J. Hesse. _Security Analysis of CPace._ ASIACRYPT 2021.
+  [eprint 2021/114](https://eprint.iacr.org/2021/114)
+- F. Driscoll, M. Parsons, B. Hale. _RFC 9794: Terminology for Post-Quantum
+  Traditional Hybrid Schemes._ IETF, 2025.
+  [rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9794.html). why
+  "hybrid" alone says nothing about authentication.
