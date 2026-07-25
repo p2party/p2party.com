@@ -1,4 +1,6 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+
+import type { ReactNode } from "react";
 
 import {
   ArchiveBoxXMarkIcon,
@@ -39,6 +41,67 @@ export interface SideBarProps {
   roomUrl: string;
 }
 
+/**
+ * A labelled identifier on the console panel. The value is the point, so it
+ * gets the room to breathe (two lines of mono) and a copy control — a
+ * truncated id you cannot select is decoration, not information.
+ */
+const IdentityField = ({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: ReactNode;
+}) => {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => {
+      setCopied(false);
+    }, 1600);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [copied]);
+
+  const present = value.length > 0;
+
+  return (
+    <div className='px-2 py-1.5'>
+      <div className='flex items-center justify-between gap-2'>
+        <span className='flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-[0.15em] text-orange-400 uppercase'>
+          {icon}
+          {label}
+        </span>
+        {present && (
+          <button
+            type='button'
+            onClick={() => {
+              void navigator.clipboard
+                .writeText(value)
+                .then(() => {
+                  setCopied(true);
+                })
+                .catch(() => {
+                  setCopied(false);
+                });
+            }}
+            className='font-mono text-[10px] tracking-[0.1em] text-zinc-400 uppercase transition-colors hover:text-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500'
+          >
+            {copied ? "copied" : "copy"}
+          </button>
+        )}
+      </div>
+      <p className='mt-1 font-mono text-[11px] leading-snug wrap-anywhere text-zinc-300 select-text'>
+        {present ? value : "—"}
+      </p>
+    </div>
+  );
+};
+
 const SideBar = () => {
   const { roomUrl, roomId, peerId, roomPolicy } = useRoom({
     subscribeToMessages: false,
@@ -61,9 +124,7 @@ const SideBar = () => {
             <SidebarLabel>
               <span className='font-mono font-bold'>
                 p2party
-                <span className='text-orange-600 dark:text-orange-400'>
-                  ://
-                </span>
+                <span className='text-orange-400'>://</span>
                 room
               </span>
             </SidebarLabel>
@@ -79,46 +140,24 @@ const SideBar = () => {
         )}
 
         {roomUrl && (
-          <SidebarItem>
-            <span className='flex min-w-0 items-center gap-3'>
-              {roomId.length > 0 && <HomeIcon className='size-10' />}
-
-              {roomId.length === 0 && <HomeIcon className='size-7' />}
-
-              <span className='min-w-0'>
-                <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                  Room ID:
-                </span>
-                <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
-                  {roomId.length > 0 ? roomId : '""'}
-                </span>
-              </span>
-            </span>
-          </SidebarItem>
+          <IdentityField
+            label='Room'
+            value={roomId}
+            icon={<HomeIcon className='size-4' />}
+          />
         )}
 
-        <SidebarItem>
-          <span className='flex min-w-0 items-center gap-3'>
-            {peerId.length > 0 && <UserIcon className='size-10' />}
-
-            {peerId.length === 0 && <UserIcon className='size-7' />}
-
-            <span className='min-w-0'>
-              <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
-                My Peer ID:
-              </span>
-              <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
-                {peerId.length > 0 ? peerId : '""'}
-              </span>
-            </span>
-          </span>
-        </SidebarItem>
+        <IdentityField
+          label='You'
+          value={peerId}
+          icon={<UserIcon className='size-4' />}
+        />
 
         <SidebarItem onClick={() => setShowSettings(true)}>
           <span className='flex min-w-0 items-center gap-3'>
             <Cog8ToothIcon className='size-9 lg:size-7' />
             <span className='min-w-0'>
-              <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+              <span className='block truncate text-sm/5 font-medium text-zinc-100'>
                 Settings
               </span>
             </span>
@@ -130,7 +169,7 @@ const SideBar = () => {
           <span className='flex min-w-0 items-center gap-3'>
             <BookOpenIcon className='size-9 lg:size-7' />
             <span className='min-w-0'>
-              <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+              <span className='block truncate text-sm/5 font-medium text-zinc-100'>
                 Address Book
               </span>
             </span>
@@ -146,7 +185,7 @@ const SideBar = () => {
             <span className='flex min-w-0 items-center gap-3'>
               <QrCodeIcon className='size-9 lg:size-7' />
               <span className='min-w-0'>
-                <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+                <span className='block truncate text-sm/5 font-medium text-zinc-100'>
                   Show room QR code
                 </span>
               </span>
@@ -165,7 +204,7 @@ const SideBar = () => {
           <span className='flex min-w-0 items-center gap-3'>
             <ArchiveBoxXMarkIcon className='size-9 lg:size-7' />
             <span className='min-w-0'>
-              <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+              <span className='block truncate text-sm/5 font-medium text-zinc-100'>
                 Blacklist
               </span>
             </span>

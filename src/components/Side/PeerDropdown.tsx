@@ -35,10 +35,10 @@ const PeerDropdown = () => {
         <span className='flex min-w-0 items-center gap-3'>
           <UserGroupIcon className='size-8 lg:size-7' />
           <span className='min-w-0'>
-            <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+            <span className='block truncate text-sm/5 font-medium text-zinc-100'>
               Peers in room
             </span>
-            <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
+            <span className='block truncate font-mono text-xs/5 font-normal text-zinc-400'>
               {peers.length + 1}
             </span>
           </span>

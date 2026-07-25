@@ -26,10 +26,10 @@ const DeleteDropdown = () => {
         <span className='flex min-w-0 items-center gap-3'>
           <TrashIcon className='size-9 lg:size-7' />
           <span className='min-w-0'>
-            <span className='block truncate text-sm/5 font-medium text-zinc-950 dark:text-white'>
+            <span className='block truncate text-sm/5 font-medium text-zinc-100'>
               Delete:
             </span>
-            <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
+            <span className='block truncate font-mono text-xs/5 font-normal text-zinc-400'>
               Room, Identity, everything
             </span>
           </span>

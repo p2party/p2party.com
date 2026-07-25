@@ -35,7 +35,7 @@ function MobileSidebar({
         transition
         className='fixed inset-y-0 w-full max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full'
       >
-        <div className='flex h-full flex-col border-r-2 border-zinc-950 bg-zinc-50 pt-(--safe-area-inset-top) dark:border-zinc-200 dark:bg-zinc-950'>
+        <div className='flex h-full flex-col pt-(--safe-area-inset-top)'>
           <div className='-mb-3 px-4 pt-3'>
             <Headless.CloseButton as={NavbarItem} aria-label='Close navigation'>
               <CloseMenuIcon />

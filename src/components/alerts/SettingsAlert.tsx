@@ -90,7 +90,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
   };
 
   return (
-    <Alert open={isOpen} onClose={setIsOpen} size='md'>
+    <Alert open={isOpen} onClose={setIsOpen} size='3xl'>
       <AlertTitle>Settings</AlertTitle>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
         Connectivity can change locally. The authenticated room policy is

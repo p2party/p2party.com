@@ -25,13 +25,13 @@ const SignalingDropdown = () => {
       <DropdownButton as={SidebarItem}>
         <span className='flex min-w-0 items-center gap-3'>
           <span className='min-w-0'>
-            <span className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'>
+            <span className='block truncate font-mono text-xs/5 font-normal text-zinc-400'>
               {signalingServerUrl}
             </span>
             {stunServerUrls?.map((v, i) => (
               <span
                 key={i}
-                className='block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400'
+                className='block truncate font-mono text-xs/5 font-normal text-zinc-400'
               >
                 {v}
               </span>
