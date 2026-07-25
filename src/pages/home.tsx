@@ -145,7 +145,7 @@ const HomePage = () => {
         <div className='flex flex-col items-center text-center md:items-start md:text-left'>
           <span className='animate-fade-in mb-4 inline-flex max-w-full items-center gap-2 border-2 border-zinc-950 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] whitespace-nowrap text-zinc-950 uppercase sm:px-3 sm:text-xs sm:tracking-[0.18em] md:text-[10px] md:tracking-[0.08em] lg:text-xs lg:tracking-[0.18em] dark:border-zinc-200 dark:text-white'>
             <span className='bg-darkOrange inline-block size-1.5' />
-            no accounts · no uploads · browser to browser
+            no accounts · peer-to-peer · no cloud storage
           </span>
           <h1 className='animate-fade-in text-4xl leading-tight font-black tracking-[-0.055em] text-balance text-zinc-950 sm:text-5xl lg:text-6xl dark:text-white'>
             Privacy That{" "}
