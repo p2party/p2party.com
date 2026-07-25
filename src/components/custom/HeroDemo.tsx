@@ -55,6 +55,26 @@ const SCRIPT: Step[] = [
 ];
 
 const TOTAL_CELLS = 8;
+/** One 65,490-byte cell fragments into this many datagrams on the wire. */
+const PACKETS_PER_CELL = 54;
+const HEX = "0123456789abcdef";
+
+/**
+ * A deterministic pseudo-random hex run, so the illustration is stable
+ * across renders. These are NOT real ciphertext bytes — a landing page has
+ * no session — but they stand in for the only thing an observer gets: the
+ * same amount of opaque, uniformly sized bytes from every cell.
+ */
+const cellHex = (cell: number, length: number): string => {
+  let value = (cell + 1) * 2654435761;
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    value = (value * 1103515245 + 12345) & 0x7fffffff;
+    out += HEX[(value >>> (7 + (i % 5))) & 0xf];
+    if (i % 2 === 1 && i !== length - 1) out += " ";
+  }
+  return out;
+};
 // Which strip positions carry real bytes. The point of the illustration is
 // that this is not observable — the marker only appears on the legend.
 const REAL_CELLS = new Set([1, 4, 6]);
@@ -158,10 +178,35 @@ const HeroDemo = () => {
         >
           <span className='text-orange-400'>›</span> {current.note}
         </p>
-        <p className='mt-1 flex min-h-[2.25rem] items-start font-mono text-[10px] leading-relaxed text-zinc-500 sm:min-h-[1.5rem] sm:text-[11px]'>
-          {REAL_CELLS.size} of {TOTAL_CELLS} cells carry your bytes — the wire
-          cannot tell which
-        </p>
+        {/* What an observer actually collects: opaque bytes, and counts. */}
+        <div className='mt-2 border-t border-zinc-800 pt-2'>
+          <p className='truncate font-mono text-[10px] text-zinc-600 sm:text-[11px]'>
+            {cellHex(Math.max(0, current.cells - 1), 24)}
+          </p>
+          <dl className='mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 font-mono text-[10px] sm:text-[11px]'>
+            <div className='flex items-baseline gap-1.5'>
+              <dt className='text-zinc-500'>packets</dt>
+              <dd className='text-zinc-200'>
+                {(current.cells * PACKETS_PER_CELL).toLocaleString()}
+              </dd>
+            </div>
+            <div className='flex items-baseline gap-1.5'>
+              <dt className='text-zinc-500'>cells</dt>
+              <dd className='text-zinc-200'>
+                {current.cells}/{TOTAL_CELLS}
+              </dd>
+            </div>
+            <div className='flex items-baseline gap-1.5'>
+              <dt className='text-zinc-500'>carrying your bytes</dt>
+              <dd className='text-orange-400'>
+                {[...REAL_CELLS].filter((cell) => cell < current.cells).length}
+              </dd>
+            </div>
+          </dl>
+          <p className='mt-1 min-h-[1.5rem] font-mono text-[10px] leading-relaxed text-zinc-500'>
+            every cell is the same size — the wire cannot tell which
+          </p>
+        </div>
       </div>
     </figure>
   );
