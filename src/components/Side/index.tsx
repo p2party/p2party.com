@@ -1,14 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-
-import type { ReactNode } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import {
   ArchiveBoxXMarkIcon,
   BookOpenIcon,
   Cog8ToothIcon,
-  HomeIcon,
   QrCodeIcon,
-  UserIcon,
 } from "@heroicons/react/20/solid";
 
 import {
@@ -41,58 +37,8 @@ export interface SideBarProps {
   roomUrl: string;
 }
 
-/**
- * A labelled identifier on the console panel. The value is the point, so it
- * gets the room to breathe (two lines of mono) and a copy control — a
- * truncated id you cannot select is decoration, not information.
- */
-const IdentityField = ({ value, icon }: { value: string; icon: ReactNode }) => {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => {
-      setCopied(false);
-    }, 1600);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [copied]);
-
-  const present = value.length > 0;
-
-  return (
-    <div className='px-2 py-1.5'>
-      <div className='flex items-center justify-between gap-2'>
-        <span className='text-orange-400'>{icon}</span>
-        {present && (
-          <button
-            type='button'
-            onClick={() => {
-              void navigator.clipboard
-                .writeText(value)
-                .then(() => {
-                  setCopied(true);
-                })
-                .catch(() => {
-                  setCopied(false);
-                });
-            }}
-            className='font-mono text-[10px] tracking-[0.1em] text-zinc-400 uppercase transition-colors hover:text-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500'
-          >
-            {copied ? "copied" : "copy"}
-          </button>
-        )}
-      </div>
-      <p className='mt-1 font-mono text-[11px] leading-snug wrap-anywhere text-zinc-300 select-text'>
-        {present ? value : "—"}
-      </p>
-    </div>
-  );
-};
-
 const SideBar = () => {
-  const { roomUrl, roomId, peerId, roomPolicy } = useRoom({
+  const { roomUrl, roomPolicy } = useRoom({
     subscribeToMessages: false,
   });
   const inviteUrl = roomUrl ? absoluteRoomInviteUrl(roomUrl, roomPolicy) : "";
@@ -128,14 +74,9 @@ const SideBar = () => {
           </Suspense>
         )}
 
-        {roomUrl && (
-          <IdentityField
-            value={roomId}
-            icon={<HomeIcon className='size-4' />}
-          />
-        )}
-
-        <IdentityField value={peerId} icon={<UserIcon className='size-4' />} />
+        {/* The room id and peer id used to sit here as two unlabelled icons
+            with a dash, which told the user nothing. Both are shown, labelled,
+            in the diagnostics panel. */}
 
         <SidebarItem onClick={() => setShowSettings(true)}>
           <span className='flex min-w-0 items-center gap-3'>
