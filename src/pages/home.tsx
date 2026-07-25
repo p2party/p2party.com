@@ -135,11 +135,11 @@ const HomePage = () => {
       />
 
       {/* Hero */}
-      <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-12 pb-16 sm:pt-16 sm:pb-20 lg:grid-cols-2 lg:gap-12'>
+      <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-4 pt-8 pb-12 sm:gap-6 sm:pt-16 sm:pb-20 lg:grid-cols-2 lg:gap-12'>
         {/* Visual */}
         <div className='order-first flex justify-center lg:order-last lg:justify-end'>
           <Suspense
-            fallback={<div className='h-56 sm:h-80 lg:h-100' aria-hidden />}
+            fallback={<div className='h-40 sm:h-72 lg:h-100' aria-hidden />}
           >
             <CatAvatar className='animate-float m-0 w-56 p-0 motion-reduce:animate-none sm:w-80 lg:w-100' />
           </Suspense>
@@ -147,7 +147,7 @@ const HomePage = () => {
 
         {/* Copy + CTAs */}
         <div className='flex flex-col items-center text-center lg:items-start lg:text-left'>
-          <span className='animate-fade-in mb-4 inline-flex items-center gap-2 border-2 border-zinc-950 bg-white px-3 py-1 font-mono text-xs font-bold tracking-[0.2em] text-zinc-950 uppercase dark:border-zinc-200 dark:bg-zinc-950 dark:text-white'>
+          <span className='animate-fade-in mb-4 inline-flex max-w-full items-center gap-2 border-2 border-zinc-950 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] whitespace-nowrap text-zinc-950 uppercase sm:px-3 sm:text-xs sm:tracking-[0.2em] dark:border-zinc-200 dark:text-white'>
             <span className='bg-darkOrange inline-block size-1.5' />
             direct mesh · protocol v4 · no accounts
           </span>
@@ -164,7 +164,7 @@ const HomePage = () => {
             Sniffers get uniform cells. You get privacy. No accounts.
           </p>
 
-          <div className='animate-slide-up mt-7 flex flex-col items-center gap-3 sm:flex-row lg:items-start'>
+          <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7 sm:w-auto sm:flex-row sm:items-center lg:items-center'>
             <Button
               onClick={() => setRoomSetupOpen(true)}
               color='orange'
@@ -173,14 +173,8 @@ const HomePage = () => {
               Generate Room
             </Button>
             <Link
-              href='/session-lab'
-              className='inline-flex items-center gap-1.5 rounded-none border-2 border-zinc-950 bg-white px-5 py-2.5 font-mono text-sm font-semibold text-zinc-950 transition-colors hover:bg-orange-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-zinc-200 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900'
-            >
-              createSession() lab
-            </Link>
-            <Link
               href='/blog'
-              className='inline-flex items-center gap-1.5 rounded-none px-5 py-2.5 font-mono text-sm font-semibold text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-orange-300'
+              className='inline-flex items-center justify-center gap-1.5 rounded-none px-5 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-orange-300'
             >
               protocol field notes
             </Link>
@@ -188,7 +182,7 @@ const HomePage = () => {
               href='https://github.com/p2party/p2party-js'
               target='_blank'
               rel='noopener noreferrer'
-              className='inline-flex items-center gap-1.5 rounded-none px-5 py-2.5 font-mono text-sm font-semibold text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-white'
+              className='inline-flex items-center justify-center gap-1.5 rounded-none px-5 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-white'
             >
               <svg className='size-4' fill='currentColor' viewBox='0 0 24 24'>
                 <path
@@ -208,7 +202,7 @@ const HomePage = () => {
       </Suspense>
 
       {/* Feature cards */}
-      <div className='relative mx-auto mb-16 grid w-full max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className='relative mx-auto mb-16 grid w-full max-w-6xl gap-5 sm:grid-cols-2 xl:grid-cols-4'>
         {features.map((f, i) => (
           <div
             key={f.title}
@@ -243,7 +237,7 @@ const HomePage = () => {
           the real data inside an avalanche of cryptographically random noise.
         </p>
 
-        <div className='grid gap-6 sm:grid-cols-3'>
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {steps.map((s) => (
             <div
               key={s.num}
@@ -277,7 +271,7 @@ const HomePage = () => {
           are out of the loop.
         </p>
 
-        <div className='grid gap-6 sm:grid-cols-3'>
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           <div className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'>
             <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
               <svg

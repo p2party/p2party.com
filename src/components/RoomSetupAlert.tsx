@@ -17,7 +17,7 @@ import {
   AlertTitle,
 } from "./alert";
 import { Button } from "./button";
-import { Description, Label } from "./fieldset";
+import { Description, Field, Label } from "./fieldset";
 import { Input } from "./input";
 import { Select } from "./select";
 import { Switch, SwitchField } from "./switch";
@@ -159,7 +159,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
         cannot be silently changed later.
       </AlertDescription>
       <AlertBody className='space-y-5'>
-        <div>
+        <Field>
           <Label htmlFor='room-mlkem-suite'>Room-wide ML-KEM suite</Label>
           <Description>
             Every peer uses this exact suite. It is authenticated in the room
@@ -182,7 +182,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
               ML-KEM-1024 — largest keys (NIST category 5)
             </option>
           </Select>
-        </div>
+        </Field>
 
         <div className='rounded-xl border border-orange-300/70 bg-orange-50/70 p-4 shadow-[3px_3px_0_0_rgba(249,115,22,0.16)] dark:border-orange-800/70 dark:bg-orange-950/25'>
           <SwitchField>
@@ -203,7 +203,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           </SwitchField>
 
           {pinEnabled && (
-            <div className='mt-4'>
+            <Field className='mt-4'>
               <Label htmlFor='new-room-pin'>Room PIN</Label>
               <Input
                 id='new-room-pin'
@@ -224,7 +224,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
               >
                 Never added to the URL, Redux, IndexedDB, logs, or analytics.
               </p>
-            </div>
+            </Field>
           )}
         </div>
 
@@ -315,7 +315,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           </div>
 
           {coverEnabled && (
-            <div className='mt-3'>
+            <Field className='mt-3'>
               <Label htmlFor='room-cover-cadence'>Cover cadence</Label>
               <Description>
                 The cycle length is authenticated in the room policy and shared
@@ -334,7 +334,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
                   </option>
                 ))}
               </Select>
-            </div>
+            </Field>
           )}
         </fieldset>
 
@@ -346,7 +346,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           negotiation.
         </p>
 
-        <div className='border-t border-zinc-300 pt-5 dark:border-zinc-700'>
+        <Field className='block border-t border-zinc-300 pt-5 dark:border-zinc-700'>
           <Label htmlFor='room-invite-words'>Enter 24 invitation words</Label>
           <Description>
             Words carry the full 256-bit room capability plus a checksum. Match
@@ -377,7 +377,7 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           >
             {isJoining ? "Checking words…" : "Join with 24 words"}
           </Button>
-        </div>
+        </Field>
 
         {error && (
           <p

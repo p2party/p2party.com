@@ -9,6 +9,8 @@ import {
   type P2PartySession,
 } from "p2party/session";
 
+import { loadSessionWasmBinary } from "../protocol/wasm";
+
 import { Button } from "../components/button";
 import { Link } from "../components/link";
 
@@ -68,9 +70,10 @@ const SessionLabPage = () => {
     let snapshot: Uint8Array | undefined;
 
     try {
+      const wasmBinary = await loadSessionWasmBinary();
       [aliceIdentity, bobIdentity] = await Promise.all([
-        generateSessionIdentity(),
-        generateSessionIdentity(),
+        generateSessionIdentity({ wasmBinary }),
+        generateSessionIdentity({ wasmBinary }),
       ]);
 
       const aliceToBob = makeLink();
@@ -95,6 +98,7 @@ const SessionLabPage = () => {
           },
           transport: transport(aliceToBob.send, bobToAlice.recv),
           mode: "nopin",
+          crypto: { wasmBinary },
         }),
         createSession({
           role: "responder",
@@ -107,6 +111,7 @@ const SessionLabPage = () => {
           },
           transport: transport(bobToAlice.send, aliceToBob.recv),
           mode: "nopin",
+          crypto: { wasmBinary },
         }),
       ]);
 
@@ -116,7 +121,7 @@ const SessionLabPage = () => {
       const forwardPlaintext = decoder.decode(await bob.decrypt(envelope));
 
       snapshot = await alice.serialize();
-      restoredAlice = await restoreSession(snapshot);
+      restoredAlice = await restoreSession(snapshot, { wasmBinary });
       await alice.destroy();
       alice = undefined;
 
