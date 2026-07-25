@@ -103,13 +103,16 @@ const REAL_CELLS = new Set([0, 2, 3, 5, 6]);
 
 const HeroDemo = () => {
   const [step, setStep] = useState(0);
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(query.matches);
-    const onChange = () => {
-      setReduced(query.matches);
+    const onChange = (event: MediaQueryListEvent) => {
+      setReduced(event.matches);
     };
     query.addEventListener("change", onChange);
     return () => {
@@ -118,11 +121,8 @@ const HeroDemo = () => {
   }, []);
 
   useEffect(() => {
-    // Reduced motion gets the finished state, not a loop.
-    if (reduced) {
-      setStep(SCRIPT.length - 1);
-      return;
-    }
+    // Reduced motion holds the finished state; no timer, no state writes.
+    if (reduced) return;
     const timer = setTimeout(() => {
       setStep((current) => (current + 1) % SCRIPT.length);
     }, SCRIPT[step]?.ms ?? 1000);
@@ -131,10 +131,13 @@ const HeroDemo = () => {
     };
   }, [step, reduced]);
 
-  const current = SCRIPT[step];
-  const showFile = SCRIPT.slice(0, step + 1).some((s) => s.file);
+  // Derived, not stored: with reduced motion the last step is simply what we
+  // render, so the effect never has to write state to reach it.
+  const activeStep = reduced ? SCRIPT.length - 1 : step;
+  const current = SCRIPT[activeStep];
+  const showFile = SCRIPT.slice(0, activeStep + 1).some((s) => s.file);
   const transferPercent = Math.round((current.cells / TOTAL_CELLS) * 100);
-  const bubbles = SCRIPT.slice(0, step + 1)
+  const bubbles = SCRIPT.slice(0, activeStep + 1)
     .map((s) => s.bubble)
     .filter((b): b is NonNullable<Step["bubble"]> => b !== undefined);
 
@@ -150,7 +153,7 @@ const HeroDemo = () => {
           room
         </span>
         <span className='text-orange-600 dark:text-orange-400'>
-          {step + 1}/{SCRIPT.length}
+          {activeStep + 1}/{SCRIPT.length}
         </span>
       </figcaption>
 
