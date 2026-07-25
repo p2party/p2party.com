@@ -99,16 +99,12 @@ const HeroDemo = () => {
       className='shadow-brutal relative w-full max-w-lg overflow-hidden border-2 border-zinc-950 bg-white dark:border-zinc-200 dark:bg-zinc-950'
       aria-label='Illustration of one message crossing the wire as uniform encrypted cells'
     >
-      {/* The mark sits behind the demo rather than beside it. */}
-      <img
-        src='/logo-cat-tight.svg'
-        alt=''
-        aria-hidden
-        className='pointer-events-none absolute top-6 left-1/2 h-44 -translate-x-1/2 opacity-[0.15] select-none sm:h-52 dark:opacity-[0.18]'
-      />
-
       <figcaption className='relative flex items-center justify-between border-b-2 border-zinc-950 px-3 py-1.5 font-mono text-[10px] font-bold tracking-[0.15em] uppercase dark:border-zinc-200'>
-        <span className='text-zinc-950 dark:text-white'>one message</span>
+        <span className='text-zinc-950 lowercase dark:text-white'>
+          p2party
+          <span className='text-orange-600 dark:text-orange-400'>://</span>
+          room
+        </span>
         <span className='text-orange-600 dark:text-orange-400'>
           {step + 1}/{SCRIPT.length}
         </span>
@@ -116,6 +112,14 @@ const HeroDemo = () => {
 
       {/* Chat */}
       <div className='relative flex min-h-64 flex-col justify-end gap-2 px-4 py-4 sm:min-h-72'>
+        {/* The mark is the backdrop of the screen, centred within it. */}
+        <img
+          src='/logo-cat-tight.svg'
+          alt=''
+          aria-hidden
+          className='pointer-events-none absolute top-1/2 left-1/2 h-44 -translate-x-1/2 -translate-y-1/2 opacity-[0.15] select-none sm:h-52 dark:opacity-[0.18]'
+        />
+
         {bubbles.map((bubble, index) => (
           <p
             key={`${bubble.from}-${String(index)}`}
