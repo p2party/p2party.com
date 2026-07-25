@@ -98,14 +98,49 @@ const MessageDropdown = ({
     throw new Error("This message has no file attached.");
   };
 
+  /**
+   * A blob: URL inherits THIS page's origin, so anything the browser executes
+   * from one runs as p2party.com. The message type — and therefore the Blob's
+   * MIME type — is chosen by the sender, and MessageType includes ImageSVG and
+   * CodeHTML. Opening a peer's .html or .svg in a tab would hand them script
+   * execution against our localStorage and IndexedDB, which hold identity and
+   * ratchet state. Anyone holding the room link can send one.
+   *
+   * So: only render inline what cannot carry script. Everything else is
+   * downloaded instead, which is inert.
+   */
+  const INLINE_SAFE = [
+    "image/png",
+    "image/jpeg",
+    "image/gif",
+    "image/webp",
+    "image/avif",
+    "image/bmp",
+    "audio/",
+    "video/",
+    "application/pdf",
+  ];
+
+  const isInlineSafe = (type: string): boolean => {
+    const mime = type.split(";", 1)[0].trim().toLowerCase();
+    // image/svg+xml must never match: SVG is a script-bearing document.
+    return INLINE_SAFE.some((safe) =>
+      safe.endsWith("/") ? mime.startsWith(safe) : mime === safe,
+    );
+  };
+
   const handleOpen = async () => {
     setFileError("");
     try {
       const blob = await materializeFile();
+      if (!isInlineSafe(blob.type)) {
+        await handleDownload();
+        return;
+      }
       const objectUrl = URL.createObjectURL(blob);
       // Reassembly consumed the user gesture, so a popup blocker can reject
       // this — window.open returns null and nothing would otherwise happen.
-      const opened = window.open(objectUrl, "_blank");
+      const opened = window.open(objectUrl, "_blank", "noopener,noreferrer");
       if (!opened)
         setFileError(
           "Your browser blocked the new tab. Allow pop-ups for this site, or use Download.",
