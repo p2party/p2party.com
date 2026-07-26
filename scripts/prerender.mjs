@@ -28,14 +28,55 @@ const manifest = JSON.parse(
   await readFile("src/content/blog/index.json", "utf8"),
 );
 
-export const ROUTES = [
-  "/",
-  "/privacy-policy",
-  "/terms-of-service",
-  "/session-lab",
-  "/blog",
-  ...manifest.posts.map((post) => post.href),
+// One description and canonical per route. Without these every prerendered
+// page inherited the landing page's, so eleven URLs advertised themselves as
+// the same document -- the classic way to get your own pages treated as
+// duplicates of each other.
+const STATIC_ROUTES = [
+  {
+    path: "/",
+    description:
+      "End-to-end encrypted messaging and file transfer straight between browsers. No accounts, no cloud storage, no server that can read your messages.",
+  },
+  {
+    path: "/privacy-policy",
+    title: "Privacy policy · p2party",
+    description:
+      "What p2party's signaling service can and cannot see, what is stored, and for how long.",
+  },
+  {
+    path: "/terms-of-service",
+    title: "Terms of service · p2party",
+    description: "The terms covering use of p2party.com.",
+  },
+  {
+    path: "/session-lab",
+    title: "Session lab · p2party",
+    description:
+      "Run the protocol-v4 handshake and Double Ratchet in your browser, with no network and no room, and watch each step.",
+  },
+  {
+    path: "/blog",
+    title: "Field notes · p2party",
+    description:
+      "How p2party's protocol was built and what it does not claim: uniform cells, hybrid post-quantum key agreement, ratcheting, and cover traffic.",
+  },
 ];
+
+const ROUTE_META = new Map([
+  ...STATIC_ROUTES.map((route) => [route.path, route]),
+  ...manifest.posts.map((post) => [
+    post.href,
+    {
+      path: post.href,
+      title: `${post.title} · p2party`,
+      description: post.description,
+      article: post,
+    },
+  ]),
+]);
+
+export const ROUTES = [...ROUTE_META.keys()];
 
 const CONTENT_TYPES = {
   ".js": "text/javascript",
@@ -96,7 +137,81 @@ for (const route of ROUTES) {
     continue;
   }
 
-  const html = "<!doctype html>\n" + (await page.content());
+  const meta = ROUTE_META.get(route);
+  const canonical = `${ORIGIN}${route}`;
+  const escape = (value) =>
+    value
+      .replace(/&/gu, "&amp;")
+      .replace(/"/gu, "&quot;")
+      .replace(/</gu, "&lt;");
+
+  let html = "<!doctype html>\n" + (await page.content());
+
+  // The app sets document.title for some routes and not others; take whatever
+  // it rendered unless this route states one.
+  const rendered = /<title>([^<]*)<\/title>/u.exec(html)?.[1];
+  const title = meta?.title ?? rendered ?? "p2party";
+  const description = meta?.description ?? "";
+
+  const replaceTag = (pattern, replacement) => {
+    html = pattern.test(html)
+      ? html.replace(pattern, replacement)
+      : html.replace("</head>", `    ${replacement}\n  </head>`);
+  };
+
+  html = html.replace(
+    /<title>[^<]*<\/title>/u,
+    `<title>${escape(title)}</title>`,
+  );
+  replaceTag(
+    /<meta name="description" content="[^"]*"\s*\/?>/u,
+    `<meta name="description" content="${escape(description)}" />`,
+  );
+  replaceTag(
+    /<link rel="canonical" href="[^"]*"\s*\/?>/u,
+    `<link rel="canonical" href="${canonical}" />`,
+  );
+  replaceTag(
+    /<meta property="og:url" content="[^"]*"\s*\/?>/u,
+    `<meta property="og:url" content="${canonical}" />`,
+  );
+  replaceTag(
+    /<meta property="og:title" content="[^"]*"\s*\/?>/u,
+    `<meta property="og:title" content="${escape(title)}" />`,
+  );
+  replaceTag(
+    /<meta property="og:description" content="[^"]*"\s*\/?>/u,
+    `<meta property="og:description" content="${escape(description)}" />`,
+  );
+  replaceTag(
+    /<meta name="twitter:title" content="[^"]*"\s*\/?>/u,
+    `<meta name="twitter:title" content="${escape(title)}" />`,
+  );
+  replaceTag(
+    /<meta name="twitter:description" content="[^"]*"\s*\/?>/u,
+    `<meta name="twitter:description" content="${escape(description)}" />`,
+  );
+
+  if (meta?.article) {
+    html = html.replace(
+      /<meta property="og:type" content="[^"]*"\s*\/?>/u,
+      '<meta property="og:type" content="article" />',
+    );
+    const article = {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: meta.article.title,
+      description: meta.article.description,
+      datePublished: meta.article.date,
+      author: { "@type": "Person", name: manifest.series.author.name },
+      mainEntityOfPage: canonical,
+      url: canonical,
+    };
+    html = html.replace(
+      "</head>",
+      `    <script type="application/ld+json">${JSON.stringify(article)}</script>\n  </head>`,
+    );
+  }
   const outPath =
     route === "/"
       ? join(DIST, "index.html")

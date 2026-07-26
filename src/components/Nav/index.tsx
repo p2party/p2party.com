@@ -25,7 +25,6 @@ const PeerDropdown = lazy(() => import("./PeerDropdown"));
 const Share = lazy(() => import("./ShareDropdown"));
 const DeleteDropdown = lazy(() => import("./DeleteDropdown"));
 const RoomSetupAlert = lazy(() => import("../RoomSetupAlert"));
-const RoomWordsAlert = lazy(() => import("../alerts/RoomWordsAlert"));
 
 export interface NavBarProps {
   roomUrl: string;
@@ -42,7 +41,6 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
   const [showAddressBook, setShowAddressBook] = useState(false);
   const [showBlacklist, setShowBlacklist] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-  const [showWords, setShowWords] = useState(false);
   const [showRoomSetup, setShowRoomSetup] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
 
@@ -89,23 +87,12 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
         </Suspense> */}
 
             <Suspense fallback={<Spinner />}>
-              <Share
-                inviteUrl={inviteUrl}
-                setShowQRCode={setShowQRCode}
-                setShowWords={setShowWords}
-              />
+              <Share inviteUrl={inviteUrl} setShowQRCode={setShowQRCode} />
               <QRCodeAlert
-                roomUrl={roomUrl}
                 inviteUrl={inviteUrl}
                 roomPolicy={roomPolicy}
                 isOpen={showQRCode}
                 setIsOpen={setShowQRCode}
-              />
-
-              <RoomWordsAlert
-                roomUrl={roomUrl}
-                isOpen={showWords}
-                setIsOpen={setShowWords}
               />
             </Suspense>
           </>

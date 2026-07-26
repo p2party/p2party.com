@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 
-import p2party from "p2party";
 import QRCode from "qrcode";
 
 import { Alert, AlertActions, AlertTitle, AlertBody } from "../alert";
@@ -13,7 +12,6 @@ import type { Dispatch, SetStateAction } from "react";
 import type { RoomPolicyV1 } from "p2party";
 
 export interface QRCodeAlertProps {
-  roomUrl: string;
   inviteUrl: string;
   roomPolicy: RoomPolicyV1;
   isOpen: boolean;
@@ -58,33 +56,14 @@ const loadImage = (src: string, label: string): Promise<HTMLImageElement> =>
   });
 
 const QRCodeAlert = ({
-  roomUrl,
   inviteUrl,
   roomPolicy,
   isOpen,
   setIsOpen,
 }: QRCodeAlertProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [wordInvite, setWordInvite] = useState({ roomUrl: "", value: "" });
   const [copyResult, setCopyResult] = useState({ inviteUrl: "", value: "" });
-  const words = wordInvite.roomUrl === roomUrl ? wordInvite.value : "";
   const copyStatus = copyResult.inviteUrl === inviteUrl ? copyResult.value : "";
-
-  useEffect(() => {
-    if (!isOpen || roomUrl.length === 0) return;
-    let cancelled = false;
-    const capability = p2party.decodeRoomCapability(roomUrl);
-    void p2party
-      .encodeRoomCapabilityWords(capability)
-      .then((encoded) => {
-        if (!cancelled) setWordInvite({ roomUrl, value: encoded });
-      })
-      .catch((cause) => console.error("Room word encoding error:", cause))
-      .finally(() => capability.fill(0));
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, roomUrl]);
 
   useEffect(() => {
     if (!isOpen || inviteUrl.length === 0) return;
@@ -157,7 +136,6 @@ const QRCodeAlert = ({
   };
 
   const close = () => {
-    setWordInvite({ roomUrl: "", value: "" });
     setCopyResult({ inviteUrl: "", value: "" });
     const canvas = canvasRef.current;
     canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
@@ -187,23 +165,9 @@ const QRCodeAlert = ({
           {roomPolicy.authMode === "pin" ? "PIN required" : "no room PIN"} ·{" "}
           {coverModeSummary(roomPolicy)}
         </p>
-        <label
-          htmlFor='room-invite-words-copy'
-          className='mt-3 block font-mono text-xs font-bold text-zinc-950 dark:text-white'
-        >
-          24-word human invitation
-        </label>
-        <textarea
-          id='room-invite-words-copy'
-          readOnly
-          rows={4}
-          value={words}
-          className='mt-1 block w-full resize-none rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
-        />
         <p className='mt-2 text-xs text-zinc-500 dark:text-zinc-400'>
-          The link keeps the capability after <code>#</code>. The words encode
-          the same 256-bit capability and never enter the URL. Communicate a PIN
-          separately.
+          The link keeps the capability after <code>#</code>, so it stays out of
+          request lines and server logs. Communicate a PIN separately.
         </p>
         <p aria-live='polite' className='mt-2 min-h-4 font-mono text-xs'>
           {copyStatus}
@@ -216,15 +180,8 @@ const QRCodeAlert = ({
         <Button plain onClick={handleDownload}>
           Download QR
         </Button>
-        <Button outline onClick={() => copy("Link", inviteUrl)}>
+        <Button color='orange' onClick={() => copy("Link", inviteUrl)}>
           Copy link
-        </Button>
-        <Button
-          color='orange'
-          onClick={() => copy("24 words", words)}
-          disabled={words.length === 0}
-        >
-          Copy 24 words
         </Button>
       </AlertActions>
     </Alert>

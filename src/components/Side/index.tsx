@@ -116,7 +116,6 @@ const SideBar = () => {
               </span>
             </span>
             <QRCodeAlert
-              roomUrl={roomUrl ?? ""}
               inviteUrl={inviteUrl}
               roomPolicy={roomPolicy}
               isOpen={showQRCode}
