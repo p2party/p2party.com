@@ -33,6 +33,7 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
   const {
     roomUrl,
     peers,
+    reachablePeers,
     signalingServerConnectionState,
     connect,
     disconnectFromPeer,
@@ -51,7 +52,7 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
         <UserGroupIcon className='size-6 text-zinc-500 dark:text-zinc-400' />
         {peers.length > 0 && (
           <span className='bg-darkOrange absolute -top-1 -right-1 flex min-w-[1.25rem] items-center justify-center rounded-full text-xs text-white'>
-            {peers.length + 1 > 99 ? "99+" : peers.length + 1}
+            {reachablePeers.length + 1 > 99 ? "99+" : reachablePeers.length + 1}
           </span>
         )}
       </DropdownButton>
@@ -60,10 +61,10 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
         <DropdownHeader>
           <div className='pr-6'>
             <div className='text-xs text-zinc-500 dark:text-zinc-400'>
-              Room peers:
+              Connected peers:
             </div>
             <div className='text-sm/7 font-semibold text-zinc-800 dark:text-white'>
-              {peers.length + 1}
+              {reachablePeers.length + 1}
             </div>
           </div>
         </DropdownHeader>

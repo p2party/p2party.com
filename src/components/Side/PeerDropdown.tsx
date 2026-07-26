@@ -16,6 +16,7 @@ const PeerDropdown = () => {
   const {
     roomUrl,
     peers,
+    reachablePeers,
     signalingServerConnectionState,
     connect,
     disconnectFromPeer,
@@ -36,10 +37,15 @@ const PeerDropdown = () => {
           <UserGroupIcon className='size-8 lg:size-7' />
           <span className='min-w-0'>
             <span className='block truncate text-sm/5 font-medium text-zinc-100'>
-              Peers in room
+              Connected peers
             </span>
             <span className='block truncate font-mono text-xs/5 font-normal text-zinc-400'>
-              {peers.length + 1}
+              {reachablePeers.length + 1}
+              {/* A peer in the roster whose handshake has not finished cannot
+                  receive anything yet. Saying so is better than a number that
+                  quietly disagrees with what a send will do. */}
+              {peers.length > reachablePeers.length &&
+                ` · ${String(peers.length - reachablePeers.length)} connecting`}
             </span>
           </span>
         </span>

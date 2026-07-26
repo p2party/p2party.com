@@ -231,6 +231,20 @@ export const useRoom = ({
     setStunServerUrls,
     signalingServerConnectionState: signalingServerConnection,
     peers: roomView.peers,
+    /**
+     * The peers a message would actually reach right now.
+     *
+     * `peers` is the signaling roster: who the server says is in the room. The
+     * library refuses to send to a peer whose protocol-v4 handshake has not
+     * completed, so a roster count answers "who is here" while a send answers
+     * "who can hear me", and the two disagree whenever an edge is still
+     * handshaking or has dropped. Counting the roster told people two peers
+     * were connected and then failed the send with `not-connected`.
+     */
+    reachablePeers: roomView.peers.filter(
+      (peer) =>
+        roomView.handshakeStatusByPeer[peer.peerId]?.status === "authenticated",
+    ),
     channels: roomView.channels,
     coverStatusByPeer: roomView.coverStatusByPeer,
     handshakeStatusByPeer: roomView.handshakeStatusByPeer,
