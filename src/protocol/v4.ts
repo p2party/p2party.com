@@ -32,7 +32,8 @@ export type PeerHandshakeStatus = NonNullable<
 
 /**
  * Keep the version-specific calls visible at the integration boundary. These
- * are direct, declaration-checked 0.13.0 exports—not a compatibility shim.
+ * are direct, declaration-checked exports of the vendored p2party release—
+ * not a compatibility shim.
  */
 export const protocolV4 = {
   connect: p2party.connect,

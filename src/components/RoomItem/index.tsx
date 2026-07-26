@@ -50,7 +50,7 @@ const RoomListItem: FC<UniqueRoom> = (room) => {
     msgExtension: "txt",
   });
   // A room persisted by a pre-v4 build carries a wireVersion-3 policy blob
-  // that the 0.13.0 decoder (and roomInvitePath) reject. One legacy record
+  // that the protocol-v4 decoder (and roomInvitePath) reject. One legacy record
   // must degrade to a row without an invite link — it must never unmount the
   // whole saved-rooms list (there is no error boundary above this row).
   let inviteHref: string | undefined;
