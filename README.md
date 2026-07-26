@@ -10,18 +10,18 @@ not a generic component library.
 
 ## Protocol status
 
-The protocol-v4 release target consumes an immutable local `p2party` 0.14.0
+The protocol-v4 release target consumes an immutable local `p2party` 0.14.1
 tarball:
 
 ```text
-file:vendor/p2party-0.14.0.tgz
+file:vendor/p2party-0.14.1.tgz
 ```
 
 Artifact SHA-256:
-`e24b612b46b9e99a30fef38736e9fb01a0970f480e832334c5bd72b6a3ef324e`.
+`86529e653f9aac5bcfb0e857a85cc0dfeb603994ce87c7d2fbe1f71d141b627c`.
 
 The browser loads the matching committed
-`public/vendor/p2party-0.14.0/libcrypto.wasm`; the SDK's build-pinned SRI still
+`public/vendor/p2party-0.14.1/libcrypto.wasm`; the SDK's build-pinned SRI still
 applies. `npm run provenance:check` verifies the tarball, its embedded WASM
 provenance, the lockfile integrity, and the self-hosted bytes as one unit.
 
@@ -51,7 +51,7 @@ Prerequisites:
 
 - Node.js 24.11.1 and npm 11.6.2
 - Bun 1.3.14 for the unit-test runner
-- the committed, verified `vendor/p2party-0.14.0.tgz`
+- the committed, verified `vendor/p2party-0.14.1.tgz`
 
 Install and run:
 
