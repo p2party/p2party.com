@@ -155,13 +155,27 @@ const HomePage = () => {
       <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-8 pb-10 sm:gap-8 sm:pt-14 sm:pb-14 md:grid-cols-2 md:items-center md:gap-x-10 md:gap-y-4 lg:gap-x-12'>
         {/* Headline — first on every screen */}
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-1 md:items-start md:justify-end md:self-end md:text-left'>
-          <span className='animate-fade-in mb-4 inline-flex max-w-full items-center gap-2 border-2 border-zinc-950 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] whitespace-nowrap text-zinc-950 uppercase sm:px-3 sm:text-xs sm:tracking-[0.18em] md:text-[10px] md:tracking-[0.08em] lg:text-xs lg:tracking-[0.18em] dark:border-zinc-200 dark:text-white'>
-            <span className='bg-darkOrange inline-block size-1.5' />
+          {/*
+            No nowrap: at 375px -- an iPhone SE, not a hypothetical -- the
+            eyebrow ran past its own border and the last word was sliced in
+            half. Left to wrap it stays inside the box on small screens and is
+            still one line everywhere it fits, which is 414px up.
+          */}
+          <span className='animate-fade-in mb-4 inline-flex max-w-full items-center gap-2 border-2 border-zinc-950 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] text-zinc-950 uppercase sm:px-3 sm:text-xs sm:tracking-[0.18em] md:text-[10px] md:tracking-[0.08em] lg:text-xs lg:tracking-[0.18em] dark:border-zinc-200 dark:text-white'>
+            <span className='bg-darkOrange inline-block size-1.5 shrink-0' />
             no accounts · peer-to-peer · no cloud storage
           </span>
-          <h1 className='animate-fade-in text-4xl leading-tight font-black tracking-[-0.055em] text-balance text-zinc-950 sm:text-5xl lg:text-6xl dark:text-white'>
-            Privacy That{" "}
-            <span className='text-orange-600 dark:text-orange-500'>
+          {/*
+            Two rows, always. Left to itself the headline rewraps by width --
+            four rows on a narrow phone, three on a tablet -- and the slogan
+            stops reading as one line answered by another. Each half is its own
+            nowrap block so the break is ours, and the smallest step is a clamp
+            rather than a fixed size so "Privacy That" scales with the viewport
+            instead of overflowing it.
+          */}
+          <h1 className='animate-fade-in text-[clamp(1.75rem,11vw,2.25rem)] leading-[1.05] font-black tracking-[-0.055em] text-zinc-950 sm:text-5xl lg:text-6xl dark:text-white'>
+            <span className='block whitespace-nowrap'>Privacy That</span>
+            <span className='block whitespace-nowrap text-orange-600 dark:text-orange-500'>
               Fights Back
             </span>
           </h1>
@@ -173,9 +187,8 @@ const HomePage = () => {
         {/* Copy + CTAs */}
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:self-start md:text-left'>
           <p className='animate-slide-up max-w-lg text-justify text-lg leading-relaxed hyphens-auto text-zinc-500 dark:text-zinc-400'>
-            Share text and files straight from your browser to theirs.
-            Everything travels in identical 65,490-byte encrypted blocks, so the
-            wire never reveals how much you sent or what kind of thing it was.
+            Text and files, browser to browser, in identical 64 KB encrypted
+            blocks that hide what you sent — and how much.
           </p>
 
           <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7'>
