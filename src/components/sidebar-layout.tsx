@@ -69,7 +69,7 @@ export function SidebarLayout({
       </MobileSidebar>
 
       {/* Navbar on mobile */}
-      <header className='fixed top-0 right-0 left-0 z-50 flex items-center border-b-2 border-zinc-950 bg-white px-4 lg:hidden dark:border-zinc-200 dark:bg-black'>
+      <header className='fixed top-0 right-0 left-0 z-50 flex items-center border-b-2 border-zinc-950 bg-white px-2 sm:px-4 lg:hidden dark:border-zinc-200 dark:bg-black'>
         <div className='py-2'>
           <NavbarItem
             onClick={() => setShowSidebar(true)}

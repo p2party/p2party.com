@@ -176,7 +176,7 @@ const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
 
   return (
     <div
-      className={`mb-3 flex items-end gap-1 px-0.5 sm:mb-4 sm:gap-2 sm:px-2 ${
+      className={`mb-3 flex items-end gap-1 sm:mb-4 sm:gap-2 ${
         message.fromPeerId === peerId ? "justify-end" : "justify-start"
       }`}
     >
