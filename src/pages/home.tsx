@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
 import p2party from "p2party";
 
 import { Button } from "../components/button";
@@ -117,24 +116,28 @@ const steps = [
 ];
 
 const HomePage = () => {
-  const navigate = useNavigate();
   const [roomSetupOpen, setRoomSetupOpen] = useState(false);
+  const [storedRooms, setStoredRooms] = useState<number | null>(null);
 
+  // Anyone with a saved room used to have the landing page painted and then
+  // yanked out from under them by a redirect to /rooms. That is the flicker,
+  // and it also meant returning visitors could never read the page. The rooms
+  // are offered as a destination instead of imposed as one.
   useEffect(() => {
-    const abortController = new AbortController();
-
-    const getRooms = async () => {
-      const r = await p2party.getAllExistingRooms();
-
-      if (r.length > 0) navigate("/rooms/", { replace: true });
-    };
-
-    getRooms();
-
+    let cancelled = false;
+    void p2party
+      .getAllExistingRooms()
+      .then((rooms) => {
+        if (!cancelled) setStoredRooms(rooms.length);
+      })
+      .catch(() => {
+        // A storage failure should not cost anyone the landing page.
+        if (!cancelled) setStoredRooms(0);
+      });
     return () => {
-      abortController.abort();
+      cancelled = true;
     };
-  }, [navigate]);
+  }, []);
 
   return (
     <div className='relative isolate flex min-h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col items-center overflow-hidden bg-white px-6 dark:bg-black'>
@@ -176,13 +179,33 @@ const HomePage = () => {
           </p>
 
           <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7'>
-            <Button
-              onClick={() => setRoomSetupOpen(true)}
-              color='orange'
-              className='shadow-brutal-sm w-full rounded-none border-2 border-zinc-950 px-8 py-3 text-lg font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
-            >
-              Generate Room
-            </Button>
+            <div className='flex w-full flex-col gap-3 sm:flex-row'>
+              <Button
+                onClick={() => setRoomSetupOpen(true)}
+                color='orange'
+                className='shadow-brutal-sm flex-1 rounded-none border-2 border-zinc-950 px-8 py-3 text-lg font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
+              >
+                Generate Room
+              </Button>
+
+              {/* Always present, so the row never reflows when the count
+                  arrives. The count appears once known; /rooms handles the
+                  empty case with its own explanation and action. */}
+              {/* `outline` paints border-zinc-950/10 -- a 10% black, which
+                  renders grey next to the solid orange primary. `plain` sets
+                  border-transparent instead, so the border below is stated
+                  important to win against whichever the variant emits. */}
+              <Button
+                href='/rooms'
+                plain
+                className='shadow-brutal-sm flex-1 rounded-none border-2! border-black! bg-white px-8 py-3 text-lg font-semibold whitespace-nowrap text-black transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-white! dark:bg-black dark:text-white'
+              >
+                Your Rooms
+                {storedRooms !== null && storedRooms > 0
+                  ? ` (${storedRooms > 99 ? "99+" : String(storedRooms)})`
+                  : ""}
+              </Button>
+            </div>
             <div className='-mx-3 flex w-[calc(100%+1.5rem)] items-center justify-between gap-1 sm:gap-0'>
               <Link
                 href='/blog'

@@ -113,6 +113,10 @@ const serveDist = async () => {
   return server;
 };
 
+// The Vite shell before prerendering overwrites it: correct script tags, empty
+// #root. Dynamic routes need this, not a prerendered page.
+const shellHtml = await readFile(join(DIST, "index.html"), "utf8");
+
 const server = await serveDist();
 const port = server.address().port;
 const browser = await chromium.launch();
@@ -223,6 +227,33 @@ for (const route of ROUTES) {
 
 await browser.close();
 server.close();
+
+// Routes whose content is per-user or secret get the empty shell rather than a
+// prerendered page.
+//
+// Without this the host had no file at /r, fell back to the prerendered
+// index.html, and served a room invite as HTTP 404 whose body was the entire
+// landing page. Anyone opening an invite watched "Privacy That Fights Back"
+// paint and then get replaced by their chat. The shell renders nothing, so the
+// app is the first thing drawn.
+//
+// noindex because a room is addressed by a secret capability and the saved-room
+// list is per-device; neither should ever appear in an index.
+for (const [route, title] of [
+  ["/r", "Room · p2party"],
+  ["/rooms", "Your rooms · p2party"],
+]) {
+  const html = shellHtml
+    .replace(/<title>[^<]*<\/title>/u, `<title>${title}</title>`)
+    .replace(
+      /<meta name="robots" content="[^"]*"\s*\/?>/u,
+      '<meta name="robots" content="noindex, nofollow" />',
+    );
+  const outPath = join(DIST, route.replace(/^\//u, ""), "index.html");
+  await mkdir(dirname(outPath), { recursive: true });
+  await writeFile(outPath, html, "utf8");
+  console.log(`  ${route.padEnd(34)} shell (noindex)`);
+}
 
 // robots.txt and sitemap.xml describe exactly the routes that were rendered,
 // so they cannot drift from what is actually crawlable.
