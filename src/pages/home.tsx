@@ -138,7 +138,7 @@ const HomePage = () => {
 
   return (
     <div className='relative isolate flex min-h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col items-center overflow-hidden bg-white px-6 dark:bg-black'>
-      // Retro dot grid
+      {/* Retro dot grid */}
       <div
         className='pointer-events-none absolute inset-0 text-orange-500 opacity-[0.08] dark:opacity-[0.05]'
         style={{
@@ -148,9 +148,9 @@ const HomePage = () => {
         }}
         aria-hidden
       />
-      // Hero
+      {/* Hero */}
       <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-8 pb-10 sm:gap-8 sm:pt-14 sm:pb-14 md:grid-cols-2 md:items-center md:gap-x-10 md:gap-y-4 lg:gap-x-12'>
-        // Headline — first on every screen
+        {/* Headline — first on every screen */}
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-1 md:items-start md:justify-end md:self-end md:text-left'>
           <span className='animate-fade-in mb-4 inline-flex max-w-full items-center gap-2 border-2 border-zinc-950 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] whitespace-nowrap text-zinc-950 uppercase sm:px-3 sm:text-xs sm:tracking-[0.18em] md:text-[10px] md:tracking-[0.08em] lg:text-xs lg:tracking-[0.18em] dark:border-zinc-200 dark:text-white'>
             <span className='bg-darkOrange inline-block size-1.5' />
@@ -163,11 +163,11 @@ const HomePage = () => {
             </span>
           </h1>
         </div>
-        // Visual: a looping demonstration of one message on the wire
+        {/* Visual: a looping demonstration of one message on the wire */}
         <div className='flex justify-center md:col-start-2 md:row-span-2 md:row-start-1 md:justify-end md:self-center'>
           <HeroDemo />
         </div>
-        // Copy + CTAs
+        {/* Copy + CTAs */}
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:self-start md:text-left'>
           <p className='animate-slide-up max-w-lg text-justify text-lg leading-relaxed hyphens-auto text-zinc-500 dark:text-zinc-400'>
             Share text and files straight from your browser to theirs.
@@ -218,7 +218,7 @@ const HomePage = () => {
       <Suspense>
         <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
       </Suspense>
-      // Feature cards
+      {/* Feature cards */}
       <div className='relative mx-auto mb-14 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4'>
         {features.map((f, i) => (
           <div
@@ -238,7 +238,7 @@ const HomePage = () => {
           </div>
         ))}
       </div>
-      // How it works — the offensive protocol
+      {/* How it works — the offensive protocol */}
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
           How&nbsp;
@@ -272,7 +272,7 @@ const HomePage = () => {
           ))}
         </div>
       </div>
-      // Infrastructure
+      {/* Infrastructure */}
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
           Minimal&nbsp;
@@ -364,7 +364,7 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-      // Footer
+      {/* Footer */}
       <footer className='relative mb-4 w-full text-center'>
         <div className='flex flex-wrap items-center justify-center gap-x-4 gap-y-1'>
           <Link
