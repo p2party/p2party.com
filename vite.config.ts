@@ -28,6 +28,14 @@ export default defineConfig((configEnv) => {
     },
     optimizeDeps: {
       exclude: ["p2party"],
+      // p2party is excluded so a re-vendored SDK is picked up without clearing
+      // the dep cache -- but excluding it also means its imports are served as
+      // raw source. class-validator then reaches for validator's CommonJS
+      // submodules, which the browser cannot import ("doesn't provide an
+      // export named: 'default'" on validator/lib/isLatLong.js). Pre-bundling
+      // them converts CJS to ESM, which is what Vite advises for the CommonJS
+      // dependencies of an excluded package.
+      include: ["class-validator", "validator"],
     },
     build: {
       rollupOptions: {
