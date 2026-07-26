@@ -148,7 +148,7 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               placeholder='Type your message…'
               aria-describedby='message-input-hint'
               resizable={false}
-              className='mr-1 flex-1 overflow-hidden rounded-none font-medium'
+              className='shadow-brutal-sm mr-1 flex-1 overflow-hidden rounded-none border-2 border-zinc-950 font-medium dark:border-zinc-200'
               rows={1}
             />
             <Button

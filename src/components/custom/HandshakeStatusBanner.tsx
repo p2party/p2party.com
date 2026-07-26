@@ -57,11 +57,20 @@ const describe = (
  * and — for a throttled PIN — when it can be retried.
  */
 const HandshakeStatusBanner = () => {
-  const { handshakeStatusByPeer } = useRoom({ subscribeToMessages: false });
+  const { handshakeStatusByPeer, peers } = useRoom({
+    subscribeToMessages: false,
+  });
   const [now, setNow] = useState(() => Date.now());
 
+  // Only report a peer that is still here and still failed.
+  //
+  // A dropped edge leaves its "failed" entry behind, and a peer that
+  // reconnects arrives under a new id, so the old entry outlives the problem.
+  // The banner is fixed-position over the room header, so a stale entry landed
+  // on top of "connected with …" and told people a working room was broken.
+  const present = new Set(peers.map((peer) => peer.peerId));
   const failures = Object.entries(handshakeStatusByPeer).filter(
-    ([, value]) => value.status === "failed",
+    ([peerId, value]) => value.status === "failed" && present.has(peerId),
   );
   const throttled = failures.some(
     ([, value]) => value.reason === "pin-throttled",
@@ -90,7 +99,7 @@ const HandshakeStatusBanner = () => {
   const { text, detail } = describe(worst, now);
 
   return (
-    <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-sm flex-col items-center gap-1 px-3 pb-4 lg:left-64'>
+    <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-1 px-3 py-2'>
       <Badge
         color='red'
         className='shadow-brutal-sm min-h-11 w-full items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase dark:border-zinc-200'
