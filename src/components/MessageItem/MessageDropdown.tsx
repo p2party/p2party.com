@@ -7,6 +7,8 @@ import { isURL } from "class-validator";
 import { useSelector } from "react-redux";
 import p2party from "p2party";
 
+import { FileCard, MessageBubble } from "../custom/MessageBubble";
+
 import { Text } from "../text";
 import {
   Dropdown,
@@ -18,7 +20,6 @@ import {
 import {
   // ArrowTopRightOnSquareIcon,
   ArrowDownOnSquareIcon,
-  DocumentIcon,
   StopIcon,
   TrashIcon,
 } from "@heroicons/react/24/solid";
@@ -28,12 +29,6 @@ import {
 } from "@heroicons/react/20/solid";
 
 import type { Message, FileExtension } from "p2party";
-
-const truncateFilename = (filename: string, maxLength: number) => {
-  if (filename.length <= maxLength) return filename;
-  const half = Math.floor((maxLength - 3) / 2); // Reserve space for "..."
-  return `${filename.slice(0, half)}...${filename.slice(-half)}`;
-};
 
 const readAsDataURL = (blob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -60,6 +55,7 @@ const MessageDropdown = ({
   message,
   roomId,
   msg,
+  msgSize,
   msgFilename,
   msgCategory,
   // msgLoadingText,
@@ -218,10 +214,20 @@ const MessageDropdown = ({
     }
   };
 
-  return (
-    <div
-      className={`relative my-1 w-auto max-w-full overflow-hidden border-2 p-2.5 transition-transform md:max-w-lg ${message.fromPeerId === peerId ? "bg-darkOrange ml-3 border-zinc-950 text-white lg:ml-0 dark:border-zinc-200" : "mr-3 border-zinc-950 bg-white text-zinc-950 lg:mr-0 dark:border-zinc-200 dark:bg-zinc-950 dark:text-white"}`}
-    >
+  const own = message.fromPeerId === peerId;
+  const isFile = msgCategory !== p2party.MessageCategory.Text;
+
+  // A file is a card, not a bubble: the filename, size and fill bar need a
+  // white surface to read against, and which side it sits on already says who
+  // sent it. Text keeps the orange/white bubble.
+  //
+  // Written as JSX rather than a wrapper component defined here: a component
+  // created during render is a new type on every render, so React would unmount
+  // and remount the whole message -- losing the open dropdown and any selection.
+  const edge = `my-1 ${own ? "ml-3 lg:ml-0" : "mr-3 lg:mr-0"} md:max-w-lg`;
+
+  const body = (
+    <>
       <Dropdown>
         <DropdownButton plain className='size-fit cursor-pointer'>
           {msgCategory === p2party.MessageCategory.Text && url.length === 0 && (
@@ -240,15 +246,13 @@ const MessageDropdown = ({
             </Text>
           )}
 
-          {msgCategory !== p2party.MessageCategory.Text && (
-            <div className='flex w-full items-center justify-between px-2'>
-              <Text
-                className={`text-left tracking-wide wrap-break-word whitespace-pre-wrap ${message.fromPeerId === peerId ? "font-medium text-white" : "font-normal text-zinc-950 dark:text-white"} antialiased`}
-              >
-                {truncateFilename(`${msgFilename}`, 20)}
-              </Text>
-              <DocumentIcon className='h-6 w-6 text-gray-500' />
-            </div>
+          {isFile && (
+            <FileCard
+              filename={msgFilename}
+              extension={msgExtension}
+              size={msgSize}
+              percentage={msgPercentage}
+            />
           )}
         </DropdownButton>
         <DropdownMenu
@@ -386,7 +390,15 @@ const MessageDropdown = ({
         </div>
       )}
       */}
-    </div>
+    </>
+  );
+
+  return isFile ? (
+    <div className={edge}>{body}</div>
+  ) : (
+    <MessageBubble tone={own ? "own" : "peer"} className={edge}>
+      {body}
+    </MessageBubble>
   );
 };
 

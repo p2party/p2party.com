@@ -15,12 +15,11 @@ import { Badge } from "../components/badge";
 import HandshakeStatusBanner from "../components/custom/HandshakeStatusBanner";
 
 import type { SendMessageResult, MessageTransferHandle } from "../protocol/v4";
-import type { TrackedTransfer } from "../components/TransferTray";
+import type { TrackedTransfer } from "../protocol/delivery";
 
 const CatAvatar = lazy(() => import("../components/avatars/cat"));
 const MessageItem = lazy(() => import("../components/MessageItem"));
 const MessageInput = lazy(() => import("../components/MessageInput"));
-const TransferTray = lazy(() => import("../components/TransferTray"));
 
 const deliveryResultFrom = (error: unknown): SendMessageResult | undefined => {
   if (!error || typeof error !== "object" || !("result" in error))
@@ -292,31 +291,20 @@ const ChatPage = () => {
     [transfers],
   );
 
-  const dismissTransfer = useCallback((transferId: string) => {
-    cancelledTransfersRef.current.delete(transferId);
-    setTransfers((current) =>
-      current.filter((transfer) => transfer.handle.transferId !== transferId),
-    );
-  }, []);
+  // Delivery state now rides on the bubble, so it has to be findable from a
+  // message. transferId is sender-only and is exactly the right key: a received
+  // message has no delivery state of ours to report.
+  const transfersByMessage = useMemo(() => {
+    const byTransfer = new Map<string, TrackedTransfer>();
+    for (const transfer of transfers)
+      byTransfer.set(transfer.handle.transferId, transfer);
+    return byTransfer;
+  }, [transfers]);
 
-  // A send that reached everyone needs a glance, not an acknowledgement. Only
-  // the fully successful case clears itself: partial, failed and cancelled
-  // transfers stay until they are read, because they are the ones that need a
-  // decision.
-  useEffect(() => {
-    const delivered = transfers.filter(
-      (transfer) => transfer.status === "delivered",
-    );
-    if (delivered.length === 0) return;
-    const timers = delivered.map((transfer) =>
-      setTimeout(() => {
-        dismissTransfer(transfer.handle.transferId);
-      }, 2000),
-    );
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, [transfers, dismissTransfer]);
+  // Deliberately no auto-dismiss. That was right for a floating card, which
+  // had to get out of the way; a caption belongs to the message it labels and
+  // should still be there when someone scrolls back to ask whether that file
+  // ever arrived.
 
   // useEffect(() => {
   //   if (textareaRef.current) {
@@ -456,7 +444,16 @@ const ChatPage = () => {
           <div className='mb-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white px-1 pb-24 sm:px-3 dark:bg-black'>
             {selectedMessages.map((message) => (
               <Suspense key={`${message.sha512Hex}-${message.timestamp}`}>
-                <MessageItem message={message} roomId={roomId} />
+                <MessageItem
+                  message={message}
+                  roomId={roomId}
+                  transfer={
+                    message.transferId === undefined
+                      ? undefined
+                      : transfersByMessage.get(message.transferId)
+                  }
+                  onCancelTransfer={cancelTransfer}
+                />
               </Suspense>
             ))}
             <div
@@ -466,15 +463,6 @@ const ChatPage = () => {
           </div>
         )}
       </div>
-
-      <Suspense>
-        <TransferTray
-          messages={messages}
-          transfers={transfers}
-          onCancel={cancelTransfer}
-          onDismiss={dismissTransfer}
-        />
-      </Suspense>
 
       {sendError && (
         <div

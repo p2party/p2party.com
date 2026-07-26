@@ -4,28 +4,12 @@ import p2party from "p2party";
 
 import { Avatar } from "../avatar";
 import { Link } from "../link";
+import { formatBytes } from "../../utils/formatBytes";
 import { roomInvitePath } from "../../protocol/roomAccess";
 import { immediateRoomPolicy } from "../../protocol/v4";
 
 import type { FC } from "react";
 import type { FileExtension, RoomStats, UniqueRoom } from "p2party";
-
-/**
- * Binary units, because that is what the transfer layer counts and what the
- * chunk sizes are expressed in. One decimal below 10 so "1.4 MB" does not
- * round to "1 MB", none above, so a row never jitters between widths.
- */
-const formatBytes = (bytes: number): string => {
-  if (bytes <= 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const exponent = Math.min(
-    Math.floor(Math.log2(bytes) / 10),
-    units.length - 1,
-  );
-  const value = bytes / 1024 ** exponent;
-  const digits = exponent === 0 || value >= 10 ? 0 : 1;
-  return `${value.toFixed(digits)} ${units[exponent]}`;
-};
 
 const timeSince = (date: Date): string => {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);

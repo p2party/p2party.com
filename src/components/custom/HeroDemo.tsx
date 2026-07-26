@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { FileCard, MessageBubble } from "./MessageBubble";
+
 import { CELL_BYTES, PAYLOAD_BYTES_PER_CELL } from "../../protocol/v4";
 
 /**
@@ -168,46 +170,31 @@ const HeroDemo = () => {
         />
 
         {showFile && (
-          <div className='animate-fade-in relative max-w-[85%] self-end border-2 border-zinc-950 bg-white p-2.5 dark:border-zinc-200 dark:bg-zinc-900'>
-            <div className='flex items-center gap-2'>
-              <span
-                aria-hidden
-                className='bg-darkOrange flex size-8 shrink-0 items-center justify-center font-mono text-[10px] font-bold text-white'
-              >
-                ZIP
-              </span>
-              <span className='min-w-0'>
-                <span className='block truncate font-mono text-xs font-bold text-zinc-950 dark:text-white'>
-                  field-photos.zip
-                </span>
-                <span className='block font-mono text-[10px] text-zinc-500 dark:text-zinc-400'>
-                  256 KiB · {transferPercent}%
-                </span>
-              </span>
-            </div>
-            <div
-              className='mt-2 h-1.5 w-full border border-zinc-300 dark:border-zinc-700'
-              aria-hidden
-            >
-              <div
-                className='bg-darkOrange h-full transition-[width] duration-300 motion-reduce:transition-none'
-                style={{ width: `${String(transferPercent)}%` }}
-              />
-            </div>
+          <div className='max-w-[85%] self-end'>
+            <FileCard
+              filename='field-photos.zip'
+              extension='zip'
+              size={256 * 1024}
+              percentage={transferPercent}
+              animate
+              compact
+            />
           </div>
         )}
 
         {bubbles.map((bubble, index) => (
-          <p
+          <div
             key={`${bubble.from}-${String(index)}`}
-            className={
-              bubble.from === "you"
-                ? "animate-fade-in max-w-[85%] self-end border-2 border-zinc-950 bg-orange-500 px-2.5 py-1.5 text-xs text-white dark:border-zinc-200"
-                : "animate-fade-in max-w-[85%] self-start border-2 border-zinc-950 bg-white px-2.5 py-1.5 text-xs text-zinc-950 dark:border-zinc-200 dark:bg-zinc-900 dark:text-white"
-            }
+            className={`max-w-[85%] ${bubble.from === "you" ? "self-end" : "self-start"}`}
           >
-            {bubble.text}
-          </p>
+            <MessageBubble
+              tone={bubble.from === "you" ? "own" : "peer"}
+              size='sm'
+              animate
+            >
+              {bubble.text}
+            </MessageBubble>
+          </div>
         ))}
       </div>
 

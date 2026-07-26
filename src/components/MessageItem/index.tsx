@@ -2,15 +2,22 @@ import { useState, useEffect, memo } from "react";
 import { useSelector } from "react-redux";
 import p2party from "p2party";
 
+import { DeliveryCaption } from "../custom/MessageBubble";
+import { summariseDelivery } from "../../protocol/delivery";
+
 import MessageSenderDropdown from "./MessageSenderDropdown";
 import MessageDropdown from "./MessageDropdown";
 
 import type { FC } from "react";
 import type { Message, FileExtension } from "p2party";
+import type { TrackedTransfer } from "../../protocol/delivery";
 
 export interface MessageItemProps {
   message: Message;
   roomId: string;
+  /** Present only for messages this device sent, and only while tracked. */
+  transfer?: TrackedTransfer;
+  onCancelTransfer?: (transferId: string) => void;
 }
 
 // const formatBytes = (bytes: number): string => {
@@ -39,7 +46,12 @@ export interface MessageItemProps {
 //   return `${result} ${units[i]}`;
 // }
 
-const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
+const MessageItem: FC<MessageItemProps> = ({
+  message,
+  roomId,
+  transfer,
+  onCancelTransfer,
+}) => {
   // Narrow subscription: only peerId (from keyPair, which changes rarely) — NOT
   // the whole rooms array. readMessage is a stable module fn. This keeps a
   // per-chunk progress tick from re-rendering every message row.
@@ -210,6 +222,26 @@ const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
           msgFilename={msgFilename}
           msgPercentage={msgPercentage}
         />
+
+        {/* Delivery, for messages this device sent. It belongs against the
+            message it describes, not in a corner of the screen. */}
+        {transfer && (
+          <DeliveryCaption
+            summary={summariseDelivery(
+              transfer.status,
+              transfer.result,
+              transfer.error,
+            )}
+            align={message.fromPeerId === peerId ? "own" : "peer"}
+            onCancel={
+              onCancelTransfer
+                ? () => {
+                    onCancelTransfer(transfer.handle.transferId);
+                  }
+                : undefined
+            }
+          />
+        )}
 
         {/* Loading */}
         {msgPercentage < 100 && (
