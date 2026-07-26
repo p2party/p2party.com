@@ -11,6 +11,7 @@ import { Text } from "../text";
 import {
   Dropdown,
   DropdownButton,
+  DropdownLabel,
   DropdownMenu,
   DropdownItem,
 } from "../dropdown";
@@ -259,7 +260,7 @@ const MessageDropdown = ({
             url.length > 0 && (
               <DropdownItem onClick={() => window.open(url, "_blank")}>
                 <ArrowTopRightOnSquareIcon />
-                Open URL in a new tab
+                <DropdownLabel>Open URL in a new tab</DropdownLabel>
               </DropdownItem>
             )}
 
@@ -267,7 +268,7 @@ const MessageDropdown = ({
             msgCategory === p2party.MessageCategory.Text && (
               <DropdownItem onClick={() => navigator.clipboard.writeText(msg)}>
                 <ClipboardIcon />
-                Copy text
+                <DropdownLabel>Copy text</DropdownLabel>
               </DropdownItem>
             )}
 
@@ -277,16 +278,16 @@ const MessageDropdown = ({
               <>
                 <DropdownItem onClick={handleOpen}>
                   <ArrowTopRightOnSquareIcon />
-                  Open file
+                  <DropdownLabel>Open file</DropdownLabel>
                 </DropdownItem>
                 <DropdownItem onClick={handleDownload}>
                   <ArrowDownOnSquareIcon />
-                  Download file
+                  <DropdownLabel>Download file</DropdownLabel>
                 </DropdownItem>
                 {canSaveAs && (
                   <DropdownItem onClick={handleSaveAs}>
                     <ArrowDownOnSquareIcon />
-                    Save as…
+                    <DropdownLabel>Save as…</DropdownLabel>
                   </DropdownItem>
                 )}
               </>
@@ -297,7 +298,7 @@ const MessageDropdown = ({
             Capacitor.getPlatform() !== "web" && (
               <DropdownItem onClick={handleDownload}>
                 <ArrowDownOnSquareIcon />
-                Download file
+                <DropdownLabel>Download file</DropdownLabel>
               </DropdownItem>
             )}
 
@@ -335,7 +336,7 @@ const MessageDropdown = ({
             }
           >
             <TrashIcon />
-            Delete
+            <DropdownLabel>Delete</DropdownLabel>
           </DropdownItem>
 
           {/* The privacy machinery this app markets, per message: how many

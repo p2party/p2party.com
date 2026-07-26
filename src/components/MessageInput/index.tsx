@@ -132,9 +132,9 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
         <div
           ref={inputBarRef}
           style={{ bottom: bottomOffset }}
-          className='fixed right-0 left-0 z-50 mb-1 shrink-0 border-t-2 border-zinc-950 bg-white px-4 py-3 lg:mr-2 lg:ml-64 lg:px-14 dark:border-zinc-200 dark:bg-black'
+          className='fixed right-0 left-0 z-50 shrink-0 border-t-2 border-zinc-950 bg-white px-2 py-2 sm:px-4 sm:py-3 lg:mr-2 lg:ml-64 lg:px-14 dark:border-zinc-200 dark:bg-black'
         >
-          <div className='flex max-w-full items-end gap-1'>
+          <div className='flex max-w-full items-end gap-1.5'>
             <FileButton handleFiles={handleFiles} />
 
             <MicrophoneButton handleFiles={handleFiles} />
@@ -148,7 +148,7 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               placeholder='Type your message…'
               aria-describedby='message-input-hint'
               resizable={false}
-              className='shadow-brutal-sm mr-1 flex-1 overflow-hidden rounded-none border-2 border-zinc-950 font-medium dark:border-zinc-200'
+              className='shadow-brutal-sm flex-1 overflow-hidden rounded-none border-2 border-zinc-950 font-medium dark:border-zinc-200'
               rows={1}
             />
             <Button

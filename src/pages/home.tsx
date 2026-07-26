@@ -226,7 +226,7 @@ const HomePage = () => {
             className='group shadow-brutal-sm hover:shadow-brutal border-2 border-zinc-950 bg-white p-6 transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 motion-reduce:transition-none dark:border-zinc-200 dark:bg-zinc-950'
             style={{ animationDelay: `${i * 120}ms` }}
           >
-            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
+            <div className='bg-darkOrange shadow-brutal-sm mb-3 inline-flex border-2 border-zinc-950 p-2 text-white dark:border-zinc-200'>
               {f.icon}
             </div>
             <h3 className='font-mono text-base font-bold text-zinc-950 dark:text-white'>
@@ -288,7 +288,7 @@ const HomePage = () => {
 
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           <div className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'>
-            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
+            <div className='bg-darkOrange shadow-brutal-sm mb-3 inline-flex border-2 border-zinc-950 p-2 text-white dark:border-zinc-200'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 viewBox='0 0 24 24'
@@ -314,7 +314,7 @@ const HomePage = () => {
           </div>
 
           <div className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'>
-            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
+            <div className='bg-darkOrange shadow-brutal-sm mb-3 inline-flex border-2 border-zinc-950 p-2 text-white dark:border-zinc-200'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 viewBox='0 0 24 24'
@@ -339,7 +339,7 @@ const HomePage = () => {
           </div>
 
           <div className='relative border-2 border-zinc-950 bg-white p-6 dark:border-zinc-200 dark:bg-zinc-950'>
-            <div className='bg-darkOrange mb-3 inline-flex p-2 text-white'>
+            <div className='bg-darkOrange shadow-brutal-sm mb-3 inline-flex border-2 border-zinc-950 p-2 text-white dark:border-zinc-200'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 viewBox='0 0 24 24'

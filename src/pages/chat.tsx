@@ -299,6 +299,25 @@ const ChatPage = () => {
     );
   }, []);
 
+  // A send that reached everyone needs a glance, not an acknowledgement. Only
+  // the fully successful case clears itself: partial, failed and cancelled
+  // transfers stay until they are read, because they are the ones that need a
+  // decision.
+  useEffect(() => {
+    const delivered = transfers.filter(
+      (transfer) => transfer.status === "delivered",
+    );
+    if (delivered.length === 0) return;
+    const timers = delivered.map((transfer) =>
+      setTimeout(() => {
+        dismissTransfer(transfer.handle.transferId);
+      }, 2000),
+    );
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [transfers, dismissTransfer]);
+
   // useEffect(() => {
   //   if (textareaRef.current) {
   //     textareaRef.current.style.height = "auto";

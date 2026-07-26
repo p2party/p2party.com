@@ -50,7 +50,13 @@ const TransferTray = ({
     return byTransfer;
   }, [messages]);
 
-  if (transfers.length === 0) return null;
+  // One at a time. Every send used to leave a card behind, so a handful of
+  // messages buried the conversation under a stack of "delivered" notices that
+  // each had to be dismissed by hand. A finished send is worth a glance, not a
+  // queue: show the newest and let the rest go.
+  const visible = transfers.slice(-1);
+
+  if (visible.length === 0) return null;
 
   return (
     <aside
@@ -58,7 +64,7 @@ const TransferTray = ({
       aria-live='polite'
       className='fixed right-3 bottom-24 z-40 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2 lg:right-5 lg:bottom-28'
     >
-      {transfers.map((transfer) => {
+      {visible.map((transfer) => {
         const message = messagesByTransfer.get(transfer.handle.transferId);
         const preparationProgress =
           message && message.totalChunks > 0

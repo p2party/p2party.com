@@ -176,7 +176,7 @@ const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
 
   return (
     <div
-      className={`mb-4 flex items-end px-2 ${
+      className={`mb-3 flex items-end gap-1 px-0.5 sm:mb-4 sm:gap-2 sm:px-2 ${
         message.fromPeerId === peerId ? "justify-end" : "justify-start"
       }`}
     >
@@ -188,13 +188,13 @@ const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
 
       <div className='flex max-w-[85%] flex-col md:max-w-[75%]'>
         {message.fromPeerId !== peerId && (
-          <span className='mb-0.5 ml-1 text-left text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-400'>
+          <span className='mb-0.5 ml-1 text-left text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-300'>
             {message.fromPeerId.slice(0, 8)}
           </span>
         )}
 
         {message.fromPeerId === peerId && (
-          <span className='mr-1 mb-0.5 text-right text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-400'>
+          <span className='mr-1 mb-0.5 text-right text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-300'>
             {message.fromPeerId.slice(0, 8)}
           </span>
         )}
@@ -221,7 +221,7 @@ const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
             }`}
           >
             <span
-              className={`w-48 text-[11px] text-zinc-500 dark:text-zinc-400 ${
+              className={`w-48 text-[11px] text-zinc-500 dark:text-zinc-300 ${
                 message.fromPeerId === peerId ? "text-right" : "text-left"
               }`}
             >
@@ -254,13 +254,13 @@ const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
         {msgPercentage === 100 && (
           <>
             {message.fromPeerId !== peerId && (
-              <span className='mt-0.5 ml-1 text-left text-[11px] text-zinc-500 dark:text-zinc-400'>
+              <span className='mt-0.5 ml-1 text-left text-[11px] text-zinc-500 dark:text-zinc-300'>
                 {new Date(message.timestamp).toLocaleString()}
               </span>
             )}
 
             {message.fromPeerId === peerId && (
-              <span className='mt-0.5 mr-1 text-right text-[11px] text-zinc-500 dark:text-zinc-400'>
+              <span className='mt-0.5 mr-1 text-right text-[11px] text-zinc-500 dark:text-zinc-300'>
                 {new Date(message.timestamp).toLocaleString()}
               </span>
             )}

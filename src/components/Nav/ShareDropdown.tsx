@@ -8,6 +8,7 @@ import { NavbarItem } from "../navbar";
 import {
   Dropdown,
   DropdownButton,
+  DropdownLabel,
   DropdownMenu,
   DropdownItem,
 } from "../dropdown";
@@ -45,12 +46,12 @@ const Share: FC<ShareProps> = ({ inviteUrl, setShowQRCode }) => {
         <DropdownMenu className='min-w-64' anchor='bottom start'>
           <DropdownItem onClick={handleShare}>
             <ArrowUpOnSquareIcon />
-            Share
+            <DropdownLabel>Share</DropdownLabel>
           </DropdownItem>
 
           <DropdownItem onClick={() => setShowQRCode(true)}>
             <QrCodeIcon />
-            Show QR code
+            <DropdownLabel>Show QR code</DropdownLabel>
           </DropdownItem>
         </DropdownMenu>
       </Dropdown>

@@ -6,6 +6,7 @@ import { Avatar } from "../avatar";
 import {
   Dropdown,
   DropdownButton,
+  DropdownLabel,
   DropdownMenu,
   DropdownItem,
   DropdownHeader,
@@ -167,7 +168,7 @@ const MessageSenderDropdown = ({ message }: MessageSenderDropdownProps) => {
               message.fromPeerId.length - 2,
               message.fromPeerId.length,
             )}
-            className='w-10 shrink-0 rounded-full'
+            className='w-7 shrink-0 rounded-full sm:w-9'
           />
         </DropdownButton>
 
@@ -213,7 +214,7 @@ const MessageSenderDropdown = ({ message }: MessageSenderDropdownProps) => {
               }}
             >
               <ShieldCheckIcon />
-              Verify identity
+              <DropdownLabel>Verify identity</DropdownLabel>
             </DropdownItem>
           )}
 
