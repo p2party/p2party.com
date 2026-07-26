@@ -13,17 +13,19 @@ const RoomSetupAlert = lazy(() => import("../components/RoomSetupAlert"));
 const features = [
   {
     icon: (
+      // Two endpoints and the sealed line between them: a mesh edge, not a padlock.
       <svg
         xmlns='http://www.w3.org/2000/svg'
         viewBox='0 0 24 24'
-        fill='currentColor'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth={2}
+        strokeLinecap='square'
         className='size-6'
       >
-        <path
-          fillRule='evenodd'
-          d='M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z'
-          clipRule='evenodd'
-        />
+        <rect x='2' y='8' width='7' height='8' />
+        <rect x='15' y='8' width='7' height='8' />
+        <path d='M9 12h6' />
       </svg>
     ),
     title: "End-to-End Encrypted",
@@ -31,13 +33,21 @@ const features = [
   },
   {
     icon: (
+      // Four nodes with every pair joined: the actual topology, n(n-1)/2 edges.
       <svg
         xmlns='http://www.w3.org/2000/svg'
         viewBox='0 0 24 24'
-        fill='currentColor'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth={2}
+        strokeLinecap='square'
         className='size-6'
       >
-        <path d='M4.913 2.658c2.075-.27 4.19-.408 6.337-.408 2.147 0 4.262.139 6.337.408 1.922.25 3.291 1.861 3.405 3.727a4.403 4.403 0 0 0-1.032-.211 50.89 50.89 0 0 0-8.42 0c-2.358.196-4.04 2.19-4.04 4.434v4.286a4.47 4.47 0 0 0 2.433 3.984L7.28 21.53A.75.75 0 0 1 6 21v-2.234a8.865 8.865 0 0 1-1.088-.196c-1.922-.25-3.291-1.861-3.405-3.727A51.838 51.838 0 0 1 1.5 10.59c0-1.686.018-3.35.077-4.986.114-1.866 1.483-3.477 3.406-3.727ZM15 9.75a.75.75 0 0 1 .75-.75c2.043 0 4.07.12 6.07.36 1.922.25 3.291 1.861 3.405 3.727.056 1.636.075 3.3.075 4.986s-.019 3.35-.075 4.986c-.114 1.866-1.483 3.477-3.405 3.727a49.18 49.18 0 0 1-6.07.36c-2.043 0-4.07-.12-6.07-.36-1.921-.25-3.291-1.861-3.405-3.727A51.768 51.768 0 0 1 6.2 18.857c0-1.686.018-3.35.077-4.986.114-1.866 1.483-3.477 3.405-3.727A49.58 49.58 0 0 1 15.75 9h-.001a.75.75 0 0 1 .001.75Z' />
+        <path d='M5 5h14M5 19h14M5 5v14M19 5v14M5 5l14 14M19 5L5 19' />
+        <rect x='2' y='2' width='6' height='6' fill='currentColor' />
+        <rect x='16' y='2' width='6' height='6' fill='currentColor' />
+        <rect x='2' y='16' width='6' height='6' fill='currentColor' />
+        <rect x='16' y='16' width='6' height='6' fill='currentColor' />
       </svg>
     ),
     title: "Peer-to-Peer Mesh",
@@ -45,18 +55,20 @@ const features = [
   },
   {
     icon: (
-      // Shield with exclamation — "offensive" / active defense
+      // Identical cells, one carrying payload. The wire cannot tell which.
       <svg
         xmlns='http://www.w3.org/2000/svg'
         viewBox='0 0 24 24'
-        fill='currentColor'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth={2}
+        strokeLinecap='square'
         className='size-6'
       >
-        <path
-          fillRule='evenodd'
-          d='M11.484 2.17a.75.75 0 0 1 1.032 0 11.209 11.209 0 0 0 7.877 3.08.75.75 0 0 1 .722.515 12.74 12.74 0 0 1 .635 3.985c0 5.942-4.064 10.933-9.563 12.348a.749.749 0 0 1-.374 0C6.314 20.683 2.25 15.692 2.25 9.75c0-1.39.223-2.73.635-3.985a.75.75 0 0 1 .722-.516l.143.001c2.996 0 5.718-1.17 7.734-3.08ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75ZM12 15a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75v-.008a.75.75 0 0 0-.75-.75H12Z'
-          clipRule='evenodd'
-        />
+        <rect x='2' y='2' width='9' height='9' />
+        <rect x='13' y='2' width='9' height='9' />
+        <rect x='2' y='13' width='9' height='9' />
+        <rect x='13' y='13' width='9' height='9' fill='currentColor' />
       </svg>
     ),
     title: "Offensive Cryptography",
@@ -64,18 +76,21 @@ const features = [
   },
   {
     icon: (
+      // A file split into equal chunks moving across: chunked, never uploaded.
       <svg
         xmlns='http://www.w3.org/2000/svg'
         viewBox='0 0 24 24'
-        fill='currentColor'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth={2}
+        strokeLinecap='square'
         className='size-6'
       >
-        <path
-          fillRule='evenodd'
-          d='M5.625 1.5H9a3.75 3.75 0 0 1 3.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 0 1 3.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 0 1-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875Zm5.845 17.03a.75.75 0 0 0 1.06 0l3-3a.75.75 0 1 0-1.06-1.06l-1.72 1.72V12a.75.75 0 0 0-1.5 0v4.19l-1.72-1.72a.75.75 0 0 0-1.06 1.06l3 3Z'
-          clipRule='evenodd'
-        />
-        <path d='M14.25 5.25a5.23 5.23 0 0 0-1.279-3.434 9.768 9.768 0 0 1 6.963 6.963A5.23 5.23 0 0 0 16.5 7.5h-1.875a.375.375 0 0 1-.375-.375V5.25Z' />
+        <rect x='2' y='4' width='7' height='16' />
+        <rect x='12' y='5' width='3' height='3' fill='currentColor' />
+        <rect x='12' y='11' width='3' height='3' fill='currentColor' />
+        <rect x='12' y='17' width='3' height='3' fill='currentColor' />
+        <path d='M18 6h4M18 12h4M18 18h4' />
       </svg>
     ),
     title: "Text & File Sharing",
@@ -123,7 +138,7 @@ const HomePage = () => {
 
   return (
     <div className='relative isolate flex min-h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col items-center overflow-hidden bg-white px-6 dark:bg-black'>
-      {/* Retro dot grid */}
+      // Retro dot grid
       <div
         className='pointer-events-none absolute inset-0 text-orange-500 opacity-[0.08] dark:opacity-[0.05]'
         style={{
@@ -133,10 +148,9 @@ const HomePage = () => {
         }}
         aria-hidden
       />
-
-      {/* Hero */}
+      // Hero
       <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-8 pb-10 sm:gap-8 sm:pt-14 sm:pb-14 md:grid-cols-2 md:items-center md:gap-x-10 md:gap-y-4 lg:gap-x-12'>
-        {/* Headline — first on every screen */}
+        // Headline — first on every screen
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-1 md:items-start md:justify-end md:self-end md:text-left'>
           <span className='animate-fade-in mb-4 inline-flex max-w-full items-center gap-2 border-2 border-zinc-950 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] whitespace-nowrap text-zinc-950 uppercase sm:px-3 sm:text-xs sm:tracking-[0.18em] md:text-[10px] md:tracking-[0.08em] lg:text-xs lg:tracking-[0.18em] dark:border-zinc-200 dark:text-white'>
             <span className='bg-darkOrange inline-block size-1.5' />
@@ -149,13 +163,11 @@ const HomePage = () => {
             </span>
           </h1>
         </div>
-
-        {/* Visual: a looping demonstration of one message on the wire */}
+        // Visual: a looping demonstration of one message on the wire
         <div className='flex justify-center md:col-start-2 md:row-span-2 md:row-start-1 md:justify-end md:self-center'>
           <HeroDemo />
         </div>
-
-        {/* Copy + CTAs */}
+        // Copy + CTAs
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:self-start md:text-left'>
           <p className='animate-slide-up max-w-lg text-justify text-lg leading-relaxed hyphens-auto text-zinc-500 dark:text-zinc-400'>
             Share text and files straight from your browser to theirs.
@@ -203,12 +215,10 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-
       <Suspense>
         <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
       </Suspense>
-
-      {/* Feature cards */}
+      // Feature cards
       <div className='relative mx-auto mb-14 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4'>
         {features.map((f, i) => (
           <div
@@ -228,8 +238,7 @@ const HomePage = () => {
           </div>
         ))}
       </div>
-
-      {/* How it works — the offensive protocol */}
+      // How it works — the offensive protocol
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
           How&nbsp;
@@ -263,8 +272,7 @@ const HomePage = () => {
           ))}
         </div>
       </div>
-
-      {/* Infrastructure */}
+      // Infrastructure
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
           Minimal&nbsp;
@@ -356,8 +364,7 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
+      // Footer
       <footer className='relative mb-4 w-full text-center'>
         <div className='flex flex-wrap items-center justify-center gap-x-4 gap-y-1'>
           <Link

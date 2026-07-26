@@ -109,23 +109,25 @@ const MessageItem: FC<MessageItemProps> = ({ message, roomId }) => {
             msgExtension: m.extension,
             msgPercentage: percentage,
           }));
-        } else if (
-          message.fromPeerId === peerId &&
-          message.savedSize < message.totalSize
-        ) {
-          const percentage = Math.floor(
-            (message.savedSize / message.totalSize) * 100,
-          );
-
+        } else if (message.fromPeerId === peerId) {
+          // savedSize is receive-side accounting: it counts chunks written to
+          // this device's store. A sender never stores its own message, so it
+          // stays 0 forever and this row read "Sent 0%" on a transfer the
+          // toast had already reported as delivered to every peer.
+          //
+          // Chunk generation is the only outbound progress the message row
+          // knows about. Once it completes the payload is handed to the
+          // transport, and delivery per peer is what the transfer handle
+          // reports.
           setState((prevState) => ({
             ...prevState,
             msg: nextMsg,
-            msgLoadingText: `Sent ${percentage}%`,
+            msgLoadingText: "",
             msgSize: m.size,
             msgFilename: m.filename,
             msgCategory: m.category,
             msgExtension: m.extension,
-            msgPercentage: percentage,
+            msgPercentage: 100,
           }));
         } else if (m.percentage === 100) {
           setState((prevState) => ({
