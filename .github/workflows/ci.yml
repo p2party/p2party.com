@@ -46,6 +46,11 @@ jobs:
       - name: Test
         run: npm test
 
+      # `npm run build` prerenders the static routes in a real browser, and
+      # npm ci installs the Playwright package but not its browser binaries.
+      - name: Install the prerender browser
+        run: npx playwright install --with-deps chromium
+
       - name: Build
         run: npm run build
 
