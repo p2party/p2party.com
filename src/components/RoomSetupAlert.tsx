@@ -86,6 +86,13 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
       selectCoverCard(!coverEnabled);
     }
   };
+  // The dialog does two different jobs. Showing the 24-word field while
+  // someone is generating a room asks them to paste an invite they have not
+  // been given yet.
+  // "Join with words" reveals the field on the first press and submits on the
+  // second. Generating a room never shows it: you cannot paste an invite you
+  // have not been given.
+  const [intent, setIntent] = useState<"create" | "join">("create");
   const [inviteWords, setInviteWords] = useState("");
   const [error, setError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -233,9 +240,15 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
 
   return (
     <Alert open={isOpen} onClose={close} size='3xl'>
-      <AlertTitle>Create or join a protocol-v4 room</AlertTitle>
+      <AlertTitle>
+        {intent === "create"
+          ? "Create a protocol-v4 room"
+          : "Join a protocol-v4 room"}
+      </AlertTitle>
       <AlertDescription>
-        These settings are locked in when the room is created.
+        {intent === "create"
+          ? "These settings are locked in when the room is created. Share the invite that comes back."
+          : "These must match the settings the room was created with, or the connection is refused."}
       </AlertDescription>
 
       <div
@@ -556,44 +569,38 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           </div>
         )}
 
-        <Field className='block border-t border-zinc-300 pt-4 dark:border-zinc-700'>
-          <Label htmlFor='room-invite-words'>Enter 24 invitation words</Label>
-          <Description>
-            Match the sender&apos;s settings above, or the connection is
-            refused.
-          </Description>
-          <textarea
-            id='room-invite-words'
-            name='room-invite-words'
-            rows={4}
-            value={inviteWords}
-            onChange={(event) => {
-              setInviteWords(event.target.value);
-              setError("");
-            }}
-            autoCapitalize='none'
-            autoCorrect='off'
-            spellCheck={false}
-            placeholder={wordSample || "loading a sample…"}
-            className='mt-2 block w-full rounded-lg border border-zinc-950/10 bg-white px-3 py-2 font-mono text-sm text-zinc-950 focus:outline-2 focus:outline-orange-500 dark:border-white/10 dark:bg-white/5 dark:text-white'
-          />
-          <div className='mt-3 flex flex-wrap items-center gap-2'>
-            <Button
-              outline
-              onClick={joinRoomFromWords}
-              disabled={isWorking || scheduleError.length > 0}
-            >
-              {isJoining ? "Checking words…" : "Join with 24 words"}
-            </Button>
-            <button
-              type='button'
-              onClick={() => void refreshWordSample()}
-              className='font-mono text-xs text-zinc-500 underline decoration-dotted underline-offset-4 hover:text-orange-700 dark:text-zinc-400 dark:hover:text-orange-300'
-            >
-              show another sample
-            </button>
-          </div>
-        </Field>
+        {intent === "join" && (
+          <Field className='block border-t border-zinc-300 pt-4 dark:border-zinc-700'>
+            <Label htmlFor='room-invite-words'>Enter 24 invitation words</Label>
+            <Description>
+              The words the room&apos;s creator sent you. Order matters.
+            </Description>
+            <textarea
+              id='room-invite-words'
+              name='room-invite-words'
+              rows={4}
+              value={inviteWords}
+              onChange={(event) => {
+                setInviteWords(event.target.value);
+                setError("");
+              }}
+              autoCapitalize='none'
+              autoCorrect='off'
+              spellCheck={false}
+              placeholder={wordSample || "loading a sample…"}
+              className='mt-2 block w-full rounded-lg border border-zinc-950/10 bg-white px-3 py-2 font-mono text-sm text-zinc-950 focus:outline-2 focus:outline-orange-500 dark:border-white/10 dark:bg-white/5 dark:text-white'
+            />
+            <div className='mt-3 flex flex-wrap items-center gap-2'>
+              <button
+                type='button'
+                onClick={() => void refreshWordSample()}
+                className='font-mono text-xs text-zinc-500 underline decoration-dotted underline-offset-4 hover:text-orange-700 dark:text-zinc-400 dark:hover:text-orange-300'
+              >
+                show another sample
+              </button>
+            </div>
+          </Field>
+        )}
 
         {error && (
           <p
@@ -609,8 +616,19 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
           Cancel
         </Button>
         <Button
+          outline
+          onClick={() => {
+            if (intent === "join") return void joinRoomFromWords();
+            setIntent("join");
+            setError("");
+          }}
+          disabled={isWorking || scheduleError.length > 0}
+        >
+          {isJoining ? "Checking words…" : "Join with words"}
+        </Button>
+        <Button
           color='orange'
-          onClick={createRoom}
+          onClick={() => void createRoom()}
           disabled={isWorking || scheduleError.length > 0}
         >
           {isCreating ? "Generating…" : "Generate room"}
