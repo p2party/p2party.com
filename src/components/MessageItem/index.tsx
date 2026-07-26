@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import p2party from "p2party";
 
 import { DeliveryCaption } from "../custom/MessageBubble";
+import { formatBytes } from "../../utils/formatBytes";
 import { summariseDelivery } from "../../protocol/delivery";
 
 import MessageSenderDropdown from "./MessageSenderDropdown";
@@ -63,14 +64,12 @@ const MessageItem: FC<MessageItemProps> = ({
     msgFilename: string;
     msgCategory: string;
     msgPercentage: number;
-    msgLoadingText: string;
     msgExtension: FileExtension;
   }>({
     msg: "",
     msgSize: 0,
     msgFilename: "",
     msgCategory: p2party.MessageCategory.Text,
-    msgLoadingText: "",
     msgPercentage: 0,
     msgExtension: "",
   });
@@ -81,7 +80,6 @@ const MessageItem: FC<MessageItemProps> = ({
     msgCategory,
     msgPercentage,
     msgExtension,
-    msgLoadingText,
     msgFilename,
   } = state;
 
@@ -115,7 +113,6 @@ const MessageItem: FC<MessageItemProps> = ({
           setState((prevState) => ({
             ...prevState,
             msg: nextMsg,
-            msgLoadingText: `Generating chunks ${percentage}%`,
             msgFilename: m.filename,
             msgCategory: m.category,
             msgExtension: m.extension,
@@ -134,7 +131,6 @@ const MessageItem: FC<MessageItemProps> = ({
           setState((prevState) => ({
             ...prevState,
             msg: nextMsg,
-            msgLoadingText: "",
             msgSize: m.size,
             msgFilename: m.filename,
             msgCategory: m.category,
@@ -146,7 +142,6 @@ const MessageItem: FC<MessageItemProps> = ({
             ...prevState,
             msg: nextMsg,
             msgSize: m.size,
-            msgLoadingText: "",
             msgFilename: m.filename,
             msgCategory: m.category,
             msgExtension: m.extension,
@@ -156,9 +151,6 @@ const MessageItem: FC<MessageItemProps> = ({
           setState((prevState) => ({
             ...prevState,
             msgSize: m.size,
-            msgLoadingText: `Received ${Math.floor(
-              (message.savedSize / message.totalSize) * 100,
-            )}%`,
             msgFilename: m.filename,
             msgCategory: m.category,
             msgExtension: m.extension,
@@ -186,26 +178,88 @@ const MessageItem: FC<MessageItemProps> = ({
     peerId,
   ]);
 
+  // Real outbound progress, polled while this device's send is in flight.
+  // Nothing pushes it: the receipts land in the SDK's have-set, so a UI has to
+  // ask. Only in-flight sends poll, and the interval is cleared the moment the
+  // transfer settles.
+  const inFlight = transfer?.status === "preparing";
+  const transferId = transfer?.handle.transferId;
+  const [ackedChunks, setAckedChunks] = useState(0);
+
+  useEffect(() => {
+    if (!inFlight || transferId === undefined) return;
+    let cancelled = false;
+    const read = () => {
+      const acks = p2party.getTransferAcks(roomId, transferId);
+      // A message is only as sent as its slowest peer: reporting the fastest
+      // would show 100% while someone in the room still has nothing.
+      const slowest = acks.length
+        ? Math.min(...acks.map((ack) => ack.ackedChunks))
+        : 0;
+      if (!cancelled) setAckedChunks(slowest);
+    };
+    read();
+    const timer = setInterval(read, 400);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [inFlight, transferId, roomId]);
+
+  const own = message.fromPeerId === peerId;
+  const isFile = msgCategory !== p2party.MessageCategory.Text;
+  const receiving = !own && msgPercentage < 100;
+  // Real payload bytes the slowest peer has confirmed. Acks are real chunks
+  // only, so this never counts cover.
+  const ackedBytes = Math.min(
+    message.totalSize,
+    ackedChunks * p2party.MAX_CHUNK_SIZE,
+  );
+  // What actually crossed the wire, cover included: every cell is padded to
+  // full, so this is always larger than the payload and is a property of the
+  // padding policy rather than of the message.
+  const wireBytes = message.totalChunks * p2party.WIRE_CHUNK_FRAME_LEN;
+  // Cover is not an afterthought here, so the wire figure is stated rather
+  // than hidden: padding is why a 9-byte reply and a photo look alike, and it
+  // is paid for in bytes.
+  const sentNote = !own
+    ? undefined
+    : transfer?.status === "preparing" && message.merkleRootHex !== ""
+      ? `${formatBytes(ackedBytes)} of ${formatBytes(message.totalSize)}`
+      : transfer?.status === "delivered" || transfer?.status === "partial"
+        ? `${formatBytes(message.totalSize)} · ${formatBytes(wireBytes)} on the wire`
+        : formatBytes(message.totalSize);
+
+  // Frames actually taken in, cover included. The receiver counts these
+  // separately from real chunks, so the two figures never have to be guessed
+  // apart.
+  const receivedWireBytes =
+    (message.chunksReceivedTotal ?? 0) * p2party.WIRE_CHUNK_FRAME_LEN;
+  const receivedPercentage =
+    message.totalSize > 0
+      ? Math.min(100, Math.floor((message.savedSize / message.totalSize) * 100))
+      : 0;
+
   return (
     <div
       className={`mb-3 flex items-end gap-1 sm:mb-4 sm:gap-2 ${
-        message.fromPeerId === peerId ? "justify-end" : "justify-start"
+        own ? "justify-end" : "justify-start"
       }`}
     >
-      {message.fromPeerId !== peerId && (
+      {!own && (
         <div className='self-center'>
           <MessageSenderDropdown message={message} />
         </div>
       )}
 
       <div className='flex max-w-[85%] flex-col md:max-w-[75%]'>
-        {message.fromPeerId !== peerId && (
+        {!own && (
           <span className='mb-0.5 ml-1 text-left text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-300'>
             {message.fromPeerId.slice(0, 8)}
           </span>
         )}
 
-        {message.fromPeerId === peerId && (
+        {own && (
           <span className='mr-1 mb-0.5 text-right text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-300'>
             {message.fromPeerId.slice(0, 8)}
           </span>
@@ -218,7 +272,6 @@ const MessageItem: FC<MessageItemProps> = ({
           msgCategory={msgCategory}
           msgExtension={msgExtension}
           msgSize={msgSize}
-          // msgLoadingText={msgLoadingText}
           msgFilename={msgFilename}
           msgPercentage={msgPercentage}
         />
@@ -231,8 +284,16 @@ const MessageItem: FC<MessageItemProps> = ({
               transfer.status,
               transfer.result,
               transfer.error,
+              {
+                created: message.chunksCreated,
+                total: message.totalChunks,
+                staged: message.merkleRootHex !== "",
+                ackedBytes,
+                realBytes: message.totalSize,
+              },
             )}
-            align={message.fromPeerId === peerId ? "own" : "peer"}
+            align={own ? "own" : "peer"}
+            note={sentNote}
             onCancel={
               onCancelTransfer
                 ? () => {
@@ -243,64 +304,56 @@ const MessageItem: FC<MessageItemProps> = ({
           />
         )}
 
-        {/* Loading */}
-        {msgPercentage < 100 && (
-          <div
-            className={`mt-1 flex items-center gap-2 ${
-              message.fromPeerId === peerId
-                ? "justify-end"
-                : "flex-row-reverse justify-start"
-            }`}
-          >
-            <span
-              className={`w-48 text-[11px] text-zinc-500 dark:text-zinc-300 ${
-                message.fromPeerId === peerId ? "text-right" : "text-left"
-              }`}
-            >
-              {msgLoadingText}
-            </span>
-            <div className='relative h-5 w-5'>
-              <svg className='h-5 w-5 -rotate-90' viewBox='0 0 36 36'>
-                <path
-                  className='text-zinc-200 dark:text-zinc-700'
-                  stroke='currentColor'
-                  strokeWidth='4'
-                  fill='none'
-                  d='M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32'
-                />
-                <path
-                  className='text-darkOrange'
-                  stroke='currentColor'
-                  strokeWidth='4'
-                  fill='none'
-                  strokeLinecap='round'
-                  strokeDasharray='100'
-                  strokeDashoffset={100 - msgPercentage}
-                  d='M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32'
-                />
-              </svg>
+        {/* Receiving is the one direction with an honest percentage: savedSize
+            is what this device has actually written, and it climbs the whole
+            way (measured 1.3 MB -> 12.6 MB on a 12 MB file). The sender has no
+            equivalent, which is why its state is ticks rather than a bar. */}
+        {receiving && (
+          <div className='mt-0.5 flex flex-col items-start'>
+            <div className='flex items-center gap-1.5'>
+              <span
+                aria-hidden
+                className='size-1.5 shrink-0 animate-pulse bg-zinc-400 dark:bg-zinc-500'
+              />
+              <span
+                className='font-mono text-[11px] text-zinc-500 dark:text-zinc-400'
+                role='status'
+              >
+                Receiving {receivedPercentage}%
+              </span>
+              <span className='font-mono text-[11px] text-zinc-500 dark:text-zinc-400'>
+                · {formatBytes(message.savedSize)} of{" "}
+                {formatBytes(message.totalSize)}
+                {receivedWireBytes > 0
+                  ? ` · ${formatBytes(receivedWireBytes)} on the wire`
+                  : ""}
+              </span>
+            </div>
+            <div className='mt-1 h-1 w-32 border border-zinc-300 dark:border-zinc-700'>
+              <div
+                className='bg-darkOrange h-full transition-[width] duration-300 motion-reduce:transition-none'
+                style={{ width: `${String(receivedPercentage)}%` }}
+              />
             </div>
           </div>
         )}
 
-        {msgPercentage === 100 && (
-          <>
-            {message.fromPeerId !== peerId && (
-              <span className='mt-0.5 ml-1 text-left text-[11px] text-zinc-500 dark:text-zinc-300'>
-                {new Date(message.timestamp).toLocaleString()}
-              </span>
-            )}
-
-            {message.fromPeerId === peerId && (
-              <span className='mt-0.5 mr-1 text-right text-[11px] text-zinc-500 dark:text-zinc-300'>
-                {new Date(message.timestamp).toLocaleString()}
-              </span>
-            )}
-          </>
-        )}
+        {/* Time, and the size for text -- which had no way of telling you how
+            many bytes it moved. A file already states its size on the card, so
+            repeating it here would just be the same number twice. */}
+        <span
+          className={`mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-300 ${
+            own ? "mr-1 text-right" : "ml-1 text-left"
+          }`}
+        >
+          {new Date(message.timestamp).toLocaleString()}
+          {!receiving && !isFile && message.totalSize > 0
+            ? ` · ${formatBytes(message.totalSize)}`
+            : ""}
+        </span>
       </div>
 
-      {message.fromPeerId === peerId && (
+      {own && (
         <div className='self-center'>
           <MessageSenderDropdown message={message} />
         </div>

@@ -217,9 +217,10 @@ const MessageDropdown = ({
   const own = message.fromPeerId === peerId;
   const isFile = msgCategory !== p2party.MessageCategory.Text;
 
-  // A file is a card, not a bubble: the filename, size and fill bar need a
-  // white surface to read against, and which side it sits on already says who
-  // sent it. Text keeps the orange/white bubble.
+  // A file is a card rather than a bubble -- it carries a badge, a size and a
+  // fill bar, which a plain bubble has nowhere to put -- but it takes the same
+  // orange-for-sent colouring, so a file reads as one more thing you said
+  // rather than as a different kind of object in the thread.
   //
   // Written as JSX rather than a wrapper component defined here: a component
   // created during render is a new type on every render, so React would unmount
@@ -252,6 +253,7 @@ const MessageDropdown = ({
               extension={msgExtension}
               size={msgSize}
               percentage={msgPercentage}
+              tone={own ? "own" : "peer"}
             />
           )}
         </DropdownButton>

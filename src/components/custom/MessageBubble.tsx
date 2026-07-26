@@ -57,16 +57,49 @@ export const MessageBubble = ({
 /**
  * A file, as a card rather than a bubble.
  *
- * Files stay on a white surface in both directions, which is what the demo
- * does and why its transfer reads at a glance: a filename, a size and a fill
- * bar need contrast that an orange bubble does not give them. Direction is
- * already carried by which side of the conversation the card sits on.
+ * The card follows the same direction colouring as a text bubble -- orange for
+ * what you sent, white for what arrived -- because a file sitting white among
+ * orange bubbles read as a different kind of object rather than as one more
+ * thing you said. Everything inside it inverts to keep contrast on the orange:
+ * the badge flips to a white chip, and the fill bar is drawn in white rather
+ * than in an orange that would vanish into its own background.
  */
+const CARD_SURFACE: Record<BubbleTone, string> = {
+  own: "bg-darkOrange border-zinc-950 dark:border-zinc-200",
+  peer: "border-zinc-950 bg-white dark:border-zinc-200 dark:bg-zinc-950",
+};
+
+const CARD_BADGE: Record<BubbleTone, string> = {
+  own: "bg-white text-darkOrange",
+  peer: "bg-darkOrange text-white",
+};
+
+const CARD_NAME: Record<BubbleTone, string> = {
+  own: "text-white",
+  peer: "text-zinc-950 dark:text-white",
+};
+
+const CARD_META: Record<BubbleTone, string> = {
+  own: "text-white/75",
+  peer: "text-zinc-500 dark:text-zinc-400",
+};
+
+const CARD_TRACK: Record<BubbleTone, string> = {
+  own: "border-white/40",
+  peer: "border-zinc-300 dark:border-zinc-700",
+};
+
+const CARD_FILL: Record<BubbleTone, string> = {
+  own: "bg-white",
+  peer: "bg-darkOrange",
+};
+
 export const FileCard = ({
   filename,
   extension,
   size,
   percentage,
+  tone = "peer",
   animate = false,
   compact = false,
 }: {
@@ -76,6 +109,7 @@ export const FileCard = ({
   size?: number;
   /** 0-100. At 100 the fill bar is dropped: a finished file is just a file. */
   percentage: number;
+  tone?: BubbleTone;
   animate?: boolean;
   compact?: boolean;
 }) => {
@@ -85,20 +119,22 @@ export const FileCard = ({
 
   return (
     <div
-      className={`relative w-auto max-w-full border-2 border-zinc-950 bg-white ${compact ? "p-2" : "p-2.5"} dark:border-zinc-200 dark:bg-zinc-950 ${animate ? "animate-fade-in" : ""}`}
+      className={`relative w-auto max-w-full border-2 ${CARD_SURFACE[tone]} ${compact ? "p-2" : "p-2.5"} ${animate ? "animate-fade-in" : ""}`}
     >
       <div className='flex items-center gap-2'>
         <span
-          className={`bg-darkOrange flex ${compact ? "size-8" : "size-9"} shrink-0 items-center justify-center font-mono text-[10px] font-bold text-white`}
+          className={`flex ${compact ? "size-8" : "size-9"} shrink-0 items-center justify-center font-mono text-[10px] font-bold ${CARD_BADGE[tone]}`}
           aria-hidden
         >
           {badge}
         </span>
         <span className='min-w-0'>
-          <span className='block truncate font-mono text-xs font-bold text-zinc-950 dark:text-white'>
+          <span
+            className={`block truncate font-mono text-xs font-bold ${CARD_NAME[tone]}`}
+          >
             {filename}
           </span>
-          <span className='block font-mono text-[10px] text-zinc-500 dark:text-zinc-400'>
+          <span className={`block font-mono text-[10px] ${CARD_META[tone]}`}>
             {size === undefined ? "" : formatBytes(size)}
             {size === undefined || done ? "" : " · "}
             {done ? "" : `${String(Math.round(percentage))}%`}
@@ -107,9 +143,9 @@ export const FileCard = ({
       </div>
 
       {!done && (
-        <div className='mt-2 h-1.5 w-full border border-zinc-300 dark:border-zinc-700'>
+        <div className={`mt-2 h-1.5 w-full border ${CARD_TRACK[tone]}`}>
           <div
-            className='bg-darkOrange h-full transition-[width] duration-300 motion-reduce:transition-none'
+            className={`h-full transition-[width] duration-300 motion-reduce:transition-none ${CARD_FILL[tone]}`}
             style={{
               width: `${String(Math.min(100, Math.max(0, percentage)))}%`,
             }}
@@ -135,6 +171,51 @@ const TONE_DOT: Record<DeliveryTone, string> = {
 };
 
 /**
+ * One tick, drawn square-capped to match the site rather than the rounded
+ * check every messaging app ships.
+ */
+const Tick = ({ className = "" }: { className?: string }) => (
+  <svg
+    viewBox='0 0 14 11'
+    className={`h-2.5 w-3 ${className}`}
+    fill='none'
+    stroke='currentColor'
+    strokeWidth={2.2}
+    strokeLinecap='square'
+    strokeLinejoin='miter'
+    aria-hidden
+  >
+    <path d='M1 5.8 L4.9 9.7 L13 1.2' />
+  </svg>
+);
+
+/**
+ * The tick pair, in the grammar people already read without being taught: one
+ * tick while the message is still being made, two once it is on the wire, two
+ * in green when receipts come back.
+ *
+ * The second tick is pulled left so the pair reads as one mark rather than two
+ * separate checks, and the whole group carries a text label for anyone who
+ * cannot see colour -- green versus grey must never be the only thing carrying
+ * the state.
+ */
+export const DeliveryTicks = ({
+  count,
+  tone,
+}: {
+  count: 1 | 2;
+  tone: DeliveryTone;
+}) => (
+  <span
+    className={`inline-flex shrink-0 items-center ${TONE_TEXT[tone]}`}
+    aria-hidden
+  >
+    <Tick />
+    {count === 2 && <Tick className='-ml-1.5' />}
+  </span>
+);
+
+/**
  * Delivery state, as a caption on the message it describes.
  *
  * This was a floating card in the corner that outlived the send and had to be
@@ -145,26 +226,39 @@ const TONE_DOT: Record<DeliveryTone, string> = {
 export const DeliveryCaption = ({
   summary,
   align,
+  note,
   onCancel,
 }: {
   summary: DeliverySummary;
   align: BubbleTone;
+  /** Byte figures for this message: what moved, and what it cost on the wire. */
+  note?: string;
   onCancel?: () => void;
 }) => (
   <div
     className={`mt-0.5 flex flex-col ${align === "own" ? "items-end" : "items-start"}`}
   >
     <div className='flex items-center gap-1.5'>
-      <span
-        aria-hidden
-        className={`size-1.5 shrink-0 ${TONE_DOT[summary.tone]} ${summary.tone === "pending" ? "animate-pulse" : ""}`}
-      />
+      {summary.ticks === 0 ? (
+        <span
+          aria-hidden
+          className={`size-1.5 shrink-0 ${TONE_DOT[summary.tone]}`}
+        />
+      ) : (
+        <DeliveryTicks count={summary.ticks} tone={summary.tone} />
+      )}
       <span
         className={`font-mono text-[11px] ${TONE_TEXT[summary.tone]}`}
         role='status'
       >
         {summary.label}
+        {summary.progress === undefined ? "" : ` ${String(summary.progress)}%`}
       </span>
+      {note !== undefined && (
+        <span className='font-mono text-[11px] text-zinc-500 dark:text-zinc-400'>
+          · {note}
+        </span>
+      )}
       {summary.cancellable && onCancel && (
         <button
           type='button'
@@ -175,6 +269,17 @@ export const DeliveryCaption = ({
         </button>
       )}
     </div>
+
+    {/* The one countable outbound phase gets a real bar; the wire phase does
+        not, because nothing reports it. */}
+    {summary.progress !== undefined && (
+      <div className='mt-1 h-1 w-32 border border-zinc-300 dark:border-zinc-700'>
+        <div
+          className='bg-darkOrange h-full transition-[width] duration-300 motion-reduce:transition-none'
+          style={{ width: `${String(summary.progress)}%` }}
+        />
+      </div>
+    )}
 
     {summary.detail.length > 1 && (
       <details className='mt-0.5'>

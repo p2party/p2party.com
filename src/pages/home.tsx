@@ -187,8 +187,8 @@ const HomePage = () => {
         {/* Copy + CTAs */}
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:self-start md:text-left'>
           <p className='animate-slide-up max-w-lg text-justify text-lg leading-relaxed hyphens-auto text-zinc-500 dark:text-zinc-400'>
-            Text and files, browser to browser, in identical 64 KB encrypted
-            blocks that hide what you sent — and how much.
+            Send text and files, browser to browser, in identical 64 KB
+            encrypted blocks that hide what you sent — and how much.
           </p>
 
           <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7'>
