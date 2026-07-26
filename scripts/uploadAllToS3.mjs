@@ -106,9 +106,24 @@ const contentTypeForKey = (key) => {
 };
 
 const cacheControlForKey = (key) => {
-  if (entrypointKeys.has(key) || key.startsWith(".well-known/"))
+  // Every .html is an entrypoint, not just the root one. Prerendering emits
+  // blog/index.html, privacy-policy/index.html and nine more; each references
+  // content-hashed assets, so caching the HTML pins visitors to the old asset
+  // names and a deploy goes unnoticed until the cache expires.
+  if (
+    key.endsWith(".html") ||
+    entrypointKeys.has(key) ||
+    key.startsWith(".well-known/")
+  )
     return "no-cache, no-store, must-revalidate";
-  if (key.startsWith("assets/")) return "public, max-age=31536000, immutable";
+  // Content-hashed by Vite, and the self-hosted WASM carries the SDK version
+  // in its path. Both name exactly one build forever, so a re-fetch can only
+  // ever return the same bytes.
+  if (
+    key.startsWith("assets/") ||
+    /^vendor\/p2party-\d+\.\d+\.\d+\//u.test(key)
+  )
+    return "public, max-age=31536000, immutable";
   return "public, max-age=3600";
 };
 
