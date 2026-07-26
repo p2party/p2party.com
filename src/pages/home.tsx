@@ -104,6 +104,7 @@ const steps = [
 const HomePage = () => {
   const navigate = useNavigate();
   const [roomSetupOpen, setRoomSetupOpen] = useState(false);
+  const [joinRoomOpen, setJoinRoomOpen] = useState(false);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -164,13 +165,25 @@ const HomePage = () => {
           </p>
 
           <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7'>
-            <Button
-              onClick={() => setRoomSetupOpen(true)}
-              color='orange'
-              className='shadow-brutal-sm w-full rounded-none border-2 border-zinc-950 px-8 py-3 text-lg font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
-            >
-              Generate Room
-            </Button>
+            <div className='flex w-full flex-col gap-3 sm:flex-row'>
+              <Button
+                onClick={() => setRoomSetupOpen(true)}
+                color='orange'
+                className='shadow-brutal-sm flex-1 rounded-none border-2 border-zinc-950 px-8 py-3 text-lg font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200'
+              >
+                Generate Room
+              </Button>
+              {/* A separate job, not a variant of the one on the left: you
+                  already hold an invite and are walking into someone else's
+                  room. Different colour so it never reads as the primary. */}
+              <Button
+                onClick={() => setJoinRoomOpen(true)}
+                outline
+                className='shadow-brutal-sm flex-1 rounded-none border-2 border-zinc-950 bg-white px-8 py-3 text-lg font-semibold whitespace-nowrap text-zinc-950 transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 motion-reduce:transition-none dark:border-zinc-200 dark:bg-zinc-950 dark:text-white'
+              >
+                Join a Room
+              </Button>
+            </div>
             <div className='-mx-3 flex w-[calc(100%+1.5rem)] items-center justify-between gap-1 sm:gap-0'>
               <Link
                 href='/blog'
@@ -206,6 +219,11 @@ const HomePage = () => {
 
       <Suspense>
         <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
+        <RoomSetupAlert
+          isOpen={joinRoomOpen}
+          setIsOpen={setJoinRoomOpen}
+          mode='join'
+        />
       </Suspense>
 
       {/* Feature cards */}
