@@ -37,6 +37,7 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="p2party" />
     <meta property="og:url" content="https://p2party.com/" />
     <meta property="og:title" content="p2party" />
     <meta
@@ -55,6 +56,21 @@
     <meta name="twitter:image" content="https://p2party.com/logo-cat.svg" />
 
     <title>P2Party is an encrypted WebRTC mesh network generator</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "p2party",
+        "url": "https://p2party.com/",
+        "applicationCategory": "CommunicationApplication",
+        "operatingSystem": "Any browser with WebRTC and WebAssembly",
+        "description": "End-to-end encrypted messaging and file transfer over a peer-to-peer WebRTC mesh. No accounts, no cloud storage; the signaling service introduces peers but never carries their messages.",
+        "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "codeRepository": "https://github.com/p2party/p2party.com"
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
