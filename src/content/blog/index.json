@@ -90,6 +90,16 @@
       "description": "What ships, what remains gated, and the measured systems claim across cover traffic, blind rendezvous, and private swarms.",
       "date": "2026-07-24",
       "commitAnchors": ["749e3d2", "293ce4c", "a426490", "f044286", "135b0fb"]
+    },
+    {
+      "order": 6,
+      "slug": "borrowing-from-spqr",
+      "href": "/blog/borrowing-from-spqr",
+      "file": "06-borrowing-from-spqr.md",
+      "title": "Borrowing from SPQR: what a sparse post-quantum ratchet costs when you cannot chunk the ciphertext",
+      "description": "Signal's SPQR fragments ML-KEM across many messages. p2party's cells already fit one whole. Same problem, inverted constraint - and why none of Signal's analysis transfers.",
+      "date": "2026-07-26",
+      "commitAnchors": ["f5e9dad", "d5d2ad9", "f1a3a92", "ebe03b1"]
     }
   ]
 }

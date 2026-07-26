@@ -4,6 +4,7 @@ import post02 from "./02-green-tests-are-not-a-security-proof.md?raw";
 import post03 from "./03-a-room-is-n-minus-one-sessions.md?raw";
 import post04 from "./04-protocol-v3-is-not-pqxdh.md?raw";
 import post05 from "./05-free-is-a-dangerous-word.md?raw";
+import post06 from "./06-borrowing-from-spqr.md?raw";
 
 const markdownByFile = new Map<string, string>([
   ["01-the-64-kib-lie.md", post01],
@@ -11,6 +12,7 @@ const markdownByFile = new Map<string, string>([
   ["03-a-room-is-n-minus-one-sessions.md", post03],
   ["04-protocol-v3-is-not-pqxdh.md", post04],
   ["05-free-is-a-dangerous-word.md", post05],
+  ["06-borrowing-from-spqr.md", post06],
 ]);
 
 const stripFrontmatter = (markdown: string): string => {
