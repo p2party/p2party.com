@@ -18,7 +18,7 @@ file:vendor/p2party-0.14.0.tgz
 ```
 
 Artifact SHA-256:
-`f7acc306be5c29177c471465e2c3eaa34e17d5a003859a5e99628fac82b0a0bd`.
+`64389cd8e8a7ff701a146f1b66516176c5c8871646b3fb47614001406e287afd`.
 
 The browser loads the matching committed
 `public/vendor/p2party-0.14.0/libcrypto.wasm`; the SDK's build-pinned SRI still
