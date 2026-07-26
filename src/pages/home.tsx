@@ -60,7 +60,7 @@ const features = [
       </svg>
     ),
     title: "Offensive Cryptography",
-    desc: "Every message is split into uniform 65,490-byte cells padded with cryptographic noise. Eavesdroppers harvest mountains of junk.",
+    desc: "Every message is split into uniform 65,490-byte cells and padded to full, so a 9-byte reply and a 60 KiB photo look the same on the wire.",
   },
   {
     icon: (
@@ -92,7 +92,7 @@ const steps = [
   {
     num: "02",
     title: "Ratchet & Scatter",
-    body: "Each chunk is protected by ChaCha20-Poly1305 under a per-peer Double Ratchet message key, then shuffled. The room-fixed ML-KEM suite hardens the initial root while classical X25519 retains an independently understood security leg.",
+    body: "Each chunk is sealed with ChaCha20-Poly1305 under its own Double Ratchet message key, then emitted in a Fisher-Yates shuffled order, so cell 1 on the wire is not chunk 1 of your file. The room-fixed ML-KEM suite hardens the initial root, and classical X25519 stays in the mix as an independently understood second leg.",
   },
   {
     num: "03",
@@ -158,9 +158,9 @@ const HomePage = () => {
         {/* Copy + CTAs */}
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:self-start md:text-left'>
           <p className='animate-slide-up max-w-lg text-justify text-lg leading-relaxed hyphens-auto text-zinc-500 dark:text-zinc-400'>
-            Share text and files straight from your browser to theirs. Whoever
-            is watching the wire sees identical encrypted blocks — not who
-            spoke, not when, not how much.
+            Share text and files straight from your browser to theirs.
+            Everything travels in identical 65,490-byte encrypted blocks, so the
+            wire never reveals how much you sent or what kind of thing it was.
           </p>
 
           <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7'>
@@ -239,9 +239,9 @@ const HomePage = () => {
           &nbsp;Cryptography Works
         </h2>
         <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          Traditional encryption hides content. p2party goes further — it
-          actively punishes anyone trying to intercept your traffic by burying
-          the real data inside an avalanche of cryptographically random noise.
+          Encryption hides what you said. It does not hide that a 4 MB file
+          moved at 21:07. p2party attacks that second layer: uniform cells,
+          padding to full, and an optional fixed sending rhythm.
         </p>
 
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
