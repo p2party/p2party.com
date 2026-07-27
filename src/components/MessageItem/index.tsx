@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import p2party from "p2party";
 
 import { DeliveryCaption } from "../custom/MessageBubble";
-import { formatBytes } from "../../utils/formatBytes";
+import { formatBytes, formatBytesLike } from "../../utils/formatBytes";
 import { summariseDelivery } from "../../protocol/delivery";
 
 import MessageSenderDropdown from "./MessageSenderDropdown";
@@ -233,14 +233,12 @@ const MessageItem: FC<MessageItemProps> = ({
   // than hidden: padding is why a 9-byte reply and a photo look alike, and it
   // is paid for in bytes.
   //
-  // A file card already prints its own size, so its subtitle names only what
-  // the size does not say. Text has no such line and gets both.
+  // Payload and wire figures sit together: 89 KB next to 128 KB on the wire is
+  // the comparison worth making, and it is the padding policy made legible.
   const wireNote = (bytes: number) =>
     bytes > 0 ? `${formatBytes(bytes)} on the wire` : undefined;
   const withSize = (rest?: string) =>
-    isFile
-      ? rest
-      : [formatBytes(message.totalSize), rest].filter(Boolean).join(" · ");
+    [formatBytes(message.totalSize), rest].filter(Boolean).join(" · ");
 
   const summary = transfer
     ? summariseDelivery(transfer.status, transfer.result, transfer.error, {
@@ -266,12 +264,19 @@ const MessageItem: FC<MessageItemProps> = ({
       }
     : undefined;
 
+  // Nothing is "on the wire" while the chunks are still being made, so that
+  // phase states the size and no more. Claiming a wire cost before a single
+  // cell has been sent would be inventing the number the whole line exists to
+  // report honestly.
+  const staging = inFlight && message.merkleRootHex === "";
   const note = own
-    ? transfer?.status === "preparing" && message.merkleRootHex !== ""
-      ? `${formatBytes(ackedBytes)} of ${formatBytes(message.totalSize)}`
-      : withSize(wireNote(wireBytes))
+    ? staging
+      ? formatBytes(message.totalSize)
+      : inFlight
+        ? `${formatBytesLike(ackedBytes, message.totalSize)} of ${formatBytes(message.totalSize)}`
+        : withSize(wireNote(wireBytes))
     : receiving
-      ? `${formatBytes(message.savedSize)} of ${formatBytes(message.totalSize)}`
+      ? `${formatBytesLike(message.savedSize, message.totalSize)} of ${formatBytes(message.totalSize)}`
       : withSize(wireNote(receivedWireBytes));
 
   // A file card already prints the percentage beside its size and draws the
@@ -281,6 +286,19 @@ const MessageItem: FC<MessageItemProps> = ({
   const subtitleSummary =
     isFile && shown ? { ...shown, progress: undefined } : shown;
 
+  // "9 MB of 33 MB" becoming "17 MB of 33 MB" is one character wider, and the
+  // bubble is sized to its content, so the whole thing twitched several times a
+  // second. The moving number can never be wider than the total it counts
+  // towards, so reserving two of those plus the joiner holds the width still
+  // for the whole phase. Measured from the text rather than guessed, because a
+  // guess that comes up short reserves nothing at all.
+  const progressReserve =
+    inFlight || receiving
+      ? {
+          minWidth: `${String(formatBytes(message.totalSize).length * 2 + 6)}ch`,
+        }
+      : undefined;
+
   const subtitle = (
     <DeliveryCaption
       summary={subtitleSummary}
@@ -288,6 +306,8 @@ const MessageItem: FC<MessageItemProps> = ({
       // Hug the edge facing the middle of the thread.
       align={own ? "left" : "right"}
       note={note}
+      noteClassName={inFlight || receiving ? "inline-block" : ""}
+      noteStyle={progressReserve}
       onCancel={
         transfer && onCancelTransfer
           ? () => {

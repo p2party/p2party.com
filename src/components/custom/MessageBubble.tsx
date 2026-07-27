@@ -1,6 +1,6 @@
 import { formatBytes } from "../../utils/formatBytes";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { DeliverySummary, DeliveryTone } from "../../protocol/delivery";
 
 /**
@@ -21,8 +21,18 @@ import type { DeliverySummary, DeliveryTone } from "../../protocol/delivery";
 export type BubbleTone = "own" | "peer";
 export type BubbleSize = "sm" | "md";
 
+/**
+ * Direction is carried by fill in light mode and by border colour in dark.
+ *
+ * A darkOrange slab is confident against white, but against black it is the
+ * brightest thing on the screen and every sent message shouts. On dark the
+ * bubble keeps the page's own background and takes an orange border instead:
+ * same signal, same palette, without a wall of orange in a dark room. Received
+ * messages keep the white border they already had, so the two are still told
+ * apart at a glance rather than only by which side they sit on.
+ */
 const SURFACE: Record<BubbleTone, string> = {
-  own: "bg-darkOrange border-zinc-950 text-white dark:border-zinc-200",
+  own: "bg-darkOrange border-zinc-950 text-white dark:border-darkOrange dark:bg-zinc-950 dark:text-white",
   peer: "border-zinc-950 bg-white text-zinc-950 dark:border-zinc-200 dark:bg-zinc-950 dark:text-white",
 };
 
@@ -73,12 +83,14 @@ export const MessageBubble = ({
  * than in an orange that would vanish into its own background.
  */
 const CARD_SURFACE: Record<BubbleTone, string> = {
-  own: "bg-darkOrange border-zinc-950 dark:border-zinc-200",
+  own: "bg-darkOrange border-zinc-950 dark:border-darkOrange dark:bg-zinc-950",
   peer: "border-zinc-950 bg-white dark:border-zinc-200 dark:bg-zinc-950",
 };
 
+// On dark the card is no longer orange, so the chip and the fill can be --
+// they are the accent again instead of a hole punched in one.
 const CARD_BADGE: Record<BubbleTone, string> = {
-  own: "bg-white text-darkOrange",
+  own: "bg-white text-darkOrange dark:bg-darkOrange dark:text-white",
   peer: "bg-darkOrange text-white",
 };
 
@@ -88,17 +100,17 @@ const CARD_NAME: Record<BubbleTone, string> = {
 };
 
 const CARD_META: Record<BubbleTone, string> = {
-  own: "text-white/75",
+  own: "text-white/75 dark:text-zinc-400",
   peer: "text-zinc-500 dark:text-zinc-400",
 };
 
 const CARD_TRACK: Record<BubbleTone, string> = {
-  own: "border-white/40",
+  own: "border-white/40 dark:border-zinc-700",
   peer: "border-zinc-300 dark:border-zinc-700",
 };
 
 const CARD_FILL: Record<BubbleTone, string> = {
-  own: "bg-white",
+  own: "bg-white dark:bg-darkOrange",
   peer: "bg-darkOrange",
 };
 
@@ -110,6 +122,7 @@ export const FileCard = ({
   progress,
   tone = "peer",
   subtitle,
+  showSize = true,
   animate = false,
   compact = false,
 }: {
@@ -129,6 +142,12 @@ export const FileCard = ({
   progress?: number;
   tone?: BubbleTone;
   subtitle?: ReactNode;
+  /**
+   * Off when the subtitle already states the size beside what it cost on the
+   * wire, which is where the two numbers are worth comparing. Printing it here
+   * as well says the same thing twice, two lines apart.
+   */
+  showSize?: boolean;
   animate?: boolean;
   compact?: boolean;
 }) => {
@@ -154,9 +173,11 @@ export const FileCard = ({
           >
             {filename}
           </span>
-          <span className={`block font-mono text-[10px] ${CARD_META[tone]}`}>
-            {size === undefined ? "" : formatBytes(size)}
-            {size === undefined || done ? "" : " · "}
+          <span
+            className={`block font-mono text-[10px] tabular-nums ${CARD_META[tone]}`}
+          >
+            {size === undefined || !showSize ? "" : formatBytes(size)}
+            {size === undefined || !showSize || done ? "" : " · "}
             {done ? "" : `${String(Math.round(shown))}%`}
           </span>
         </span>
@@ -186,10 +207,10 @@ export const FileCard = ({
  */
 const TONE_ON: Record<BubbleTone, Record<DeliveryTone, string>> = {
   own: {
-    pending: "text-white/70",
-    good: "text-emerald-200",
-    warn: "text-amber-100",
-    bad: "text-red-100",
+    pending: "text-white/70 dark:text-zinc-400",
+    good: "text-emerald-200 dark:text-emerald-400",
+    warn: "text-amber-100 dark:text-amber-400",
+    bad: "text-red-100 dark:text-red-400",
   },
   peer: {
     pending: "text-zinc-500 dark:text-zinc-400",
@@ -201,7 +222,7 @@ const TONE_ON: Record<BubbleTone, Record<DeliveryTone, string>> = {
 
 /** Byte figures are supporting detail, never the headline. */
 const MUTED_ON: Record<BubbleTone, string> = {
-  own: "text-white/70",
+  own: "text-white/70 dark:text-zinc-400",
   peer: "text-zinc-500 dark:text-zinc-400",
 };
 
@@ -251,7 +272,9 @@ export const DeliveryTicks = ({
   surface?: BubbleTone;
 }) => (
   <span
-    className={`inline-flex shrink-0 items-center ${TONE_ON[surface][tone]}`}
+    // Both states occupy the pair's width, so gaining the second tick moves
+    // nothing around it.
+    className={`inline-flex w-[18px] shrink-0 items-center ${TONE_ON[surface][tone]}`}
     aria-hidden
   >
     <Tick />
@@ -272,6 +295,8 @@ export const DeliveryCaption = ({
   surface,
   align,
   note,
+  noteClassName = "",
+  noteStyle,
   onCancel,
 }: {
   /** Absent on received messages: ticks are a sender's claim, not a receiver's. */
@@ -282,6 +307,15 @@ export const DeliveryCaption = ({
   align: "left" | "right";
   /** Byte figures, already formatted. */
   note?: string;
+  /**
+   * Width reservation for figures that tick. "9 MB of 33 MB" becoming
+   * "17 MB of 33 MB" is one character wider, and since the bubble is sized to
+   * its content that single character resized the whole bubble several times a
+   * second. Reserving the room the widest form needs keeps it still.
+   */
+  noteClassName?: string;
+  /** Inline width reservation, when the widest form is only known from data. */
+  noteStyle?: CSSProperties;
   onCancel?: () => void;
 }) => (
   <div
@@ -305,7 +339,9 @@ export const DeliveryCaption = ({
 
     {summary && (
       <span
-        className={`font-mono text-[10px] ${TONE_ON[surface][summary.tone]}`}
+        // Reserved to the longest phase word, so "Preparing" becoming
+        // "Sending" does not resize the bubble around it either.
+        className={`inline-block min-w-[9ch] font-mono text-[10px] ${TONE_ON[surface][summary.tone]}`}
         role='status'
       >
         {summary.label}
@@ -314,7 +350,10 @@ export const DeliveryCaption = ({
     )}
 
     {note !== undefined && (
-      <span className={`font-mono text-[10px] ${MUTED_ON[surface]}`}>
+      <span
+        className={`font-mono text-[10px] tabular-nums ${MUTED_ON[surface]} ${noteClassName}`}
+        style={noteStyle}
+      >
         {summary ? "· " : ""}
         {note}
       </span>

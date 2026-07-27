@@ -277,6 +277,7 @@ const MessageDropdown = ({
               progress={sendProgress}
               tone={own ? "own" : "peer"}
               subtitle={subtitle}
+              showSize={false}
             />
           )}
         </DropdownButton>
