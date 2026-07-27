@@ -28,7 +28,6 @@ import { useRoom } from "../../hooks/useRoom";
 import { absoluteRoomInviteUrl } from "../../protocol/roomAccess";
 import p2party from "../../protocol/sdk";
 
-const CatAvatar = lazy(() => import("../avatars/cat"));
 const SignalingDropdown = lazy(() => import("./SignalingDropdown"));
 const PeerDropdown = lazy(() => import("./PeerDropdown"));
 const DeleteDropdown = lazy(() => import("./DeleteDropdown"));
@@ -52,10 +51,13 @@ const SideBar = () => {
     <Sidebar>
       <SidebarHeader>
         <Link href={"/"}>
+          {/* No mark here. SidebarItem lays its children out on a subgrid
+              whose first column is sized for an icon slot, and the avatar is
+              not one, so it sat in the row without ever lining up with the
+              wordmark beside it. The cat is already on the page behind the
+              conversation -- printing it twice, badly, to say the same thing
+              is not worth the row. */}
           <SidebarItem className='lg:mb-2.5'>
-            <Suspense>
-              <CatAvatar src='/logo-cat-tight.svg' />
-            </Suspense>
             <SidebarLabel>
               <span className='font-mono font-bold'>
                 p2party
