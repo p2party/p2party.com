@@ -50,6 +50,11 @@ if (!container.hasChildNodes()) {
   // 5,850 characters against a settled 2,917, the document twice its height.
   container.style.display = "none";
 
+  // Entry animations are for content arriving for the first time. This tree is
+  // a second copy of markup the visitor is already reading, so it must appear
+  // finished rather than fade in behind the copy it replaces. See index.css.
+  container.setAttribute("data-adopted-prerender", "");
+
   createRoot(container).render(app);
 
   const startedAt = performance.now();

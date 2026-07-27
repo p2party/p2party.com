@@ -4,6 +4,7 @@ import { useState, lazy, Suspense, useEffect } from "react";
 
 import { Button } from "../components/button";
 import { useRoom } from "../hooks/useRoom";
+import { isPrerender } from "../protocol/prerender";
 
 import type { UniqueRoom } from "p2party";
 
@@ -24,6 +25,11 @@ const RoomsPage = () => {
   const [roomSetupOpen, setRoomSetupOpen] = useState(false);
 
   useEffect(() => {
+    // The prerenderer has no saved rooms, so resolving here would bake "0 rooms
+    // on this device" into the static HTML and every returning visitor would
+    // read it before their own list arrived. Left unresolved, the snapshot is
+    // the skeleton -- which is what everyone sees at that moment anyway.
+    if (isPrerender) return;
     let cancelled = false;
 
     void getAllPastRooms()

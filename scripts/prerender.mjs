@@ -76,6 +76,22 @@ const ROUTE_META = new Map([
   ]),
 ]);
 
+/**
+ * Rendered for their chrome, never indexed.
+ *
+ * A room is addressed by a secret capability and the saved-room list is
+ * per-device, so neither belongs in an index -- but the sidebar, header and
+ * layout around them are the same for everyone, and shipping those as static
+ * HTML is what stops a room invite from opening on a blank page. The pages
+ * themselves withhold per-device state while `__P2PARTY_PRERENDER__` is set.
+ */
+const PRIVATE_ROUTES = [
+  { path: "/r", title: "Room · p2party", noindex: true },
+  { path: "/rooms", title: "Your rooms · p2party", noindex: true },
+];
+
+for (const route of PRIVATE_ROUTES) ROUTE_META.set(route.path, route);
+
 export const ROUTES = [...ROUTE_META.keys()];
 
 const CONTENT_TYPES = {
@@ -115,12 +131,16 @@ const serveDist = async () => {
 
 // The Vite shell before prerendering overwrites it: correct script tags, empty
 // #root. Dynamic routes need this, not a prerendered page.
-const shellHtml = await readFile(join(DIST, "index.html"), "utf8");
 
 const server = await serveDist();
 const port = server.address().port;
 const browser = await chromium.launch();
 const page = await browser.newPage();
+// Read by src/protocol/prerender.ts: pages that would otherwise bake this
+// machine's state into the snapshot render their pre-data state instead.
+await page.addInitScript(() => {
+  window.__P2PARTY_PRERENDER__ = true;
+});
 
 let failures = 0;
 for (const route of ROUTES) {
@@ -208,6 +228,12 @@ for (const route of ROUTES) {
     `<meta name="twitter:description" content="${escape(description)}" />`,
   );
 
+  if (meta?.noindex)
+    replaceTag(
+      /<meta name="robots" content="[^"]*"\s*\/?>/u,
+      '<meta name="robots" content="noindex, nofollow" />',
+    );
+
   if (meta?.article) {
     html = html.replace(
       /<meta property="og:type" content="[^"]*"\s*\/?>/u,
@@ -240,32 +266,10 @@ for (const route of ROUTES) {
 await browser.close();
 server.close();
 
-// Routes whose content is per-user or secret get the empty shell rather than a
-// prerendered page.
-//
-// Without this the host had no file at /r, fell back to the prerendered
-// index.html, and served a room invite as HTTP 404 whose body was the entire
-// landing page. Anyone opening an invite watched "Privacy That Fights Back"
-// paint and then get replaced by their chat. The shell renders nothing, so the
-// app is the first thing drawn.
-//
-// noindex because a room is addressed by a secret capability and the saved-room
-// list is per-device; neither should ever appear in an index.
-for (const [route, title] of [
-  ["/r", "Room · p2party"],
-  ["/rooms", "Your rooms · p2party"],
-]) {
-  const html = shellHtml
-    .replace(/<title>[^<]*<\/title>/u, `<title>${title}</title>`)
-    .replace(
-      /<meta name="robots" content="[^"]*"\s*\/?>/u,
-      '<meta name="robots" content="noindex, nofollow" />',
-    );
-  const outPath = join(DIST, route.replace(/^\//u, ""), "index.html");
-  await mkdir(dirname(outPath), { recursive: true });
-  await writeFile(outPath, html, "utf8");
-  console.log(`  ${route.padEnd(34)} shell (noindex)`);
-}
+// The empty-shell pass that used to live here is gone: /r and /rooms are
+// rendered like every other route now, minus anything device-specific, so the
+// chrome is on screen immediately instead of after a third of a second of
+// nothing.
 
 // robots.txt and sitemap.xml describe exactly the routes that were rendered,
 // so they cannot drift from what is actually crawlable.
@@ -276,6 +280,7 @@ await writeFile(
     "Allow: /",
     "# Rooms are addressed by a secret capability; there is nothing to index.",
     "Disallow: /rooms",
+    "Disallow: /r",
     "",
     `Sitemap: ${ORIGIN}/sitemap.xml`,
     "",
@@ -283,7 +288,12 @@ await writeFile(
   "utf8",
 );
 
-const urls = ROUTES.map((route) => {
+// A route that carries noindex must never be advertised here. /r and /rooms are
+// rendered for their chrome, not for crawlers, and listing them would both
+// contradict their own robots meta and publish the shape of the private routes.
+const INDEXABLE = ROUTES.filter((route) => !ROUTE_META.get(route)?.noindex);
+
+const urls = INDEXABLE.map((route) => {
   const post = manifest.posts.find((entry) => entry.href === route);
   return [
     "  <url>",
@@ -303,7 +313,9 @@ await writeFile(
   "utf8",
 );
 
-console.log(`  robots.txt and sitemap.xml written (${ROUTES.length} routes)`);
+console.log(
+  `  robots.txt and sitemap.xml written (${String(INDEXABLE.length)} indexable of ${String(ROUTES.length)} rendered)`,
+);
 if (failures > 0) {
   console.error(`Prerender failed for ${failures} route(s)`);
   process.exit(1);
