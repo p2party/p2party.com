@@ -22,7 +22,7 @@
     "dev": "vite --host",
     "start": "npm run dev",
     "typecheck": "tsc -b --pretty false",
-    "build": "npm run typecheck && vite build && npm run prerender",
+    "build": "npm run typecheck && npm run build:client && npm run build:server && npm run prerender",
     "test": "bun test",
     "format": "prettier . --write --ignore-path .gitignore --ignore-path .prettierignore",
     "format:check": "prettier . --check --ignore-path .gitignore --ignore-path .prettierignore",
@@ -32,7 +32,9 @@
     "e2e": "node e2e/run.mjs",
     "upload": "npm run build && node --env-file=.env scripts/uploadAllToS3.mjs",
     "preview": "vite preview",
-    "prerender": "node scripts/prerender.mjs"
+    "prerender": "node scripts/prerender.mjs",
+    "build:client": "vite build",
+    "build:server": "vite build --ssr src/entry-server.tsx --outDir dist-ssr"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",

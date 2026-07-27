@@ -114,7 +114,7 @@ const run = async () => {
     for (const { page, tag } of contexts) {
       await page.goto(roomPath, { waitUntil: "domcontentloaded" });
       await page
-        .getByRole("button", { name: "Connect" })
+        .getByRole("button", { name: "Connect", exact: true })
         .click({ timeout: 30000 });
       log(`${tag} connected`);
     }

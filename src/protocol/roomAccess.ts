@@ -215,6 +215,16 @@ export const absoluteRoomInviteUrl = (
 };
 
 export type RoomInviteResolution =
+  /**
+   * Not looked yet, which is different from "there is no invite". A URL
+   * fragment is never sent to a server and so cannot exist at build time, so a
+   * prerender of /r that resolved eagerly baked "Invalid room invitation --
+   * Room invitation fragment is missing" into the HTML every real invite link
+   * is served. This is the state both the build and the first client render
+   * produce, so they agree, and the real answer arrives once there is a
+   * document to read it from.
+   */
+  | { kind: "pending" }
   | { kind: "none" }
   | { kind: "invalid"; error: string }
   | {

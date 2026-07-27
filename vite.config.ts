@@ -38,6 +38,9 @@ export default defineConfig((configEnv) => {
       include: ["class-validator", "validator"],
     },
     build: {
+      // The server build renders HTML and is never served, so it has no use
+      // for a copy of public/ -- which includes the WASM module and every logo.
+      copyPublicDir: !configEnv.isSsrBuild,
       rollupOptions: {
         output: {
           // No manual chunking. Two attempts at steering it made things worse:

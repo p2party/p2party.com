@@ -9,8 +9,12 @@ import { hasTransientRoomPin } from "../../protocol/roomAccess";
 
 import type { PropsWithChildren } from "react";
 
-const NavBar = lazy(() => import("../Nav"));
-const SideBar = lazy(() => import("../Side"));
+// The chrome is not lazy: it renders on every room route, so splitting it only
+// added a request, and a lazy component cannot be prerendered -- renderToString
+// gives up on a suspending boundary and emits nothing, which is what left a
+// room invite opening on an empty frame.
+import NavBar from "../Nav";
+import SideBar from "../Side";
 const ConnectAlert = lazy(() => import("../alerts/ConnectAlert"));
 
 const ChatLayout: FC<PropsWithChildren> = () => {

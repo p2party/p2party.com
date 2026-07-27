@@ -22,25 +22,6 @@
   --animate-float: float 6s ease-in-out infinite;
 }
 
-/*
- * Entry animations belong to the first paint, and on a prerendered page the
- * first paint is the static HTML. React then builds its own copy of the same
- * tree, and those nodes are brand new, so they run the animation a second time
- * from opacity 0 -- measured: the headline was readable at 349ms, React's copy
- * was inserted at 0.00 opacity at 359ms, and the finished copy was removed at
- * 366ms, leaving the page mid-fade. The visitor saw the headline blink out and
- * fade in again on every single load.
- *
- * main.tsx marks the React container when it adopted prerendered markup, so
- * the snapshot animates exactly once and the tree that replaces it arrives
- * already finished. Routes with nothing to adopt are untouched and animate
- * normally.
- */
-[data-adopted-prerender] .animate-fade-in,
-[data-adopted-prerender] .animate-slide-up {
-  animation: none;
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;

@@ -73,7 +73,7 @@ const run = async () => {
       for (const [i, { page }] of ctxs.entries()) {
         await page.goto(roomPath, { waitUntil: "domcontentloaded" });
         await page
-          .getByRole("button", { name: "Connect" })
+          .getByRole("button", { name: "Connect", exact: true })
           .click({ timeout: 30000 });
         log(`peer ${String(i)} connected`);
       }
@@ -158,7 +158,9 @@ const run = async () => {
         const field = page.getByLabel("Room PIN", { exact: false });
         await field.waitFor({ timeout: 30000 });
         await field.fill(pin);
-        await page.getByRole("button", { name: "Connect" }).click();
+        await page
+          .getByRole("button", { name: "Connect", exact: true })
+          .click();
       };
 
       await enterPin(host.page, "correct-horse-battery-staple");

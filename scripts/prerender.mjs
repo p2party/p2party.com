@@ -16,10 +16,8 @@
 // capability, so there is nothing to prerender and nothing that should be
 // discoverable.
 // ============================================================================
-import { chromium } from "playwright";
-import { createServer } from "node:http";
-import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
-import { join, extname, dirname } from "node:path";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { join, dirname } from "node:path";
 
 const DIST = "dist";
 const ORIGIN = "https://p2party.com";
@@ -83,7 +81,8 @@ const ROUTE_META = new Map([
  * per-device, so neither belongs in an index -- but the sidebar, header and
  * layout around them are the same for everyone, and shipping those as static
  * HTML is what stops a room invite from opening on a blank page. The pages
- * themselves withhold per-device state while `__P2PARTY_PRERENDER__` is set.
+ * pages render their pre-data state here for free: server rendering never
+ * runs effects, so the room list is its skeleton rather than this machine's.
  */
 const PRIVATE_ROUTES = [
   { path: "/r", title: "Room · p2party", noindex: true },
@@ -94,72 +93,70 @@ for (const route of PRIVATE_ROUTES) ROUTE_META.set(route.path, route);
 
 export const ROUTES = [...ROUTE_META.keys()];
 
-const CONTENT_TYPES = {
-  ".js": "text/javascript",
-  ".html": "text/html",
-  ".css": "text/css",
-  ".wasm": "application/wasm",
-  ".svg": "image/svg+xml",
-  ".json": "application/json",
-  ".webmanifest": "application/manifest+json",
+// A browser's worth of globals, for a build step that runs in Node.
+//
+// The room routes import the SDK, which reads localStorage and constructs its
+// database Worker at module scope. Rendering them at all therefore needs those
+// to exist. Nothing here has to behave -- the SDK's real work happens in
+// effects, which server rendering never runs -- it only has to be present so
+// the modules can be imported.
+const memory = new Map();
+globalThis.localStorage ??= {
+  getItem: (key) => memory.get(key) ?? null,
+  setItem: (key, value) => void memory.set(key, String(value)),
+  removeItem: (key) => void memory.delete(key),
+  clear: () => void memory.clear(),
+  key: () => null,
+  length: 0,
+};
+globalThis.Worker ??= class {
+  postMessage() {}
+  terminate() {}
+  addEventListener() {}
+  removeEventListener() {}
+};
+globalThis.WebSocket ??= class {
+  send() {}
+  close() {}
+  addEventListener() {}
+  removeEventListener() {}
+};
+globalThis.indexedDB ??= {
+  open: () => ({ addEventListener() {} }),
+  databases: async () => [],
 };
 
-const serveDist = async () => {
-  const server = createServer(async (request, response) => {
-    let filePath = join(DIST, decodeURIComponent(request.url.split("?")[0]));
-    try {
-      if ((await stat(filePath)).isDirectory())
-        filePath = join(filePath, "index.html");
-    } catch {
-      filePath = join(DIST, "index.html");
-    }
-    try {
-      const body = await readFile(filePath);
-      response.writeHead(200, {
-        "content-type":
-          CONTENT_TYPES[extname(filePath)] ?? "application/octet-stream",
-      });
-      response.end(body);
-    } catch {
-      response.writeHead(404);
-      response.end("not found");
-    }
-  });
-  await new Promise((resolve) => server.listen(0, resolve));
-  return server;
-};
+const { render } = await import("../dist-ssr/entry-server.js");
 
-// The Vite shell before prerendering overwrites it: correct script tags, empty
-// #root. Dynamic routes need this, not a prerendered page.
-
-const server = await serveDist();
-const port = server.address().port;
-const browser = await chromium.launch();
-const page = await browser.newPage();
-// Read by src/protocol/prerender.ts: pages that would otherwise bake this
-// machine's state into the snapshot render their pre-data state instead.
-await page.addInitScript(() => {
-  window.__P2PARTY_PRERENDER__ = true;
-});
+// Vite's own index.html: correct script and stylesheet tags, empty #root.
+const shellHtml = await readFile(join(DIST, "index.html"), "utf8");
+const ROOT_MARKER = '<div id="root"></div>';
+if (!shellHtml.includes(ROOT_MARKER))
+  throw new Error(`Could not find ${ROOT_MARKER} in the built index.html`);
 
 let failures = 0;
 for (const route of ROUTES) {
-  await page.goto(`http://localhost:${port}${route}`, {
-    waitUntil: "networkidle",
-  });
-  // The router resolves lazily; wait for real text rather than a fixed delay.
-  await page
-    .waitForFunction(() => document.body.innerText.trim().length > 200, {
-      timeout: 15_000,
-    })
-    .catch(() => undefined);
+  let rendered;
+  try {
+    rendered = await render(route);
+  } catch (error) {
+    console.error(`  FAILED ${route}: ${error.message}`);
+    failures += 1;
+    continue;
+  }
 
-  const text = (await page.locator("body").innerText()).trim();
+  const text = rendered
+    .replace(/<[^>]+>/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+  // A route that renders nothing is a broken build, not a page.
   if (text.length < 200) {
     console.error(`  FAILED ${route} rendered only ${text.length} chars`);
     failures += 1;
     continue;
   }
+
+  let html = shellHtml.replace(ROOT_MARKER, `<div id="root">${rendered}</div>`);
 
   const meta = ROUTE_META.get(route);
   const canonical = `${ORIGIN}${route}`;
@@ -169,24 +166,11 @@ for (const route of ROUTES) {
       .replace(/"/gu, "&quot;")
       .replace(/</gu, "&lt;");
 
-  let html = "<!doctype html>\n" + (await page.content());
-
-  // Vite injects <link rel="modulepreload"> at runtime as it resolves dynamic
-  // imports, and snapshotting the live document freezes whatever this
-  // prerendering session happened to touch into the static file. A blog post
-  // shipped preload hints for the landing page, the room-setup dialog and the
-  // 406 KB WebRTC/crypto SDK -- none of which that page can reach -- and the
-  // browser fetched all of it before the article was readable.
-  //
-  // Preloads are hints, not imports. Dropping them costs a page nothing it
-  // actually needs: the entry script is untouched, and anything genuinely
-  // reachable is still imported on demand.
-  html = html.replace(/\s*<link[^>]+rel="modulepreload"[^>]*>/gu, "");
-
-  // The app sets document.title for some routes and not others; take whatever
-  // it rendered unless this route states one.
-  const rendered = /<title>([^<]*)<\/title>/u.exec(html)?.[1];
-  const title = meta?.title ?? rendered ?? "p2party";
+  // Titles come from the route table only. The app sets document.title in an
+  // effect, and effects do not run during server rendering, so there is no
+  // rendered title to fall back to -- and inventing one from the shell would
+  // give every page the same one.
+  const title = meta?.title ?? "p2party";
   const description = meta?.description ?? "";
 
   const replaceTag = (pattern, replacement) => {
@@ -262,9 +246,6 @@ for (const route of ROUTES) {
   await writeFile(outPath, html, "utf8");
   console.log(`  ${route.padEnd(34)} ${String(text.length).padStart(6)} chars`);
 }
-
-await browser.close();
-server.close();
 
 // The empty-shell pass that used to live here is gone: /r and /rooms are
 // rendered like every other route now, minus anything device-specific, so the

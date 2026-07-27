@@ -121,7 +121,14 @@ const HomePage = () => {
   // nothing here". Resolved as initial state rather than in an effect: it is
   // known before the first render, and setting it inside one would cascade.
   const [storedRooms, setStoredRooms] = useState<number | null>(() =>
-    localStorage.getItem("peerId") === null ? 0 : null,
+    // Guarded: this initializer runs during the build's render too, where
+    // there is no storage. 0 is the honest answer there -- a machine building
+    // a static file has no saved rooms -- and it is what a first-time visitor
+    // renders as well, so the two agree.
+    typeof localStorage === "undefined" ||
+    localStorage.getItem("peerId") === null
+      ? 0
+      : null,
   );
 
   // Anyone with a saved room used to have the landing page painted and then

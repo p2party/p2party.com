@@ -1,5 +1,5 @@
-import { lazy, useEffect, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter } from "react-router-dom";
 
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
@@ -8,20 +8,12 @@ import { SafeArea, SystemBarsStyle } from "@capacitor-community/safe-area";
 
 import { useDarkMode } from "usehooks-ts";
 import { UniversalLinkProvider } from "./hooks/useUniversalLink";
+import { AppRoutes } from "./routes";
+import { lazyPages } from "./pages/registry";
 
-const ChatLayout = lazy(() => import("./components/custom/ChatLayout"));
-const RoomProviders = lazy(() => import("./components/custom/RoomProviders"));
+import type { RoutePages } from "./pages/registry";
 
-const HomePage = lazy(() => import("./pages/home"));
-const RoomsPage = lazy(() => import("./pages/rooms"));
-const ChatPage = lazy(() => import("./pages/chat"));
-const TOSPage = lazy(() => import("./pages/tos"));
-const PrivacyPage = lazy(() => import("./pages/privacy"));
-const SessionLabPage = lazy(() => import("./pages/session-lab"));
-const BlogPage = lazy(() => import("./pages/blog"));
-const BlogPostPage = lazy(() => import("./pages/blog-post"));
-
-const App = () => {
+const App = ({ pages = lazyPages }: { pages?: RoutePages }) => {
   const { isDarkMode } = useDarkMode();
 
   // useEffect(() => {
@@ -71,105 +63,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <UniversalLinkProvider>
-        <Routes>
-          <Route
-            index
-            element={
-              <Suspense>
-                <HomePage />
-              </Suspense>
-            }
-          />
-          <Route
-            path='/privacy-policy'
-            element={
-              <Suspense>
-                <PrivacyPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path='/terms-of-service'
-            element={
-              <Suspense>
-                <TOSPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path='/session-lab'
-            element={
-              <Suspense>
-                <SessionLabPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path='/blog'
-            element={
-              <Suspense>
-                <BlogPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path='/blog/:slug'
-            element={
-              <Suspense>
-                <BlogPostPage />
-              </Suspense>
-            }
-          />
-
-          <Route
-            path='rooms'
-            element={
-              <Suspense>
-                <RoomProviders>
-                  <ChatLayout />
-                </RoomProviders>
-              </Suspense>
-            }
-          >
-            <Route
-              index
-              element={
-                <Suspense>
-                  <RoomsPage />
-                </Suspense>
-              }
-            />
-          </Route>
-
-          <Route
-            path='r'
-            element={
-              <Suspense>
-                <RoomProviders>
-                  <ChatLayout />
-                </RoomProviders>
-              </Suspense>
-            }
-          >
-            <Route
-              index
-              element={
-                <Suspense>
-                  <ChatPage />
-                </Suspense>
-              }
-            />
-          </Route>
-
-          <Route
-            path='*'
-            element={
-              <Suspense>
-                <HomePage />
-              </Suspense>
-            }
-          />
-        </Routes>
+        <AppRoutes pages={pages} />
       </UniversalLinkProvider>
     </BrowserRouter>
   );

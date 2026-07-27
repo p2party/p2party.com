@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { FileCard, MessageBubble } from "./MessageBubble";
 
@@ -103,24 +103,45 @@ const cellHex = (cell: number, length: number): string => {
 // observable, so the positions are arbitrary by design.
 const REAL_CELLS = new Set([0, 2, 3, 5, 6]);
 
+/**
+ * Pinned, because this component is rendered twice in different places: once
+ * by the build, in Node, and once by the visitor's browser. Node here resolves
+ * to el-GR, which groups 65490 as "65.490" while Chromium writes "65,490" --
+ * so the static HTML carried the build machine's locale, and hydration then
+ * found text that did not match and threw the prerendered page away. The
+ * numbers are wire constants in an English sentence; they are not localised.
+ */
+const NUMBER_LOCALE = "en-US";
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+const subscribeToReducedMotion = (onChange: () => void) => {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener("change", onChange);
+  return () => {
+    query.removeEventListener("change", onChange);
+  };
+};
+
+const getReducedMotion = () => window.matchMedia(REDUCED_MOTION_QUERY).matches;
+
+/** No document, no preference: the animation's finished frame is the default. */
+const getReducedMotionOnServer = () => false;
+
 const HeroDemo = () => {
   const [step, setStep] = useState(0);
-  const [reduced, setReduced] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  // useSyncExternalStore rather than state seeded during render: the build
+  // cannot know the visitor's motion preference, and reading it in a useState
+  // initializer made a reduced-motion visitor's first render disagree with the
+  // prerendered HTML -- for which React's remedy is to throw the whole
+  // prerendered page away. The third argument is the server snapshot, so the
+  // build and the first client render always agree and the real preference
+  // arrives immediately after.
+  const reduced = useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotion,
+    getReducedMotionOnServer,
   );
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = (event: MediaQueryListEvent) => {
-      setReduced(event.matches);
-    };
-    query.addEventListener("change", onChange);
-    return () => {
-      query.removeEventListener("change", onChange);
-    };
-  }, []);
 
   useEffect(() => {
     // Reduced motion holds the finished state; no timer, no state writes.
@@ -232,7 +253,9 @@ const HeroDemo = () => {
             <div className='flex items-baseline gap-1.5'>
               <dt className='text-zinc-500'>packets</dt>
               <dd className='text-zinc-200'>
-                {(current.cells * PACKETS_PER_CELL).toLocaleString()}
+                {(current.cells * PACKETS_PER_CELL).toLocaleString(
+                  NUMBER_LOCALE,
+                )}
               </dd>
             </div>
             <div className='flex items-baseline gap-1.5'>
@@ -250,8 +273,9 @@ const HeroDemo = () => {
             </div>
           </dl>
           <p className='mt-1 min-h-[2rem] font-mono text-[10px] leading-relaxed text-zinc-500 sm:min-h-[1.5rem]'>
-            {SCENARIO} · every cell {CELL_BYTES.toLocaleString()} B, ≤{" "}
-            {PAYLOAD_BYTES_PER_CELL.toLocaleString()} B of it yours
+            {SCENARIO} · every cell {CELL_BYTES.toLocaleString(NUMBER_LOCALE)}{" "}
+            B, ≤ {PAYLOAD_BYTES_PER_CELL.toLocaleString(NUMBER_LOCALE)} B of it
+            yours
           </p>
         </div>
       </div>

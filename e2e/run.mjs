@@ -179,7 +179,7 @@ const roomState = (url) => {
     ]) {
       await page.goto(roomPath, { waitUntil: "domcontentloaded" });
       await page
-        .getByRole("button", { name: "Connect" })
+        .getByRole("button", { name: "Connect", exact: true })
         .click({ timeout: 30000 });
       log(`${tag} clicked Connect`);
     }
@@ -776,7 +776,7 @@ const roomState = (url) => {
     await B.page.reload({ waitUntil: "domcontentloaded" });
     try {
       await B.page
-        .getByRole("button", { name: "Connect" })
+        .getByRole("button", { name: "Connect", exact: true })
         .click({ timeout: 15000 });
     } catch {
       /* consent may be remembered — no dialog to accept */
