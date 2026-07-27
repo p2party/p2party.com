@@ -227,8 +227,8 @@ const MessageItem: FC<MessageItemProps> = ({
     : transfer?.status === "preparing" && message.merkleRootHex !== ""
       ? `${formatBytes(ackedBytes)} of ${formatBytes(message.totalSize)}`
       : transfer?.status === "delivered" || transfer?.status === "partial"
-        ? `${formatBytes(message.totalSize)} · ${formatBytes(wireBytes)} on the wire`
-        : formatBytes(message.totalSize);
+        ? `${formatBytes(wireBytes)} on the wire`
+        : undefined;
 
   // Frames actually taken in, cover included. The receiver counts these
   // separately from real chunks, so the two figures never have to be guessed
@@ -338,9 +338,11 @@ const MessageItem: FC<MessageItemProps> = ({
           </div>
         )}
 
-        {/* Time, and the size for text -- which had no way of telling you how
-            many bytes it moved. A file already states its size on the card, so
-            repeating it here would just be the same number twice. */}
+        {/* Time, the payload size, and what it cost on the wire -- the same
+            three facts in both directions. The size sits here rather than in
+            the delivery caption so it is stated once per message; a file
+            already names its size on the card, so only the wire figure is
+            added to it. */}
         <span
           className={`mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-300 ${
             own ? "mr-1 text-right" : "ml-1 text-left"
@@ -349,6 +351,9 @@ const MessageItem: FC<MessageItemProps> = ({
           {new Date(message.timestamp).toLocaleString()}
           {!receiving && !isFile && message.totalSize > 0
             ? ` · ${formatBytes(message.totalSize)}`
+            : ""}
+          {!receiving && !own && receivedWireBytes > 0
+            ? ` · ${formatBytes(receivedWireBytes)} on the wire`
             : ""}
         </span>
       </div>

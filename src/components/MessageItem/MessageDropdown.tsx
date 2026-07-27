@@ -128,23 +128,37 @@ const MessageDropdown = ({
 
   const handleOpen = async () => {
     setFileError("");
+    // Claim the tab inside the click, before anything is awaited. Reassembly
+    // is asynchronous and can take seconds on a large file, by which point the
+    // user gesture is spent and a pop-up blocker refuses the window.
+    //
+    // It cannot be opened with "noopener" either: that makes window.open
+    // return null on success as well as on failure, which is indistinguishable
+    // from being blocked -- so every successful open also reported "your
+    // browser blocked the new tab" while the file opened perfectly well behind
+    // the message. The opener reference is severed on the handle instead,
+    // which is what noopener would have done.
+    const tab = window.open("", "_blank");
+    if (tab) tab.opener = null;
     try {
       const blob = await materializeFile();
       if (!isInlineSafe(blob.type)) {
+        tab?.close();
         await handleDownload();
         return;
       }
-      const objectUrl = URL.createObjectURL(blob);
-      // Reassembly consumed the user gesture, so a popup blocker can reject
-      // this — window.open returns null and nothing would otherwise happen.
-      const opened = window.open(objectUrl, "_blank", "noopener,noreferrer");
-      if (!opened)
+      if (!tab) {
         setFileError(
           "Your browser blocked the new tab. Allow pop-ups for this site, or use Download.",
         );
+        return;
+      }
+      const objectUrl = URL.createObjectURL(blob);
+      tab.location.replace(objectUrl);
       setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } catch (error) {
       console.error(error);
+      tab?.close();
       setFileError(describeFailure(error));
     }
   };
@@ -350,7 +364,12 @@ const MessageDropdown = ({
               and how many resend rounds it took. Receiver-side counters are
               absent on messages you sent. */}
           {message.chunksReceivedTotal !== undefined && (
-            <div className='border-t-2 border-zinc-950/15 px-3.5 pt-2 pb-1 font-mono text-[11px] leading-relaxed text-zinc-500 sm:px-3 dark:border-white/15 dark:text-zinc-400'>
+            // col-span-full is load-bearing: the menu is a five-column grid,
+            // and without a span this footer sits in column one and stretches
+            // it to the width of "641 cells received · 641 real · 0 cover" --
+            // which pushed every icon to the far left edge and every label to
+            // the far right, with a canyon between them.
+            <div className='col-span-full border-t-2 border-zinc-950/15 px-3.5 pt-2 pb-1 font-mono text-[11px] leading-relaxed text-zinc-500 sm:px-3 dark:border-white/15 dark:text-zinc-400'>
               <div>
                 {message.chunksReceivedTotal} cells received ·{" "}
                 {message.chunksReceivedReal ?? 0} real ·{" "}
@@ -360,6 +379,13 @@ const MessageDropdown = ({
               </div>
               {(message.retransmits ?? 0) > 0 && (
                 <div>{message.retransmits} resend rounds</div>
+              )}
+              {/* OPFS is origin-private: the browser holds these bytes on disk
+                  for this site alone, and there is no path outside the browser
+                  to point anyone at. Saying where it is not is more useful than
+                  implying a location that does not exist. */}
+              {isFile && (
+                <div>in private browser storage · Save as… to keep a copy</div>
               )}
             </div>
           )}

@@ -162,11 +162,15 @@ export function DropdownLabel({
   ...props
 }: { className?: string } & Omit<Headless.LabelProps, "as" | "className">) {
   return (
+    // props is spread once, before className. It used to be spread again after,
+    // which put the caller's (usually undefined) className back and threw away
+    // "col-start-2 row-start-1" -- so every label lost its grid placement and
+    // auto-flowed into the last column, leaving the icon at the far left and
+    // the text jammed against the right edge of the menu.
     <Headless.Label
       {...props}
       data-slot='label'
       className={clsx(className, "col-start-2 row-start-1")}
-      {...props}
     />
   );
 }
