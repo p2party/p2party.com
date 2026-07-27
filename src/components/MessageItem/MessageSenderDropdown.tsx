@@ -162,7 +162,10 @@ const MessageSenderDropdown = ({ message }: MessageSenderDropdownProps) => {
         />
       )}
       <Dropdown>
-        <DropdownButton plain>
+        {/* The button's default padding put ~11px of dead space around a 28px
+            avatar on every message, which is most of the gutter the thread was
+            spending on it. The avatar is the hit target. */}
+        <DropdownButton plain className='p-0!'>
           <Avatar
             initials={message.fromPeerId.slice(
               message.fromPeerId.length - 2,

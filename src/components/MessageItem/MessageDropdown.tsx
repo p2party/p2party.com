@@ -28,6 +28,7 @@ import {
   ClipboardIcon,
 } from "@heroicons/react/20/solid";
 
+import type { ReactNode } from "react";
 import type { Message, FileExtension } from "p2party";
 
 const readAsDataURL = (blob: Blob): Promise<string> => {
@@ -49,6 +50,10 @@ export interface MessageDropdownProps {
   // msgLoadingText: string;
   msgPercentage: number;
   msgExtension: FileExtension;
+  /** Delivery + byte figures, rendered inside the bubble. */
+  subtitle?: ReactNode;
+  /** Outbound progress, which the receive-side percentage cannot express. */
+  sendProgress?: number;
 }
 
 const MessageDropdown = ({
@@ -61,6 +66,8 @@ const MessageDropdown = ({
   // msgLoadingText,
   msgExtension,
   msgPercentage,
+  subtitle,
+  sendProgress,
 }: MessageDropdownProps) => {
   // Narrow subscription: peerId only (readMessage/cancelMessage/deleteMessage
   // are stable module functions), so a dropdown row doesn't re-render on every
@@ -244,7 +251,7 @@ const MessageDropdown = ({
   const body = (
     <>
       <Dropdown>
-        <DropdownButton plain className='size-fit cursor-pointer'>
+        <DropdownButton plain className='size-fit cursor-pointer p-0!'>
           {msgCategory === p2party.MessageCategory.Text && url.length === 0 && (
             <Text
               className={`text-left tracking-wide wrap-break-word whitespace-pre-line ${message.fromPeerId === peerId ? "font-medium text-white" : "font-normal text-zinc-950 dark:text-white"} text-pretty wrap-break-word text-clip hyphens-auto antialiased select-text`}
@@ -267,7 +274,9 @@ const MessageDropdown = ({
               extension={msgExtension}
               size={msgSize}
               percentage={msgPercentage}
+              progress={sendProgress}
               tone={own ? "own" : "peer"}
+              subtitle={subtitle}
             />
           )}
         </DropdownButton>
@@ -424,7 +433,11 @@ const MessageDropdown = ({
   return isFile ? (
     <div className={edge}>{body}</div>
   ) : (
-    <MessageBubble tone={own ? "own" : "peer"} className={edge}>
+    <MessageBubble
+      tone={own ? "own" : "peer"}
+      className={edge}
+      subtitle={subtitle}
+    >
       {body}
     </MessageBubble>
   );

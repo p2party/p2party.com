@@ -36,6 +36,12 @@ export interface MessageBubbleProps {
   size?: BubbleSize;
   /** The demo's entry animation. Off in the chat, where messages really arrive. */
   animate?: boolean;
+  /**
+   * Delivery and byte figures, rendered inside the bubble under its content.
+   * They belong to the message, so they travel with it rather than stacking
+   * more lines underneath and pushing the next message down the thread.
+   */
+  subtitle?: ReactNode;
   className?: string;
   children: ReactNode;
 }
@@ -44,6 +50,7 @@ export const MessageBubble = ({
   tone,
   size = "md",
   animate = false,
+  subtitle,
   className = "",
   children,
 }: MessageBubbleProps) => (
@@ -51,6 +58,7 @@ export const MessageBubble = ({
     className={`relative w-auto max-w-full overflow-hidden border-2 transition-transform ${PADDING[size]} ${SURFACE[tone]} ${animate ? "animate-fade-in" : ""} ${className}`}
   >
     {children}
+    {subtitle}
   </div>
 );
 
@@ -99,7 +107,9 @@ export const FileCard = ({
   extension,
   size,
   percentage,
+  progress,
   tone = "peer",
+  subtitle,
   animate = false,
   compact = false,
 }: {
@@ -109,13 +119,23 @@ export const FileCard = ({
   size?: number;
   /** 0-100. At 100 the fill bar is dropped: a finished file is just a file. */
   percentage: number;
+  /**
+   * Overrides `percentage` for the bar. A sender's own message is 100% stored
+   * the instant its chunks exist, so the receive-side percentage says nothing
+   * about the send -- and the bar vanished exactly when the transfer began.
+   * The delivery progress is passed in here instead so the bar stays where the
+   * file is, rather than becoming a second bar underneath it.
+   */
+  progress?: number;
   tone?: BubbleTone;
+  subtitle?: ReactNode;
   animate?: boolean;
   compact?: boolean;
 }) => {
   const badge =
     extension.replace(/^\./u, "").slice(0, 4).toUpperCase() || "FILE";
-  const done = percentage >= 100;
+  const shown = progress ?? percentage;
+  const done = shown >= 100;
 
   return (
     <div
@@ -137,7 +157,7 @@ export const FileCard = ({
           <span className={`block font-mono text-[10px] ${CARD_META[tone]}`}>
             {size === undefined ? "" : formatBytes(size)}
             {size === undefined || done ? "" : " · "}
-            {done ? "" : `${String(Math.round(percentage))}%`}
+            {done ? "" : `${String(Math.round(shown))}%`}
           </span>
         </span>
       </div>
@@ -147,20 +167,42 @@ export const FileCard = ({
           <div
             className={`h-full transition-[width] duration-300 motion-reduce:transition-none ${CARD_FILL[tone]}`}
             style={{
-              width: `${String(Math.min(100, Math.max(0, percentage)))}%`,
+              width: `${String(Math.min(100, Math.max(0, shown)))}%`,
             }}
           />
         </div>
       )}
+
+      {subtitle}
     </div>
   );
 };
 
-const TONE_TEXT: Record<DeliveryTone, string> = {
-  pending: "text-zinc-500 dark:text-zinc-400",
-  good: "text-emerald-700 dark:text-emerald-400",
-  warn: "text-amber-700 dark:text-amber-400",
-  bad: "text-red-700 dark:text-red-400",
+/**
+ * The same four states, painted for the surface they sit on. A subtitle inside
+ * an orange bubble cannot use the greens and ambers that read against white --
+ * emerald-700 on darkOrange is mud -- so the sent side lightens where the
+ * received side darkens.
+ */
+const TONE_ON: Record<BubbleTone, Record<DeliveryTone, string>> = {
+  own: {
+    pending: "text-white/70",
+    good: "text-emerald-200",
+    warn: "text-amber-100",
+    bad: "text-red-100",
+  },
+  peer: {
+    pending: "text-zinc-500 dark:text-zinc-400",
+    good: "text-emerald-700 dark:text-emerald-400",
+    warn: "text-amber-700 dark:text-amber-400",
+    bad: "text-red-700 dark:text-red-400",
+  },
+};
+
+/** Byte figures are supporting detail, never the headline. */
+const MUTED_ON: Record<BubbleTone, string> = {
+  own: "text-white/70",
+  peer: "text-zinc-500 dark:text-zinc-400",
 };
 
 const TONE_DOT: Record<DeliveryTone, string> = {
@@ -202,12 +244,14 @@ const Tick = ({ className = "" }: { className?: string }) => (
 export const DeliveryTicks = ({
   count,
   tone,
+  surface = "peer",
 }: {
   count: 1 | 2;
   tone: DeliveryTone;
+  surface?: BubbleTone;
 }) => (
   <span
-    className={`inline-flex shrink-0 items-center ${TONE_TEXT[tone]}`}
+    className={`inline-flex shrink-0 items-center ${TONE_ON[surface][tone]}`}
     aria-hidden
   >
     <Tick />
@@ -225,69 +269,88 @@ export const DeliveryTicks = ({
  */
 export const DeliveryCaption = ({
   summary,
+  surface,
   align,
   note,
   onCancel,
 }: {
-  summary: DeliverySummary;
-  align: BubbleTone;
-  /** Byte figures for this message: what moved, and what it cost on the wire. */
+  /** Absent on received messages: ticks are a sender's claim, not a receiver's. */
+  summary?: DeliverySummary;
+  /** The bubble this sits inside, which decides the palette. */
+  surface: BubbleTone;
+  /** Which inner edge to hug: the one facing the middle of the thread. */
+  align: "left" | "right";
+  /** Byte figures, already formatted. */
   note?: string;
   onCancel?: () => void;
 }) => (
   <div
-    className={`mt-0.5 flex flex-col ${align === "own" ? "items-end" : "items-start"}`}
+    className={`mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 ${
+      align === "right" ? "justify-end" : "justify-start"
+    }`}
   >
-    <div className='flex items-center gap-1.5'>
-      {summary.ticks === 0 ? (
+    {summary &&
+      (summary.ticks === 0 ? (
         <span
           aria-hidden
           className={`size-1.5 shrink-0 ${TONE_DOT[summary.tone]}`}
         />
       ) : (
-        <DeliveryTicks count={summary.ticks} tone={summary.tone} />
-      )}
+        <DeliveryTicks
+          count={summary.ticks}
+          tone={summary.tone}
+          surface={surface}
+        />
+      ))}
+
+    {summary && (
       <span
-        className={`font-mono text-[11px] ${TONE_TEXT[summary.tone]}`}
+        className={`font-mono text-[10px] ${TONE_ON[surface][summary.tone]}`}
         role='status'
       >
         {summary.label}
         {summary.progress === undefined ? "" : ` ${String(summary.progress)}%`}
       </span>
-      {note !== undefined && (
-        <span className='font-mono text-[11px] text-zinc-500 dark:text-zinc-400'>
-          · {note}
-        </span>
-      )}
-      {summary.cancellable && onCancel && (
-        <button
-          type='button'
-          onClick={onCancel}
-          className='font-mono text-[11px] text-zinc-500 underline decoration-dotted underline-offset-2 hover:text-red-700 dark:text-zinc-400 dark:hover:text-red-400'
-        >
-          cancel
-        </button>
-      )}
-    </div>
-
-    {/* The one countable outbound phase gets a real bar; the wire phase does
-        not, because nothing reports it. */}
-    {summary.progress !== undefined && (
-      <div className='mt-1 h-1 w-32 border border-zinc-300 dark:border-zinc-700'>
-        <div
-          className='bg-darkOrange h-full transition-[width] duration-300 motion-reduce:transition-none'
-          style={{ width: `${String(summary.progress)}%` }}
-        />
-      </div>
     )}
 
-    {summary.detail.length > 1 && (
-      <details className='mt-0.5'>
-        <summary className='cursor-pointer font-mono text-[10px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'>
+    {note !== undefined && (
+      <span className={`font-mono text-[10px] ${MUTED_ON[surface]}`}>
+        {summary ? "· " : ""}
+        {note}
+      </span>
+    )}
+
+    {summary?.cancellable && onCancel && (
+      <button
+        type='button'
+        onClick={(event) => {
+          // The subtitle lives inside the dropdown trigger now; a click here
+          // must cancel the transfer, not open the menu.
+          event.preventDefault();
+          event.stopPropagation();
+          onCancel();
+        }}
+        className={`font-mono text-[10px] underline decoration-dotted underline-offset-2 ${MUTED_ON[surface]} ${
+          surface === "own"
+            ? "hover:text-white"
+            : "hover:text-red-700 dark:hover:text-red-400"
+        }`}
+      >
+        cancel
+      </button>
+    )}
+
+    {summary && summary.detail.length > 1 && (
+      <details className='w-full'>
+        <summary
+          className={`cursor-pointer font-mono text-[10px] ${MUTED_ON[surface]}`}
+        >
           per peer
         </summary>
         <ul
-          className={`mt-1 space-y-0.5 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 ${align === "own" ? "text-right" : "text-left"}`}
+          className={`mt-1 space-y-0.5 font-mono text-[10px] ${MUTED_ON[surface]} ${
+            align === "right" ? "text-right" : "text-left"
+          }`}
         >
           {summary.detail.map((line) => (
             <li key={line}>{line}</li>

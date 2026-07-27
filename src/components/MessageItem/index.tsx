@@ -11,7 +11,7 @@ import MessageDropdown from "./MessageDropdown";
 
 import type { FC } from "react";
 import type { Message, FileExtension } from "p2party";
-import type { TrackedTransfer } from "../../protocol/delivery";
+import type { DeliverySummary, TrackedTransfer } from "../../protocol/delivery";
 
 export interface MessageItemProps {
   message: Message;
@@ -219,17 +219,6 @@ const MessageItem: FC<MessageItemProps> = ({
   // full, so this is always larger than the payload and is a property of the
   // padding policy rather than of the message.
   const wireBytes = message.totalChunks * p2party.WIRE_CHUNK_FRAME_LEN;
-  // Cover is not an afterthought here, so the wire figure is stated rather
-  // than hidden: padding is why a 9-byte reply and a photo look alike, and it
-  // is paid for in bytes.
-  const sentNote = !own
-    ? undefined
-    : transfer?.status === "preparing" && message.merkleRootHex !== ""
-      ? `${formatBytes(ackedBytes)} of ${formatBytes(message.totalSize)}`
-      : transfer?.status === "delivered" || transfer?.status === "partial"
-        ? `${formatBytes(wireBytes)} on the wire`
-        : undefined;
-
   // Frames actually taken in, cover included. The receiver counts these
   // separately from real chunks, so the two figures never have to be guessed
   // apart.
@@ -240,6 +229,75 @@ const MessageItem: FC<MessageItemProps> = ({
       ? Math.min(100, Math.floor((message.savedSize / message.totalSize) * 100))
       : 0;
 
+  // Cover is not an afterthought here, so the wire figure is stated rather
+  // than hidden: padding is why a 9-byte reply and a photo look alike, and it
+  // is paid for in bytes.
+  //
+  // A file card already prints its own size, so its subtitle names only what
+  // the size does not say. Text has no such line and gets both.
+  const wireNote = (bytes: number) =>
+    bytes > 0 ? `${formatBytes(bytes)} on the wire` : undefined;
+  const withSize = (rest?: string) =>
+    isFile
+      ? rest
+      : [formatBytes(message.totalSize), rest].filter(Boolean).join(" · ");
+
+  const summary = transfer
+    ? summariseDelivery(transfer.status, transfer.result, transfer.error, {
+        created: message.chunksCreated,
+        total: message.totalChunks,
+        staged: message.merkleRootHex !== "",
+        ackedBytes,
+        realBytes: message.totalSize,
+      })
+    : undefined;
+
+  // Receiving is a state of the message, not a claim by a sender, so it gets
+  // the pending dot rather than ticks.
+  const receiveSummary: DeliverySummary | undefined = receiving
+    ? {
+        tone: "pending",
+        label: isFile
+          ? "Receiving"
+          : `Receiving ${String(receivedPercentage)}%`,
+        detail: [],
+        cancellable: false,
+        ticks: 0,
+      }
+    : undefined;
+
+  const note = own
+    ? transfer?.status === "preparing" && message.merkleRootHex !== ""
+      ? `${formatBytes(ackedBytes)} of ${formatBytes(message.totalSize)}`
+      : withSize(wireNote(wireBytes))
+    : receiving
+      ? `${formatBytes(message.savedSize)} of ${formatBytes(message.totalSize)}`
+      : withSize(wireNote(receivedWireBytes));
+
+  // A file card already prints the percentage beside its size and draws the
+  // bar, so the subtitle states the phase and drops the number rather than
+  // saying 25% twice in two lines.
+  const shown = own ? summary : receiveSummary;
+  const subtitleSummary =
+    isFile && shown ? { ...shown, progress: undefined } : shown;
+
+  const subtitle = (
+    <DeliveryCaption
+      summary={subtitleSummary}
+      surface={own ? "own" : "peer"}
+      // Hug the edge facing the middle of the thread.
+      align={own ? "left" : "right"}
+      note={note}
+      onCancel={
+        transfer && onCancelTransfer
+          ? () => {
+              onCancelTransfer(transfer.handle.transferId);
+            }
+          : undefined
+      }
+    />
+  );
+
   return (
     <div
       className={`mb-3 flex items-end gap-1 sm:mb-4 sm:gap-2 ${
@@ -247,12 +305,12 @@ const MessageItem: FC<MessageItemProps> = ({
       }`}
     >
       {!own && (
-        <div className='self-center'>
+        <div className='shrink-0 self-center'>
           <MessageSenderDropdown message={message} />
         </div>
       )}
 
-      <div className='flex max-w-[85%] flex-col md:max-w-[75%]'>
+      <div className='flex max-w-[85%] min-w-0 flex-col md:max-w-[75%]'>
         {!own && (
           <span className='mb-0.5 ml-1 text-left text-[11px] font-medium tracking-wide text-zinc-500 dark:text-zinc-300'>
             {message.fromPeerId.slice(0, 8)}
@@ -274,92 +332,23 @@ const MessageItem: FC<MessageItemProps> = ({
           msgSize={msgSize}
           msgFilename={msgFilename}
           msgPercentage={msgPercentage}
+          subtitle={subtitle}
+          sendProgress={own ? summary?.progress : undefined}
         />
 
-        {/* Delivery, for messages this device sent. It belongs against the
-            message it describes, not in a corner of the screen. */}
-        {transfer && (
-          <DeliveryCaption
-            summary={summariseDelivery(
-              transfer.status,
-              transfer.result,
-              transfer.error,
-              {
-                created: message.chunksCreated,
-                total: message.totalChunks,
-                staged: message.merkleRootHex !== "",
-                ackedBytes,
-                realBytes: message.totalSize,
-              },
-            )}
-            align={own ? "own" : "peer"}
-            note={sentNote}
-            onCancel={
-              onCancelTransfer
-                ? () => {
-                    onCancelTransfer(transfer.handle.transferId);
-                  }
-                : undefined
-            }
-          />
-        )}
-
-        {/* Receiving is the one direction with an honest percentage: savedSize
-            is what this device has actually written, and it climbs the whole
-            way (measured 1.3 MB -> 12.6 MB on a 12 MB file). The sender has no
-            equivalent, which is why its state is ticks rather than a bar. */}
-        {receiving && (
-          <div className='mt-0.5 flex flex-col items-start'>
-            <div className='flex items-center gap-1.5'>
-              <span
-                aria-hidden
-                className='size-1.5 shrink-0 animate-pulse bg-zinc-400 dark:bg-zinc-500'
-              />
-              <span
-                className='font-mono text-[11px] text-zinc-500 dark:text-zinc-400'
-                role='status'
-              >
-                Receiving {receivedPercentage}%
-              </span>
-              <span className='font-mono text-[11px] text-zinc-500 dark:text-zinc-400'>
-                · {formatBytes(message.savedSize)} of{" "}
-                {formatBytes(message.totalSize)}
-                {receivedWireBytes > 0
-                  ? ` · ${formatBytes(receivedWireBytes)} on the wire`
-                  : ""}
-              </span>
-            </div>
-            <div className='mt-1 h-1 w-32 border border-zinc-300 dark:border-zinc-700'>
-              <div
-                className='bg-darkOrange h-full transition-[width] duration-300 motion-reduce:transition-none'
-                style={{ width: `${String(receivedPercentage)}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Time, the payload size, and what it cost on the wire -- the same
-            three facts in both directions. The size sits here rather than in
-            the delivery caption so it is stated once per message; a file
-            already names its size on the card, so only the wire figure is
-            added to it. */}
+        {/* Time only. Sizes and delivery moved inside the bubble, where they
+            belong to the message instead of stacking lines under it. */}
         <span
           className={`mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-300 ${
             own ? "mr-1 text-right" : "ml-1 text-left"
           }`}
         >
           {new Date(message.timestamp).toLocaleString()}
-          {!receiving && !isFile && message.totalSize > 0
-            ? ` · ${formatBytes(message.totalSize)}`
-            : ""}
-          {!receiving && !own && receivedWireBytes > 0
-            ? ` · ${formatBytes(receivedWireBytes)} on the wire`
-            : ""}
         </span>
       </div>
 
       {own && (
-        <div className='self-center'>
+        <div className='shrink-0 self-center'>
           <MessageSenderDropdown message={message} />
         </div>
       )}

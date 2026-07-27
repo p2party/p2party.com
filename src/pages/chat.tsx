@@ -441,7 +441,7 @@ const ChatPage = () => {
         )}
 
         {messages.length > 0 && (
-          <div className='mb-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white px-1 pb-24 sm:px-3 dark:bg-black'>
+          <div className='mb-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white pb-24 dark:bg-black'>
             {selectedMessages.map((message) => (
               <Suspense key={`${message.sha512Hex}-${message.timestamp}`}>
                 <MessageItem
