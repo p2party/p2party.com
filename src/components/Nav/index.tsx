@@ -47,7 +47,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
   return (
     <Navbar>
       {/* <NavbarItem>
-        <CatAvatar />
+        <CatAvatar src='/logo-cat-tight.svg' />
         <NavbarLabel>p2party</NavbarLabel>
       </NavbarItem> */}
       <NavbarSpacer />

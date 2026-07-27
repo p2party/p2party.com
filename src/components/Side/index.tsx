@@ -54,7 +54,7 @@ const SideBar = () => {
         <Link href={"/"}>
           <SidebarItem className='lg:mb-2.5'>
             <Suspense>
-              <CatAvatar />
+              <CatAvatar src='/logo-cat-tight.svg' />
             </Suspense>
             <SidebarLabel>
               <span className='font-mono font-bold'>

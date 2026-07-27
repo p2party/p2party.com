@@ -51,7 +51,7 @@ const RoomsPage = () => {
     <div className='relative flex min-h-0 flex-1 flex-col overflow-y-auto scroll-smooth pt-14 lg:pt-0'>
       <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:ml-64'>
         <Suspense fallback={null}>
-          <CatAvatar className='w-full opacity-[0.08] md:w-2/3 lg:w-2/5 dark:opacity-[0.06]' />
+          <CatAvatar className='w-full max-w-3xl opacity-[0.12] md:w-4/5 lg:w-3/4 dark:opacity-[0.20]' />
         </Suspense>
       </div>
 

@@ -324,10 +324,10 @@ const ChatPage = () => {
       <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:right-2 lg:left-64'>
         <Suspense>
           <CatAvatar
-            className={`w-full transition-opacity duration-500 md:w-2/3 lg:w-2/5 ${
+            className={`w-full max-w-3xl transition-opacity duration-500 md:w-4/5 lg:w-3/4 ${
               messages.length > 0
-                ? "opacity-[0.06] dark:opacity-[0.05]"
-                : "opacity-[0.12] dark:opacity-[0.10]"
+                ? "opacity-[0.09] dark:opacity-[0.14]"
+                : "opacity-[0.16] dark:opacity-[0.26]"
             }`}
           />
         </Suspense>
