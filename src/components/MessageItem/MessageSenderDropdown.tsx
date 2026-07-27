@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { useSelector } from "react-redux";
-import p2party from "p2party";
+import p2party from "../../protocol/sdk";
 
 import { Avatar } from "../avatar";
 import {

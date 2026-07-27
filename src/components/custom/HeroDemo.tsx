@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { FileCard, MessageBubble } from "./MessageBubble";
 
-import { CELL_BYTES, PAYLOAD_BYTES_PER_CELL } from "../../protocol/v4";
+import { CELL_BYTES, PAYLOAD_BYTES_PER_CELL } from "../../protocol/wire";
 
 /**
  * A looping, honest demonstration of one message crossing the wire.

@@ -151,6 +151,18 @@ for (const route of ROUTES) {
 
   let html = "<!doctype html>\n" + (await page.content());
 
+  // Vite injects <link rel="modulepreload"> at runtime as it resolves dynamic
+  // imports, and snapshotting the live document freezes whatever this
+  // prerendering session happened to touch into the static file. A blog post
+  // shipped preload hints for the landing page, the room-setup dialog and the
+  // 406 KB WebRTC/crypto SDK -- none of which that page can reach -- and the
+  // browser fetched all of it before the article was readable.
+  //
+  // Preloads are hints, not imports. Dropping them costs a page nothing it
+  // actually needs: the entry script is untouched, and anything genuinely
+  // reachable is still imported on demand.
+  html = html.replace(/\s*<link[^>]+rel="modulepreload"[^>]*>/gu, "");
+
   // The app sets document.title for some routes and not others; take whatever
   // it rendered unless this route states one.
   const rendered = /<title>([^<]*)<\/title>/u.exec(html)?.[1];

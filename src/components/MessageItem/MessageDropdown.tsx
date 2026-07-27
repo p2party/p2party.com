@@ -5,7 +5,7 @@ import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capawesome-team/capacitor-file-opener";
 import { isURL } from "class-validator";
 import { useSelector } from "react-redux";
-import p2party from "p2party";
+import p2party from "../../protocol/sdk";
 
 import { FileCard, MessageBubble } from "../custom/MessageBubble";
 

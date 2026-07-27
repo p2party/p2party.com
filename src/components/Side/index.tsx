@@ -26,7 +26,7 @@ import QRCodeAlert from "../alerts/QRCodeAlert";
 
 import { useRoom } from "../../hooks/useRoom";
 import { absoluteRoomInviteUrl } from "../../protocol/roomAccess";
-import p2party from "p2party";
+import p2party from "../../protocol/sdk";
 
 const CatAvatar = lazy(() => import("../avatars/cat"));
 const SignalingDropdown = lazy(() => import("./SignalingDropdown"));

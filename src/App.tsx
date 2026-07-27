@@ -1,19 +1,16 @@
 import { lazy, useEffect, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Provider } from "react-redux";
 
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 // import { ScreenOrientation } from "@capacitor/screen-orientation";
 import { SafeArea, SystemBarsStyle } from "@capacitor-community/safe-area";
 
-import p2party from "p2party";
-
 import { useDarkMode } from "usehooks-ts";
 import { UniversalLinkProvider } from "./hooks/useUniversalLink";
-import { RoomInviteProvider } from "./hooks/useRoomInvite";
 
 const ChatLayout = lazy(() => import("./components/custom/ChatLayout"));
+const RoomProviders = lazy(() => import("./components/custom/RoomProviders"));
 
 const HomePage = lazy(() => import("./pages/home"));
 const RoomsPage = lazy(() => import("./pages/rooms"));
@@ -127,13 +124,11 @@ const App = () => {
           <Route
             path='rooms'
             element={
-              <Provider store={p2party.store}>
-                <RoomInviteProvider>
-                  <Suspense>
-                    <ChatLayout />
-                  </Suspense>
-                </RoomInviteProvider>
-              </Provider>
+              <Suspense>
+                <RoomProviders>
+                  <ChatLayout />
+                </RoomProviders>
+              </Suspense>
             }
           >
             <Route
@@ -149,13 +144,11 @@ const App = () => {
           <Route
             path='r'
             element={
-              <Provider store={p2party.store}>
-                <RoomInviteProvider>
-                  <Suspense>
-                    <ChatLayout />
-                  </Suspense>
-                </RoomInviteProvider>
-              </Provider>
+              <Suspense>
+                <RoomProviders>
+                  <ChatLayout />
+                </RoomProviders>
+              </Suspense>
             }
           >
             <Route

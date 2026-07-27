@@ -1,12 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import p2party from "p2party";
 
 import "./index.css";
 import App from "./App";
-import { SELF_HOSTED_WASM_PATH } from "./protocol/wasm";
-
-p2party.setWasmSourceUrl(new URL(SELF_HOSTED_WASM_PATH, window.location.href));
 
 const container = document.getElementById("root")!;
 
@@ -61,7 +57,13 @@ if (!container.hasChildNodes()) {
     // textContent, not innerText: innerText is defined in terms of layout, so
     // it returns "" for a display:none subtree and forces a reflow on every
     // frame it is asked. textContent reads the tree React has actually built.
-    const ready = (container.textContent ?? "").trim().length > 200;
+    // Any content at all, not a character count. Every page is lazy behind a
+    // fallback-less Suspense, so React's first commit renders literally
+    // nothing and this stays false until the page chunk lands. A threshold
+    // instead of a presence check is what stranded /blog/<unknown-slug> --
+    // whose 404 view renders 194 characters -- under the stale snapshot for
+    // the full deadline, with the live page mounted invisibly beneath it.
+    const ready = (container.textContent ?? "").trim().length > 0;
     // The deadline matters: a route that legitimately renders less than the
     // threshold must not be left showing stale markup for ever.
     if (ready || performance.now() - startedAt > 4000) {

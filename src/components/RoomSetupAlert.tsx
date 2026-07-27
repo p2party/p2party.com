@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 
-import p2party from "p2party";
+import p2party from "../protocol/sdk";
 
 import {
   Alert,

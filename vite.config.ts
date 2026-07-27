@@ -40,15 +40,22 @@ export default defineConfig((configEnv) => {
     build: {
       rollupOptions: {
         output: {
-          // Split only the SDK. It is the largest dependency by far and moves
-          // on its own release cadence, so keeping it out of the entry chunk
-          // stops an app-code change from invalidating it in every cache.
+          // No manual chunking. Two attempts at steering it made things worse:
+          // `{ p2party: ["p2party"] }` let Rollup group the CommonJS interop
+          // helpers into the SDK chunk, and since the entry imports those
+          // helpers every page did `import{g,c}from"./p2party-*.js"` and
+          // dragged 406 KB of WebRTC and cryptography onto a blog post. A
+          // path predicate moved the helpers *and* grew the chunk to 519 KB.
           //
-          // React and Redux are deliberately NOT split: react-dom mutates
-          // react's internals at import time, and separating them across
-          // chunks breaks that ordering -- it renders a blank page with
-          // "Cannot set properties of undefined (setting 'Activity')".
-          manualChunks: { p2party: ["p2party"] },
+          // Left alone, Rollup puts a module in a chunk reachable from the
+          // things that actually import it, which is the property that matters
+          // here: the SDK is imported only by the room routes and by one
+          // deferred call on the landing page.
+          //
+          // React and Redux must stay together wherever they land: react-dom
+          // mutates react's internals at import time, and separating them
+          // across chunks renders a blank page with "Cannot set properties of
+          // undefined (setting 'Activity')".
         },
       },
     },

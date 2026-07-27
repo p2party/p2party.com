@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback } from "react";
 import { shallowEqual, useSelector } from "react-redux";
 import { useLocalStorage } from "usehooks-ts";
 
-import p2party from "p2party";
+import p2party from "../protocol/sdk";
 
 import {
   getTransientRoomPin,

@@ -1,4 +1,4 @@
-import p2party from "p2party";
+import p2party from "./sdk";
 
 import {
   immediateRoomPolicy,

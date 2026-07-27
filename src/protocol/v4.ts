@@ -1,4 +1,5 @@
-import p2party from "p2party";
+import p2party from "./sdk";
+import { CELL_BYTES, PAYLOAD_BYTES_PER_CELL } from "./wire";
 
 import type {
   MessageTransferHandle as PackageMessageTransferHandle,
@@ -154,9 +155,19 @@ export const COVER_LIMITS = {
 } as const;
 
 /** The exact size of one cell on the wire. */
-export const CELL_BYTES = p2party.WIRE_CHUNK_FRAME_LEN;
+export { CELL_BYTES, PAYLOAD_BYTES_PER_CELL } from "./wire";
+
+// The literals in ./wire exist so the landing page does not import the SDK.
+// This is the check that keeps them honest: it runs on every route that loads
+// the SDK at all, which is every route that could act on a wrong number.
+if (
+  CELL_BYTES !== p2party.WIRE_CHUNK_FRAME_LEN ||
+  PAYLOAD_BYTES_PER_CELL !== p2party.MAX_CHUNK_SIZE
+)
+  console.error(
+    `p2party.com: wire constants drifted from the SDK — cell ${String(CELL_BYTES)} vs ${String(p2party.WIRE_CHUNK_FRAME_LEN)}, payload ${String(PAYLOAD_BYTES_PER_CELL)} vs ${String(p2party.MAX_CHUNK_SIZE)}. Update src/protocol/wire.ts.`,
+  );
 /** How many of those bytes can be yours, after header and Merkle proof. */
-export const PAYLOAD_BYTES_PER_CELL = p2party.MAX_CHUNK_SIZE;
 
 export interface CoverSchedule {
   coverCadenceMs: number;

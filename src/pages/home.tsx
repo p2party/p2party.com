@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, lazy, Suspense } from "react";
-import p2party from "p2party";
 
 import { Button } from "../components/button";
 import { Link } from "../components/link";
@@ -117,16 +116,26 @@ const steps = [
 
 const HomePage = () => {
   const [roomSetupOpen, setRoomSetupOpen] = useState(false);
-  const [storedRooms, setStoredRooms] = useState<number | null>(null);
+  // A browser that has never been in a room has no rooms to count, and the SDK
+  // writes peerId on its first run -- so its absence is a reliable "there is
+  // nothing here". Resolved as initial state rather than in an effect: it is
+  // known before the first render, and setting it inside one would cascade.
+  const [storedRooms, setStoredRooms] = useState<number | null>(() =>
+    localStorage.getItem("peerId") === null ? 0 : null,
+  );
 
   // Anyone with a saved room used to have the landing page painted and then
   // yanked out from under them by a redirect to /rooms. That is the flicker,
   // and it also meant returning visitors could never read the page. The rooms
   // are offered as a destination instead of imposed as one.
   useEffect(() => {
+    // First-time visitors, which is most of them, never load 406 KB of WebRTC
+    // and cryptography to be told zero.
+    if (localStorage.getItem("peerId") === null) return;
     let cancelled = false;
-    void p2party
-      .getAllExistingRooms()
+    // Otherwise: imported on demand, after paint, never before it.
+    void import("../protocol/sdk")
+      .then(({ default: p2party }) => p2party.getAllExistingRooms())
       .then((rooms) => {
         if (!cancelled) setStoredRooms(rooms.length);
       })
@@ -252,7 +261,12 @@ const HomePage = () => {
         </div>
       </div>
       <Suspense>
-        <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
+        {/* Mounted on demand: the chunk (and the SDK it needs to make a room)
+            is fetched when someone actually asks for a room, not on the chance
+            that they might. */}
+        {roomSetupOpen && (
+          <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
+        )}
       </Suspense>
       {/* Feature cards */}
       <div className='relative mx-auto mb-14 grid w-full max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4'>
