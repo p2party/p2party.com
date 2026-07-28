@@ -59,7 +59,7 @@ export function SidebarLayout({
   const [showSidebar, setShowSidebar] = useState(false);
 
   return (
-    <div className='relative isolate flex h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full bg-white max-lg:flex-col lg:bg-zinc-50 dark:bg-black dark:lg:bg-zinc-950'>
+    <div className='relative isolate flex h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full overflow-hidden bg-white max-lg:flex-col lg:bg-zinc-50 dark:bg-black dark:lg:bg-zinc-950'>
       {/* Sidebar on desktop */}
       <div className='fixed inset-y-0 left-0 w-64 max-lg:hidden'>{sidebar}</div>
 
@@ -82,8 +82,8 @@ export function SidebarLayout({
       </header>
 
       {/* Content */}
-      <main className='flex flex-1 flex-col pb-2 lg:min-w-0 lg:pt-2 lg:pr-2 lg:pl-64'>
-        <div className='flex grow flex-col bg-white px-1 py-2 lg:border-2 lg:border-zinc-950 lg:px-10 dark:bg-black dark:lg:border-zinc-200'>
+      <main className='flex min-h-0 flex-1 flex-col overflow-hidden pb-2 lg:min-w-0 lg:pt-2 lg:pr-2 lg:pl-64'>
+        <div className='flex min-h-0 grow flex-col bg-white px-1 py-2 lg:border-2 lg:border-zinc-950 lg:px-10 dark:bg-black dark:lg:border-zinc-200'>
           <div className='mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col'>
             {children}
           </div>

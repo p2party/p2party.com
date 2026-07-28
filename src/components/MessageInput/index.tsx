@@ -8,6 +8,7 @@ import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 
 import FileButton from "./FileButton";
 import MicrophoneButton from "./MicrophoneButton";
+import { composerBottomOffset } from "./viewportGeometry";
 
 import { useRoom } from "../../hooks/useRoom";
 
@@ -31,51 +32,51 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
 
   // Keyboard avoidance.
   //
-  // Where the engine shrinks the LAYOUT viewport for the keyboard -- Capacitor
-  // with a single inset owner, and any browser honouring
-  // interactive-widget=resizes-content -- window.innerHeight shrinks with it,
-  // so this offset computes to zero and `bottom: 0` is already correct. The
+  // The composer is a normal flex row below the message scroller. Where the
+  // engine shrinks the LAYOUT viewport for the keyboard -- Chrome Android
+  // honouring interactive-widget=resizes-content, or Capacitor with a single
+  // inset owner -- the row follows it and this spacer computes to zero. The
   // correction exists for engines that shrink only the VISUAL viewport, iOS
-  // Safari above all, where the layout viewport keeps its full height and a
-  // fixed bar would otherwise sit behind the keyboard.
+  // Safari above all.
   //
-  // Deliberately driven by `resize` alone. Subscribing to `scroll` as well and
-  // calling scrollIntoView from the handler formed a feedback loop -- the
-  // smooth scroll emitted more scroll events, which scrolled again -- that
-  // ratcheted the bar upward.
+  // iOS can also pan the visual viewport after focus without resizing it.
+  // VisualViewport.scroll therefore re-measures offsetTop, but this listener
+  // never scrolls the document. The spacer participates in flex layout, so the
+  // message row shrinks with it instead of being covered by an overlay.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
 
-    const onResize = () => {
-      const offset = window.innerHeight - vv.height;
-      setBottomOffset(offset > 0 ? offset : 0);
+    const updateOffset = () => {
+      const inputBar = inputBarRef.current;
+      if (!inputBar) {
+        setBottomOffset(0);
+        return;
+      }
+
+      // marginBottom moves the row up; add the rendered margin back to recover
+      // the bottom assigned by the shell. Reading both values from the same
+      // layout frame also keeps consecutive viewport events idempotent.
+      const renderedMargin =
+        Number.parseFloat(inputBar.style.marginBottom) || 0;
+      const layoutBottom =
+        inputBar.getBoundingClientRect().bottom + renderedMargin;
+      const offset = composerBottomOffset(
+        layoutBottom,
+        vv.height,
+        vv.offsetTop,
+      );
+      setBottomOffset((current) => (current === offset ? current : offset));
     };
 
-    onResize();
-    vv.addEventListener("resize", onResize);
+    updateOffset();
+    window.addEventListener("resize", updateOffset);
+    vv.addEventListener("resize", updateOffset);
+    vv.addEventListener("scroll", updateOffset);
     return () => {
-      vv.removeEventListener("resize", onResize);
-    };
-  }, []);
-
-  // Bring the composer into view once the keyboard has settled. The offset
-  // itself is not recomputed here: a fixed timeout races the keyboard
-  // animation and would latch a half-open measurement that no later event
-  // corrects, and the resize listener above already tracks it.
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const onFocus = () => {
-      requestAnimationFrame(() => {
-        textarea.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      });
-    };
-
-    textarea.addEventListener("focus", onFocus);
-    return () => {
-      textarea.removeEventListener("focus", onFocus);
+      window.removeEventListener("resize", updateOffset);
+      vv.removeEventListener("resize", updateOffset);
+      vv.removeEventListener("scroll", updateOffset);
     };
   }, [channels.length]);
 
@@ -117,8 +118,8 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
       {channels.length > 0 && (
         <div
           ref={inputBarRef}
-          style={{ bottom: bottomOffset }}
-          className='fixed right-0 left-0 z-50 shrink-0 border-t-2 border-zinc-950 bg-white px-2 py-2 sm:px-4 sm:py-3 lg:mr-2 lg:ml-64 lg:px-14 dark:border-zinc-200 dark:bg-black'
+          style={{ marginBottom: bottomOffset }}
+          className='relative z-50 w-full shrink-0 border-t-2 border-zinc-950 bg-white px-2 py-2 sm:px-4 sm:py-3 lg:px-14 dark:border-zinc-200 dark:bg-black'
         >
           <div className='flex max-w-full items-end gap-1.5'>
             <FileButton handleFiles={handleFiles} />

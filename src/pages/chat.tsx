@@ -13,6 +13,7 @@ import {
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
 import HandshakeStatusBanner from "../components/custom/HandshakeStatusBanner";
+import { isNearMessageBottom } from "./chatScroll";
 
 import type { SendMessageResult, MessageTransferHandle } from "../protocol/v4";
 import type { TrackedTransfer } from "../protocol/delivery";
@@ -63,13 +64,14 @@ const ChatPage = () => {
     (status) => status.status === "failed",
   );
 
-  const [messageCount, setMessageCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dots, setDots] = useState("");
   const [transfers, setTransfers] = useState<TrackedTransfer[]>([]);
   const [sendError, setSendError] = useState("");
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const messageContentRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
   const cancelledTransfersRef = useRef(new Set<string>());
 
   // const handleUnload = () => {
@@ -104,30 +106,52 @@ const ChatPage = () => {
   //   }
   // }, [roomId]);
 
+  const scrollToMessageBottom = useCallback(() => {
+    const messageList = messageListRef.current;
+    if (!messageList) return;
+    messageList.scrollTop = messageList.scrollHeight;
+    stickToBottomRef.current = true;
+  }, []);
+
+  // New messages follow the live edge only while the reader is already there.
+  // Unlike scrollIntoView, this cannot scroll the page or jump a reader who is
+  // looking at older history.
   useEffect(() => {
-    const scroll = () => {
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView(
-          // false
-          {
-            block: "end",
-            behavior: "smooth",
-            inline: "nearest",
-          },
-        );
-      }
+    if (stickToBottomRef.current) scrollToMessageBottom();
+  }, [messages.length, scrollToMessageBottom]);
+
+  // A channel switch is explicit navigation, so enter the selected thread at
+  // its live edge. Per-channel scroll restoration does not exist here; carrying
+  // an unrelated numeric scrollTop across threads would be accidental state.
+  useEffect(() => {
+    stickToBottomRef.current = true;
+    scrollToMessageBottom();
+  }, [selectedChannel, scrollToMessageBottom]);
+
+  // The composer, keyboard spacer, and auto-growing textarea are normal flex
+  // rows, so any of them can resize the message viewport. Preserve the live
+  // edge across those geometry changes, but leave a reader who scrolled up at
+  // the position they chose.
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    if (!messageList || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(() => {
+      if (stickToBottomRef.current) scrollToMessageBottom();
+    });
+    observer.observe(messageList);
+    if (messageContentRef.current) observer.observe(messageContentRef.current);
+    return () => {
+      observer.disconnect();
     };
+  }, [scrollToMessageBottom]);
 
-    if (messageCount === 0 && messages.length > 0) {
-      setTimeout(() => {
-        scroll();
-
-        setMessageCount(messages.length);
-      }, 500);
-    } else {
-      scroll();
-    }
-  }, [messageCount, messages.length]);
+  const handleMessageListScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      stickToBottomRef.current = isNearMessageBottom(event.currentTarget);
+    },
+    [],
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -440,8 +464,15 @@ const ChatPage = () => {
           </div>
         )}
 
-        {messages.length > 0 && (
-          <div className='mb-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white pb-24 dark:bg-black'>
+        {/* One scroll owner followed by one measured composer row. Keeping the
+            empty list mounted preserves the same geometry before the first
+            message instead of switching layout modes. */}
+        <div
+          ref={messageListRef}
+          onScroll={handleMessageListScroll}
+          className='min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-black'
+        >
+          <div ref={messageContentRef} className='flow-root'>
             {selectedMessages.map((message) => (
               <Suspense key={`${message.sha512Hex}-${message.timestamp}`}>
                 <MessageItem
@@ -456,26 +487,22 @@ const ChatPage = () => {
                 />
               </Suspense>
             ))}
-            <div
-              ref={messagesEndRef}
-              className='scroll-mb-24 md:scroll-mb-24 lg:scroll-mb-28'
-            />
+          </div>
+        </div>
+
+        {sendError && (
+          <div
+            role='alert'
+            className='shadow-brutal-sm relative z-50 mx-3 mb-2 max-w-sm shrink-0 self-end border-2 border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800 lg:mx-5 dark:bg-red-950 dark:text-red-200'
+          >
+            {sendError}
           </div>
         )}
+
+        <Suspense>
+          <MessageInput handleFiles={handleFiles} onSend={startTransfer} />
+        </Suspense>
       </div>
-
-      {sendError && (
-        <div
-          role='alert'
-          className='shadow-brutal-sm fixed right-3 bottom-44 z-50 max-w-sm border-2 border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800 lg:right-5 lg:bottom-48 dark:bg-red-950 dark:text-red-200'
-        >
-          {sendError}
-        </div>
-      )}
-
-      <Suspense>
-        <MessageInput handleFiles={handleFiles} onSend={startTransfer} />
-      </Suspense>
     </div>
   );
 };
