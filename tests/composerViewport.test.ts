@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { composerBottomOffset } from "../src/components/MessageInput/viewportGeometry";
+import {
+  boundedComposerHeight,
+  composerBottomOffset,
+  MESSAGE_COMPOSER_MAX_HEIGHT_PX,
+} from "../src/components/MessageInput/viewportGeometry";
 
 describe("mobile composer viewport geometry", () => {
   test("lifts by the visual-only keyboard occlusion", () => {
@@ -23,5 +27,18 @@ describe("mobile composer viewport geometry", () => {
     expect(composerBottomOffset(844, 500, -20)).toBe(344);
     expect(composerBottomOffset(500, 600, 20)).toBe(0);
     expect(composerBottomOffset(844, Number.NaN, 0)).toBe(0);
+  });
+});
+
+describe("long chat drafts", () => {
+  test("grows short drafts but caps long drafts for internal scrolling", () => {
+    expect(boundedComposerHeight(72)).toBe(72);
+    expect(boundedComposerHeight(1200)).toBe(MESSAGE_COMPOSER_MAX_HEIGHT_PX);
+  });
+
+  test("fails closed for invalid or negative measurements", () => {
+    expect(boundedComposerHeight(-20)).toBe(0);
+    expect(boundedComposerHeight(Number.NaN)).toBe(0);
+    expect(boundedComposerHeight(1200, -1)).toBe(0);
   });
 });

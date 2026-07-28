@@ -25,3 +25,18 @@ export const composerBottomOffset = (
     Math.max(0, visualViewportHeight) + Math.max(0, visualViewportOffsetTop);
   return Math.max(0, composerLayoutBottom - visibleBottom);
 };
+
+/**
+ * Keep a long draft from consuming the message viewport. 160px is roughly six
+ * lines with the current mobile textarea metrics; after that the draft becomes
+ * its own scroll owner, as in conventional chat composers.
+ */
+export const MESSAGE_COMPOSER_MAX_HEIGHT_PX = 160;
+
+export const boundedComposerHeight = (
+  contentHeight: number,
+  maxHeight = MESSAGE_COMPOSER_MAX_HEIGHT_PX,
+): number => {
+  if (!Number.isFinite(contentHeight) || !Number.isFinite(maxHeight)) return 0;
+  return Math.min(Math.max(0, contentHeight), Math.max(0, maxHeight));
+};

@@ -8,7 +8,11 @@ import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 
 import FileButton from "./FileButton";
 import MicrophoneButton from "./MicrophoneButton";
-import { composerBottomOffset } from "./viewportGeometry";
+import {
+  boundedComposerHeight,
+  composerBottomOffset,
+  MESSAGE_COMPOSER_MAX_HEIGHT_PX,
+} from "./viewportGeometry";
 
 import { useRoom } from "../../hooks/useRoom";
 
@@ -82,10 +86,14 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
 
   // Auto-resize textarea
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"; // reset first so shrinking works
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto"; // reset first so shrinking works
+    const contentHeight = textarea.scrollHeight;
+    const height = boundedComposerHeight(contentHeight);
+    textarea.style.height = `${height}px`;
+    textarea.style.overflowY = contentHeight > height ? "auto" : "hidden";
   }, [newMessage]);
 
   const handleSend = useCallback(async () => {
@@ -133,8 +141,10 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e)}
               placeholder='Type your message…'
+              aria-label='Message'
               aria-describedby='message-input-hint'
               resizable={false}
+              style={{ maxHeight: MESSAGE_COMPOSER_MAX_HEIGHT_PX }}
               className='shadow-brutal-sm flex-1 overflow-hidden rounded-none border-2 border-zinc-950 font-medium dark:border-zinc-200'
               rows={1}
             />
@@ -149,6 +159,9 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               <PaperAirplaneIcon />
             </Button>
           </div>
+          <p id='message-input-hint' className='sr-only'>
+            Press Enter to send. Press Shift+Enter for a new line.
+          </p>
         </div>
       )}
     </>

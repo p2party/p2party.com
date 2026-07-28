@@ -13,7 +13,11 @@ import {
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
 import HandshakeStatusBanner from "../components/custom/HandshakeStatusBanner";
-import { isNearMessageBottom } from "./chatScroll";
+import {
+  isLayoutOnlyMessageScroll,
+  isNearMessageBottom,
+  type MessageScrollGeometry,
+} from "./chatScroll";
 
 import type { SendMessageResult, MessageTransferHandle } from "../protocol/v4";
 import type { TrackedTransfer } from "../protocol/delivery";
@@ -72,6 +76,8 @@ const ChatPage = () => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const messageContentRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
+  const observedMessageGeometryRef = useRef<MessageScrollGeometry | null>(null);
+  const resizeObserverOwnsGeometryRef = useRef(false);
   const cancelledTransfersRef = useRef(new Set<string>());
 
   // const handleUnload = () => {
@@ -111,6 +117,11 @@ const ChatPage = () => {
     if (!messageList) return;
     messageList.scrollTop = messageList.scrollHeight;
     stickToBottomRef.current = true;
+    observedMessageGeometryRef.current = {
+      scrollHeight: messageList.scrollHeight,
+      clientHeight: messageList.clientHeight,
+      scrollTop: messageList.scrollTop,
+    };
   }, []);
 
   // New messages follow the live edge only while the reader is already there.
@@ -136,19 +147,51 @@ const ChatPage = () => {
     const messageList = messageListRef.current;
     if (!messageList || typeof ResizeObserver === "undefined") return;
 
+    resizeObserverOwnsGeometryRef.current = true;
+    observedMessageGeometryRef.current = {
+      scrollHeight: messageList.scrollHeight,
+      clientHeight: messageList.clientHeight,
+      scrollTop: messageList.scrollTop,
+    };
     const observer = new ResizeObserver(() => {
       if (stickToBottomRef.current) scrollToMessageBottom();
+      observedMessageGeometryRef.current = {
+        scrollHeight: messageList.scrollHeight,
+        clientHeight: messageList.clientHeight,
+        scrollTop: messageList.scrollTop,
+      };
     });
     observer.observe(messageList);
     if (messageContentRef.current) observer.observe(messageContentRef.current);
     return () => {
       observer.disconnect();
+      resizeObserverOwnsGeometryRef.current = false;
+      observedMessageGeometryRef.current = null;
     };
   }, [scrollToMessageBottom]);
 
   const handleMessageListScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
-      stickToBottomRef.current = isNearMessageBottom(event.currentTarget);
+      const messageList = event.currentTarget;
+      const previousGeometry = observedMessageGeometryRef.current;
+      const currentGeometry = {
+        scrollHeight: messageList.scrollHeight,
+        clientHeight: messageList.clientHeight,
+        scrollTop: messageList.scrollTop,
+      };
+
+      // Chrome and Safari can emit scroll before ResizeObserver when the
+      // keyboard or an auto-growing composer shrinks this element. Preserve the
+      // pre-resize pin in that case; the observer will restore the live edge.
+      if (
+        resizeObserverOwnsGeometryRef.current &&
+        previousGeometry &&
+        isLayoutOnlyMessageScroll(previousGeometry, currentGeometry)
+      )
+        return;
+
+      stickToBottomRef.current = isNearMessageBottom(messageList);
+      observedMessageGeometryRef.current = currentGeometry;
     },
     [],
   );
@@ -380,7 +423,7 @@ const ChatPage = () => {
             fault that is entirely on this side. */}
         {signalingServerConnectionState.isConnected &&
           !signalingServerConnectionState.isVerified && (
-            <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
+            <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
               <Badge
                 color='yellow'
                 className='shadow-brutal-sm min-h-11 w-full items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase dark:border-zinc-200'
@@ -394,7 +437,7 @@ const ChatPage = () => {
           signalingServerConnectionState.isConnected &&
           signalingServerConnectionState.isVerified &&
           !hasHandshakeFailure && (
-            <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
+            <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
               <Badge
                 color='orange'
                 className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-zinc-200'
@@ -414,7 +457,7 @@ const ChatPage = () => {
           )}
 
         {!signalingServerConnectionState.isConnected && (
-          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
+          <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
             <Badge
               color='red'
               className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-zinc-200'
@@ -434,7 +477,7 @@ const ChatPage = () => {
         )}
 
         {messages.length === 0 && peers.length > 0 && (
-          <div className='fixed top-16 right-0 left-0 z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-64'>
+          <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
             <Badge
               color='green'
               className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500 dark:border-zinc-200'
@@ -470,6 +513,11 @@ const ChatPage = () => {
         <div
           ref={messageListRef}
           onScroll={handleMessageListScroll}
+          role='log'
+          aria-label={`Messages in ${selectedChannel}`}
+          aria-live='polite'
+          aria-relevant='additions text'
+          tabIndex={0}
           className='min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-black'
         >
           <div ref={messageContentRef} className='flow-root'>

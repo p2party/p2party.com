@@ -33,9 +33,9 @@ function MobileSidebar({
       />
       <Headless.DialogPanel
         transition
-        className='fixed inset-y-0 w-full max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full'
+        className='fixed inset-y-0 left-(--safe-area-inset-left) w-full max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full'
       >
-        <div className='flex h-full flex-col pt-(--safe-area-inset-top)'>
+        <div className='flex h-full flex-col pt-(--safe-area-inset-top) pb-(--safe-area-inset-bottom)'>
           <div className='-mb-3 px-4 pt-3'>
             <Headless.CloseButton as={NavbarItem} aria-label='Close navigation'>
               <CloseMenuIcon />
@@ -59,9 +59,11 @@ export function SidebarLayout({
   const [showSidebar, setShowSidebar] = useState(false);
 
   return (
-    <div className='relative isolate flex h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full overflow-hidden bg-white max-lg:flex-col lg:bg-zinc-50 dark:bg-black dark:lg:bg-zinc-950'>
+    <div className='relative isolate flex h-dvh w-full overflow-hidden bg-white pt-(--safe-area-inset-top) pr-(--safe-area-inset-right) pb-(--safe-area-inset-bottom) pl-(--safe-area-inset-left) max-lg:flex-col lg:bg-zinc-50 dark:bg-black dark:lg:bg-zinc-950'>
       {/* Sidebar on desktop */}
-      <div className='fixed inset-y-0 left-0 w-64 max-lg:hidden'>{sidebar}</div>
+      <div className='fixed inset-y-0 left-(--safe-area-inset-left) w-64 max-lg:hidden'>
+        {sidebar}
+      </div>
 
       {/* Sidebar on mobile */}
       <MobileSidebar open={showSidebar} close={() => setShowSidebar(false)}>
@@ -69,7 +71,7 @@ export function SidebarLayout({
       </MobileSidebar>
 
       {/* Navbar on mobile */}
-      <header className='fixed top-0 right-0 left-0 z-50 flex items-center border-b-2 border-zinc-950 bg-white px-2 sm:px-4 lg:hidden dark:border-zinc-200 dark:bg-black'>
+      <header className='fixed top-(--safe-area-inset-top) right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 flex items-center border-b-2 border-zinc-950 bg-white px-2 sm:px-4 lg:hidden dark:border-zinc-200 dark:bg-black'>
         <div className='py-2'>
           <NavbarItem
             onClick={() => setShowSidebar(true)}
