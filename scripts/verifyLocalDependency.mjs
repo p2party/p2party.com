@@ -42,6 +42,13 @@ if (!existsSync(artifactPath))
 const lockEntry = packageLock.packages?.["node_modules/p2party"];
 if (lockEntry?.resolved !== dependency)
   throw new Error("package-lock.json resolves a different p2party artifact");
+if (typeof lockEntry.version !== "string")
+  throw new Error("package-lock.json has no p2party package version");
+const expectedDependency = `file:vendor/p2party-${lockEntry.version}.tgz`;
+if (dependency !== expectedDependency)
+  throw new Error(
+    `p2party dependency must be the version-matched artifact ${expectedDependency}`,
+  );
 
 const artifact = readFileSync(artifactPath);
 const integrity = `sha512-${createHash("sha512")
@@ -86,6 +93,11 @@ const extractTarEntry = (tarball, wantedPath) => {
 };
 
 const packagedWasm = extractTarEntry(artifact, "package/lib/libcrypto.wasm");
+const packagedManifest = JSON.parse(
+  extractTarEntry(artifact, "package/package.json").toString("utf8"),
+);
+if (packagedManifest.version !== lockEntry.version)
+  throw new Error("p2party tarball version differs from package-lock.json");
 const packagedProvenance = JSON.parse(
   extractTarEntry(artifact, "package/lib/libcrypto.provenance.json").toString(
     "utf8",
@@ -98,6 +110,21 @@ const publicWasmPath = path.join(
   `p2party-${lockEntry.version}`,
   "libcrypto.wasm",
 );
+const expectedRuntimeWasmPath = `/vendor/p2party-${lockEntry.version}/libcrypto.wasm`;
+const runtimeWasmSource = readFileSync(
+  path.join(projectRoot, "src", "protocol", "wasm.ts"),
+  "utf8",
+);
+const configuredRuntimePaths = [
+  ...runtimeWasmSource.matchAll(/SELF_HOSTED_WASM_PATH\s*=\s*"([^"]+)"/gu),
+].map(([, configuredPath]) => configuredPath);
+if (
+  configuredRuntimePaths.length !== 1 ||
+  configuredRuntimePaths[0] !== expectedRuntimeWasmPath
+)
+  throw new Error(
+    `frontend runtime WASM path must be ${expectedRuntimeWasmPath}`,
+  );
 if (!existsSync(publicWasmPath))
   throw new Error(`Missing self-hosted p2party WASM: ${publicWasmPath}`);
 const publicWasm = readFileSync(publicWasmPath);

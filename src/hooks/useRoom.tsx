@@ -62,7 +62,6 @@ export const useRoom = ({
       .roomSelector(state)
       .find((candidate) => candidate.url === roomUrl);
     return {
-      exists: room !== undefined,
       id: room?.id ?? "",
       onlyConnectWithKnownAddresses:
         room?.onlyConnectWithKnownAddresses ?? false,
@@ -186,20 +185,8 @@ export const useRoom = ({
   );
 
   const connectToSignaling = useCallback(
-    async (roomUrl: string) => {
-      const canonicalRoomUrl = p2party.normalizeRoomCapability(roomUrl);
-      // The first contact establishes an immutable authenticated room policy.
-      // Never let a PIN invitation fall through the legacy policy-less path.
-      if (!roomView.exists) {
-        await connectToRoom(canonicalRoomUrl);
-        return;
-      }
-      await p2party.connectToSignalingServer(
-        canonicalRoomUrl,
-        signalingServerUrl,
-      );
-    },
-    [connectToRoom, roomView.exists, signalingServerUrl],
+    async (roomUrl: string) => await connectToRoom(roomUrl),
+    [connectToRoom],
   );
 
   const sendMessage = useCallback(

@@ -1,7 +1,7 @@
 import { Writable } from "node:stream";
 
 import { renderToPipeableStream } from "react-dom/server";
-import { StaticRouter } from "react-router-dom";
+import { StaticRouter } from "react-router";
 
 import { AppRoutes } from "./routes";
 import { lazyPages } from "./pages/registry";

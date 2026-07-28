@@ -1,5 +1,5 @@
 import { useEffect, useRef, FC, lazy } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import { useLocalStorage } from "usehooks-ts";
 
 import { SidebarLayout } from "../sidebar-layout";

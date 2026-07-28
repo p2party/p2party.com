@@ -1,6 +1,6 @@
 import * as Headless from "@headlessui/react";
 import React, { forwardRef } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink } from "react-router";
 
 /**
  * Catalyst ships this as a plain `<a>` with a TODO to wire it to the router.

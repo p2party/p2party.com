@@ -10,20 +10,19 @@ not a generic component library.
 
 ## Protocol status
 
-The protocol-v4 release target consumes an immutable local `p2party` 0.14.2
+The protocol-v4 release target consumes an immutable local `p2party` 0.14.4
 tarball:
 
 ```text
-file:vendor/p2party-0.14.2.tgz
+file:vendor/p2party-0.14.4.tgz
 ```
 
-Artifact SHA-256:
-`894401a78ab36674649f3cdb5c3d7e6b7d0b5ce95e8a095cd1a705880158d186`.
-
 The browser loads the matching committed
-`public/vendor/p2party-0.14.2/libcrypto.wasm`; the SDK's build-pinned SRI still
+`public/vendor/p2party-0.14.4/libcrypto.wasm`; the SDK's build-pinned SRI still
 applies. `npm run provenance:check` verifies the tarball, its embedded WASM
-provenance, the lockfile integrity, and the self-hosted bytes as one unit.
+provenance, the lockfile integrity, and the self-hosted bytes as one unit, and
+prints SHA-256 values for release records. The lockfile's SHA-512 integrity is
+the artifact source of truth; the README does not duplicate it.
 
 Protocol v4 uses interactive 3DH combined with one exact room-wide ML-KEM suite:
 ML-KEM-512, ML-KEM-768 (the default), or ML-KEM-1024. It also provides optional
@@ -51,7 +50,7 @@ Prerequisites:
 
 - Node.js 24.11.1 and npm 11.6.2
 - Bun 1.3.14 for the unit-test runner
-- the committed, verified `vendor/p2party-0.14.2.tgz`
+- the committed, verified `vendor/p2party-0.14.4.tgz`
 
 Install and run:
 
@@ -62,9 +61,9 @@ npm run dev
 
 `package-lock.json` is the authoritative dependency graph. Do not replace a
 published tarball while keeping the same version: build it once, record its
-SHA-256, and update the dependency and lockfile in the same release commit. A
-public release is incomplete until those references and the recorded digest
-agree.
+integrity in the lockfile, and update the dependency and lockfile in the same
+release commit. A public release is incomplete until those references and
+bytes agree.
 
 Paired local development may temporarily use a sibling `file:../p2party-js/...`
 artifact, but public commits must return to the immutable vendored tarball (or

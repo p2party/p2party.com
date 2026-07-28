@@ -5,7 +5,7 @@ import {
   type KeyboardEvent,
   type SetStateAction,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 import p2party from "../protocol/sdk";
 
