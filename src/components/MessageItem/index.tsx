@@ -320,7 +320,7 @@ const MessageItem: FC<MessageItemProps> = ({
 
   return (
     <div
-      className={`mb-3 flex items-end gap-1 sm:mb-4 sm:gap-2 ${
+      className={`mb-3 flex items-end gap-2 sm:mb-4 ${
         own ? "justify-end" : "justify-start"
       }`}
     >

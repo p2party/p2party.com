@@ -29,67 +29,53 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null);
 
-  // Virtual keyboard handling for mobile browsers
+  // Keyboard avoidance.
+  //
+  // Where the engine shrinks the LAYOUT viewport for the keyboard -- Capacitor
+  // with a single inset owner, and any browser honouring
+  // interactive-widget=resizes-content -- window.innerHeight shrinks with it,
+  // so this offset computes to zero and `bottom: 0` is already correct. The
+  // correction exists for engines that shrink only the VISUAL viewport, iOS
+  // Safari above all, where the layout viewport keeps its full height and a
+  // fixed bar would otherwise sit behind the keyboard.
+  //
+  // Deliberately driven by `resize` alone. Subscribing to `scroll` as well and
+  // calling scrollIntoView from the handler formed a feedback loop -- the
+  // smooth scroll emitted more scroll events, which scrolled again -- that
+  // ratcheted the bar upward.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
 
     const onResize = () => {
-      // When virtual keyboard opens, visualViewport.height shrinks
-      // The offset is the difference between the window inner height and viewport height
       const offset = window.innerHeight - vv.height;
       setBottomOffset(offset > 0 ? offset : 0);
-
-      // Scroll the textarea into view when keyboard opens
-      if (offset > 0 && textareaRef.current) {
-        requestAnimationFrame(() => {
-          textareaRef.current?.scrollIntoView({
-            block: "nearest",
-            behavior: "smooth",
-          });
-        });
-      }
     };
 
+    onResize();
     vv.addEventListener("resize", onResize);
-    vv.addEventListener("scroll", onResize);
-
     return () => {
       vv.removeEventListener("resize", onResize);
-      vv.removeEventListener("scroll", onResize);
     };
   }, []);
 
-  // Also handle focus/blur events for iOS Safari
+  // Bring the composer into view once the keyboard has settled. The offset
+  // itself is not recomputed here: a fixed timeout races the keyboard
+  // animation and would latch a half-open measurement that no later event
+  // corrects, and the resize listener above already tracks it.
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     const onFocus = () => {
-      // Small delay to let keyboard open
-      setTimeout(() => {
-        const vv = window.visualViewport;
-        if (vv) {
-          const offset = window.innerHeight - vv.height;
-          setBottomOffset(offset > 0 ? offset : 0);
-        }
+      requestAnimationFrame(() => {
         textarea.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      }, 300);
-    };
-
-    const onBlur = () => {
-      // Delay to avoid flash during keyboard dismiss animation
-      setTimeout(() => {
-        setBottomOffset(0);
-      }, 100);
+      });
     };
 
     textarea.addEventListener("focus", onFocus);
-    textarea.addEventListener("blur", onBlur);
-
     return () => {
       textarea.removeEventListener("focus", onFocus);
-      textarea.removeEventListener("blur", onBlur);
     };
   }, [channels.length]);
 

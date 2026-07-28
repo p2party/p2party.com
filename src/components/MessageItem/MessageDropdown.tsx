@@ -251,7 +251,10 @@ const MessageDropdown = ({
   const body = (
     <>
       <Dropdown>
-        <DropdownButton plain className='size-fit cursor-pointer p-0!'>
+        <DropdownButton
+          plain
+          className='size-fit max-w-full cursor-pointer p-0!'
+        >
           {msgCategory === p2party.MessageCategory.Text && url.length === 0 && (
             <Text
               className={`text-left tracking-wide wrap-break-word whitespace-pre-line ${message.fromPeerId === peerId ? "font-medium text-white" : "font-normal text-zinc-950 dark:text-white"} text-pretty wrap-break-word text-clip hyphens-auto antialiased select-text`}

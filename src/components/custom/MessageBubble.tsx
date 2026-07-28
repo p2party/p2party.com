@@ -379,7 +379,7 @@ export const DeliveryCaption = ({
       </button>
     )}
 
-    {summary && summary.detail.length > 1 && (
+    {summary && summary.detail.length > 0 && (
       <details className='w-full'>
         <summary
           className={`cursor-pointer font-mono text-[10px] ${MUTED_ON[surface]}`}
