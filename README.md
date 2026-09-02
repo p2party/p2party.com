@@ -47,7 +47,7 @@ authoritative resolver and lock.
 `package.json` depends on an immutable local tarball, not a registry range:
 
 ```text
-"p2party": "file:vendor/p2party-0.14.4.tgz"      // package.json, dependencies
+"p2party": "file:vendor/p2party-0.14.5.tgz"      // package.json, dependencies
 ```
 
 Four things to know: what that pins, how the WebAssembly module is served, the
@@ -56,7 +56,7 @@ convention — `npm run provenance:check` fails the build otherwise.
 
 ### 1. The bytes are pinned
 
-`vendor/p2party-0.14.4.tgz` is committed. `package-lock.json` records its
+`vendor/p2party-0.14.5.tgz` is committed. `package-lock.json` records its
 SHA-512, so `npm ci` from a clean clone installs exactly those bytes, with
 nothing about the SDK resolved over the network. (The other dependencies are
 ordinary registry packages and are still fetched.)
@@ -73,13 +73,13 @@ be the version-matched artifact file:vendor/p2party-<version>.tgz`. So run
 ### 2. The WASM is self-hosted, and still SRI-checked
 
 The SDK's cryptography is a WebAssembly module. Its default source is
-`https://cdn.p2party.com/@0.14.4/libcrypto.wasm`. `src/protocol/sdk.ts` — the
+`https://cdn.p2party.com/@0.14.5/libcrypto.wasm`. `src/protocol/sdk.ts` — the
 only module that may `import "p2party"` directly — calls `setWasmSourceUrl()`
-to redirect it to `/vendor/p2party-0.14.4/libcrypto.wasm`
+to redirect it to `/vendor/p2party-0.14.5/libcrypto.wasm`
 (`src/protocol/wasm.ts`), a copy committed under `public/`.
 
 Redirecting the source does not weaken the integrity check. The SDK fetches
-that URL with `{ integrity: "sha384-5bfyPJcX2JVKEJA8MK+YuBYDFu6VMg8Jphdt30CQBqHI8NIQSMwP1advvY5iuzXE" }`,
+that URL with `{ integrity: "sha384-xhO/aA9PVAK17BjqHHo25MVhidxGD4R8Ny6WIRQJx3Zw78ZQ8WpZVEUJR6pIQYZv" }`,
 a hash pinned when the SDK was built, so the browser rejects any bytes that do
 not match — from the CDN or from us. (Verified by reading the built bundle:
 `node_modules/p2party/lib/index.js` holds both the default URL and the
@@ -115,8 +115,8 @@ It prints the two hashes a release record needs. Run here:
 
 ```text
 $ npm run provenance:check
-p2party artifact SHA-256: 64819b97bc72652c51c473b41c7f922f6728bb08b8a0e861770a0d071fae0680
-p2party WASM SHA-256: 8e1ef6a853be326dbc41cb42dde4d7ebe9042ec2550cedadd1e02a757c01b91e
+p2party artifact SHA-256: 66a8cede03711ccdb846fd77c470d28c10c3b289a21e8536f88a757fa01b5473
+p2party WASM SHA-256: d40f62bbf0ebe17453962e1c5795629e17a6dc4e4fbf774201f061539363d66a
 ```
 
 CI runs it **before** `npm ci`, so a broken vendoring fails the build before a
@@ -159,8 +159,8 @@ npm ci && npm test && npm run build
 
 Step 4's `tar` invocation was run against the current release: the extracted
 bytes are byte-identical to the committed
-`public/vendor/p2party-0.14.4/libcrypto.wasm` (both SHA-256
-`8e1ef6a8…7c01b91e`).
+`public/vendor/p2party-0.14.5/libcrypto.wasm` (both SHA-256
+`d40f62bb…9363d66a`).
 
 Never replace a published artifact while keeping its version number.
 
@@ -411,10 +411,14 @@ Serve the built site first — verified working here:
 
 ```bash
 npm run build
-npx vite preview --port 5190 --strictPort
-# GET /                                    → 200
-# GET /vendor/p2party-0.14.4/libcrypto.wasm → 200
+npx vite preview --port 5820 --strictPort
+# GET /                                     → 200
+# GET /vendor/p2party-0.14.5/libcrypto.wasm → 200, 211367 bytes
 ```
+
+`vite preview` answers `/r` with `dist/index.html` rather than the prerendered
+`dist/r/index.html`, so a harness that wants the document the deployment
+actually serves needs a static server that tries `<route>/index.html` first.
 
 Then, in another shell:
 
@@ -465,7 +469,7 @@ and that they cover one preset and one payload size.
 
 ## What the app does today
 
-Grounded in the vendored `p2party` 0.14.4 and in this repository's code.
+Grounded in the vendored `p2party` 0.14.5 and in this repository's code.
 
 - **Handshake.** Every peer edge runs interactive 3DH together with one
   room-pinned ML-KEM suite — ML-KEM-512, ML-KEM-768 (default), or ML-KEM-1024.
@@ -517,24 +521,50 @@ Grounded in the vendored `p2party` 0.14.4 and in this repository's code.
   and `online`, deferred one macrotask so the SDK's liveness state lands first.
   A phone that was backgrounded with its radio off wakes through
   `visibilitychange` without necessarily focusing the window, which is why
-  `focus` alone was not enough.
+  `focus` alone was not enough. Underneath, the vendored SDK binds a peer edge
+  to the DTLS certificate it was authenticated against, so a transport the
+  other side has already replaced is dropped rather than reused; see
+  [What 0.14.5 added](#what-0145-added-and-how-it-was-checked-here) for what
+  that was and was not checked against here.
 
-### Not in the vendored SDK yet
+### What 0.14.5 added, and how it was checked here
 
-The current SDK release cycle binds a peer edge to the DTLS certificate it was
-authenticated against, re-dials the room after every failure teardown, fails a
-send to a peer that never authenticates instead of hanging, and adds a
-signaling heartbeat watchdog that marks a half-open socket disconnected. **None
-of that is in `p2party-0.14.4.tgz`** — it lives on the SDK branch
-`fix/peer-edge-transport-binding` and arrives here with the next re-vendor.
-(Checked by grepping the built bundle: the vendored SDK answers server pings
-with pongs, and it does verify the SDP `a=fingerprint:sha-256` against the
-certificates `getStats()` reports at connect time — `DTLS fingerprint mismatch:
-remote certificate ... (possible MITM)`. What it does not do is remember the
-certificate an edge was authenticated against and replace a stale transport
-when that certificate changes; there is also no re-dial and no watchdog.) The
-app-side half above ships today; do not advertise the SDK half from this
-repository until the tarball changes.
+`p2party-0.14.5.tgz` is the first vendored build that binds a peer edge to the
+DTLS certificate it was authenticated against: when the remote certificate
+changes, an authenticated transport is **replaced** rather than
+re-authenticated in place. It also re-dials the room after a failure teardown
+(but not after a deliberate disconnect), fails a send to a peer that never
+authenticates inside a bounded wait instead of hanging, and adds a signaling
+heartbeat watchdog that marks a half-open socket disconnected.
+
+Checked by grepping the installed bundle (`node_modules/p2party/lib/index.js`)
+against the one inside `p2party-0.14.4.tgz`, since the build is minified and
+only literals survive:
+
+| Evidence in the bundle                                              | 0.14.4 | 0.14.5  |
+| ------------------------------------------------------------------- | ------ | ------- |
+| `"reset-in-place"` (the replace-vs-rebind decision)                 | absent | present |
+| `"Peer is not authenticated on this transport: ..."` (bounded send) | absent | present |
+| `45e3` (`RATCHET_GATE_WAIT_TIMEOUT_MS`)                             | absent | present |
+| `25e3` (`SIGNALING_HEARTBEAT_TIMEOUT_MS`)                           | absent | present |
+| `["visibilitychange", ...]` wake-event list in the watchdog         | absent | present |
+
+**What was measured on the built site, and what was not.** A two-browser
+harness froze one page's whole Chromium process tree for 20 s with its UDP
+host-candidate buffers flooded — a phone asleep with the radio off — and both
+pages showed the peer again and exchanged a typed message about 2 s after the
+wake. That run passes on the previously vendored 0.14.4 build too, because the
+app's own reconnect-on-resume (`ChatLayout.tsx`) already covers it: it is
+evidence that this build works end to end, **not** evidence for the transport
+binding specifically. The isolating evidence for that is the SDK's own recorded
+matrix in `p2party-js/docs/e2e/desync/`, not a run from this repository.
+
+**Known follow-up, recorded and not claimed fixed.** In the SDK's matrix, the
+one arm where a frozen identity responder carries an in-flight transfer
+converges in about 37 s rather than the usual few seconds, because the
+surviving transport's SCTP association accepts the new streams of one side but
+not the other and recovery waits out the 30 s handshake step timeout. The
+outcome is correct; the latency is not yet.
 
 ---
 
