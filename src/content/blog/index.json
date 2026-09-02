@@ -100,6 +100,23 @@
       "description": "Signal's SPQR fragments ML-KEM across many messages. p2party's cells already fit one whole. Same problem, inverted constraint - and why none of Signal's analysis transfers.",
       "date": "2026-07-26",
       "commitAnchors": ["f5e9dad", "d5d2ad9", "f1a3a92", "ebe03b1"]
+    },
+    {
+      "order": 7,
+      "slug": "an-open-channel-is-not-a-live-peer",
+      "href": "/blog/an-open-channel-is-not-a-live-peer",
+      "file": "07-an-open-channel-is-not-a-live-peer.md",
+      "title": "An open channel is not a live peer: the phone that slept through its own disconnection",
+      "description": "Binding every peer edge to the DTLS certificate it was authenticated against, the four smaller lies that fell out of it, and the SIGSTOP harness that had to agree first.",
+      "date": "2026-09-02",
+      "commitAnchors": [
+        "4432feb",
+        "a923f64",
+        "2f763cd",
+        "8f7dbd0",
+        "d2e52e3",
+        "e6ecddd"
+      ]
     }
   ]
 }

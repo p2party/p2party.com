@@ -62,9 +62,11 @@ const RoomsPage = () => {
           </h1>
           <p className='mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
             This list is kept entirely client-side, in this browser&apos;s
-            IndexedDB. The invite links themselves never reach a server, so no
-            account, operator or backup holds them &mdash; and clearing site
-            data deletes them for good.
+            IndexedDB. No account, operator or backup holds it, and clearing
+            site data deletes it for good. The secret part of an invite lives in
+            the link&apos;s <code>#</code> fragment, which browsers do not send
+            in web requests &mdash; joining sends it to the signaling server,
+            which keeps only a hash of it.
           </p>
         </header>
 
@@ -106,6 +108,12 @@ const RoomsPage = () => {
                 never uploaded, so there is no account holding a list of them
                 and no server that could hand you one. An empty list is the only
                 thing we are able to show a new device.
+              </p>
+              <p className='mt-3 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
+                The same goes for your identity: the keys this browser signs
+                with are stored here and nowhere else. There is no restore flow
+                yet, so a cleared profile is a new person as far as everyone
+                else is concerned.
               </p>
               <p className='mt-3 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
                 Generate a room and it appears here once you have been in it.

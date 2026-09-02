@@ -26,7 +26,7 @@ const TOSPage = () => {
           Terms of Service
         </h1>
         <p className='mb-8 text-sm text-zinc-400 dark:text-zinc-500'>
-          Effective date: 17 October 2024 &middot; Last updated: 25 February
+          Effective date: 17 October 2024 &middot; Last updated: 2 September
           2026
         </p>
 
@@ -113,10 +113,17 @@ const TOSPage = () => {
         {/* 5 */}
         <SectionHeading>5. Connection &amp; Server Data</SectionHeading>
         <Para>
-          <strong>Signaling Server:</strong> processes ephemeral session
-          identifiers and SDP offers/answers to facilitate peer discovery. Data
-          is held in volatile memory for the duration of the connection and is
-          not written to disk.
+          <strong>Signaling Server:</strong> forwards SDP offers, answers, and
+          ICE candidates between peers to facilitate discovery, and keeps a
+          database row for your identity public key and for which room hashes it
+          belongs to. Section 3.1 of the{" "}
+          <Link
+            href='/privacy-policy'
+            className='text-orange-600 underline dark:text-orange-400'
+          >
+            Privacy Policy
+          </Link>{" "}
+          lists exactly what is stored and for how long.
         </Para>
         <Para>
           <strong>STUN Server:</strong> reflects your public IP address back to
@@ -196,6 +203,12 @@ const TOSPage = () => {
           We do not warrant that the Service will be uninterrupted, timely,
           secure, or error-free, or that any defects will be corrected. Your use
           of the Service is at your sole risk.
+        </Para>
+        <Para>
+          In particular, the protocol has not completed an independent
+          third-party security audit. We document what the software does and
+          publish the source so it can be checked; we do not warrant that it
+          resists any particular adversary.
         </Para>
 
         {/* 10 */}

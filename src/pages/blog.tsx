@@ -8,7 +8,7 @@ const BlogPage = () => (
       <section className='grid gap-10 pt-14 pb-12 lg:grid-cols-[1.15fr_.85fr] lg:items-end lg:pt-20'>
         <div>
           <p className='mb-4 font-mono text-xs font-bold tracking-[0.18em] text-orange-700 uppercase dark:text-orange-400'>
-            five commits-to-consequences reports
+            {blogPosts.length} commits-to-consequences reports
           </p>
           <h1 className='max-w-3xl text-4xl leading-[0.98] font-black tracking-[-0.055em] text-balance sm:text-6xl'>
             {blogSeries.title}

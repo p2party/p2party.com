@@ -350,7 +350,10 @@ const RoomSetupAlert = ({ isOpen, setIsOpen }: RoomSetupAlertProps) => {
                     id='cover-scheduled-description'
                     className='mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400'
                   >
-                    Send on a fixed rhythm, so nobody can tell when you sent.
+                    Every peer emits cells on the same fixed rhythm whether or
+                    not it has anything to send, so the schedule decides when a
+                    cell goes out instead of your typing. Only measured over
+                    loopback so far.
                   </p>
                 </button>
               </div>

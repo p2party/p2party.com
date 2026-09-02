@@ -26,8 +26,8 @@ const features = [
         <path d='M9 12h6' />
       </svg>
     ),
-    title: "End-to-End Encrypted",
-    desc: "Interactive 3DH + a room-fixed ML-KEM-512/768/1024 suite feeds each per-peer Double Ratchet. Messages never touch the signaling server.",
+    title: "Post-Quantum Handshake",
+    desc: "Every pair of browsers runs an interactive 3DH plus a room-fixed ML-KEM-512/768/1024 exchange, mixes both into one key, and hands it to a per-peer Double Ratchet. Ed25519 identities sign the whole transcript. Messages never touch the signaling server.",
   },
   {
     icon: (
@@ -69,8 +69,8 @@ const features = [
         <rect x='13' y='13' width='9' height='9' fill='currentColor' />
       </svg>
     ),
-    title: "Offensive Cryptography",
-    desc: "Every message is split into uniform 65,490-byte cells and padded to full, so a 9-byte reply and a 60 KiB photo look the same on the wire.",
+    title: "Uniform Cells",
+    desc: "Every message is split into 65,490-byte cells and padded to full, so a 9-byte reply and a 60 KiB photo produce the same-sized cell. The count and the timing of cells are still visible.",
   },
   {
     icon: (
@@ -91,8 +91,8 @@ const features = [
         <path d='M18 6h4M18 12h4M18 18h4' />
       </svg>
     ),
-    title: "Text & File Sharing",
-    desc: "Send text and large files directly between browsers — chunked, verified by Merkle proofs, and never uploaded.",
+    title: "Files Up To 10 GiB",
+    desc: "Send text and large files directly between browsers — chunked, verified against a Merkle root, written straight to disk as they arrive, and never uploaded. Reload mid-transfer and it picks up the gaps.",
   },
 ];
 
@@ -111,6 +111,55 @@ const steps = [
     num: "03",
     title: "Verify & Reassemble",
     body: "The recipient decrypts each cell, checks its Merkle proof, and reassembles the payload. Immediate delivery is the default; a room can instead fix a timed cover schedule, which every peer then follows.",
+  },
+];
+
+// Two lists that have to be read together. The left one is only credible
+// because the right one exists, and the right one is only publishable because
+// the project's own rule is that an untested guarantee does not get printed.
+const shipped = [
+  {
+    title: "Rooms with a PIN",
+    body: "Turn one on and both sides prove they know the same PIN without ever sending it. Repeated wrong guesses are rate-limited per identity, and the room tells you how long the wait is.",
+  },
+  {
+    title: "A fixed sending rhythm, if you want one",
+    body: "A room can be created with a cover schedule. Every peer in it then emits cells on the same cadence whether or not anyone is typing, and the room header tells you when that schedule is actually running.",
+  },
+  {
+    title: "Sessions that re-key themselves",
+    body: "A long-running conversation periodically runs a fresh ML-KEM exchange and moves to a new epoch, so a session does not rest forever on the key it was born with. Traffic waits while that exchange is in flight.",
+  },
+  {
+    title: "Contacts you can pin",
+    body: "Save a peer under a name and the app remembers the identity key behind it. If that key ever changes, you get told before you talk to them, not after.",
+  },
+  {
+    title: "Sleep, move, come back",
+    body: "A phone that was asleep with its radio off used to come back holding a connection that was already dead. Now the stale transport is replaced and re-authenticated, and the app reconnects when it becomes visible again, when you navigate back to it, and when the network returns.",
+  },
+  {
+    title: "A send that fails, says so",
+    body: "If a peer never finishes authenticating, the message fails with a reason instead of spinning forever. Delivery, partial delivery and failure are all reported on the message itself.",
+  },
+];
+
+const boundaries = [
+  {
+    title: "The signaling operator sees who is in the room",
+    body: "It stores a hash of the room, the identity keys in it, and when they connect. Hiding that needs a server-blind rendezvous, which is designed and not built.",
+  },
+  {
+    title: "Cover traffic is timing cover",
+    body: "The fixed rhythm has been measured over a loopback connection, not over a real network and not against a published traffic-analysis attack. Until it has been, we call it timing cover and not resistance.",
+  },
+  {
+    title: "Nobody independent has audited this",
+    body: "The protocol has had no third-party cryptographic review. The source and the threat model are public so that it can be checked; that is not the same as having been checked.",
+  },
+  {
+    title: "Your identity lives in this browser only",
+    body: "There is no backup or restore yet. Clear site data and the identity is gone for good. A recovery flow is the next thing being built.",
   },
 ];
 
@@ -204,7 +253,7 @@ const HomePage = () => {
         <div className='flex flex-col items-center text-center md:col-start-1 md:row-start-2 md:items-start md:self-start md:text-left'>
           <p className='animate-slide-up max-w-lg text-justify text-lg leading-relaxed hyphens-auto text-zinc-500 dark:text-zinc-400'>
             Send text and files, browser to browser, in identical 64 KB
-            encrypted blocks that hide what you sent — and how much.
+            encrypted blocks. A block is the same size whatever you put in it.
           </p>
 
           <div className='animate-slide-up mt-6 flex w-full flex-col items-stretch gap-3 sm:mt-7'>
@@ -306,8 +355,9 @@ const HomePage = () => {
         </h2>
         <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
           Encryption hides what you said. It does not hide that a 4 MB file
-          moved at 21:07. p2party attacks that second layer: uniform cells,
-          padding to full, and an optional fixed sending rhythm.
+          moved at 21:07. p2party works on that second layer: uniform cells,
+          padding to full, and an optional fixed sending rhythm. How much that
+          buys is a measurement, not a slogan — the boundaries are below.
         </p>
 
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
@@ -327,6 +377,62 @@ const HomePage = () => {
               </p>
             </div>
           ))}
+        </div>
+      </div>
+      {/* What it does today, and what it does not */}
+      <div className='relative mb-20 w-full max-w-6xl'>
+        <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
+          What It Does&nbsp;
+          <span className='text-orange-600 dark:text-orange-500'>Today</span>
+        </h2>
+        <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
+          Everything on the left is in the code you can read. Everything on the
+          right is a thing p2party does not do, said out loud, because a
+          guarantee nobody has tested is not a guarantee.
+        </p>
+
+        <div className='grid gap-6 lg:grid-cols-2'>
+          <div>
+            <h3 className='mb-3 font-mono text-xs font-bold tracking-[0.18em] text-orange-700 uppercase dark:text-orange-400'>
+              Shipped
+            </h3>
+            <ul className='space-y-3'>
+              {shipped.map((item) => (
+                <li
+                  key={item.title}
+                  className='border-2 border-zinc-950 bg-white p-4 dark:border-zinc-200 dark:bg-zinc-950'
+                >
+                  <h4 className='font-mono text-sm font-bold text-zinc-950 dark:text-white'>
+                    {item.title}
+                  </h4>
+                  <p className='mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
+                    {item.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className='mb-3 font-mono text-xs font-bold tracking-[0.18em] text-zinc-500 uppercase dark:text-zinc-400'>
+              Not claimed
+            </h3>
+            <ul className='space-y-3'>
+              {boundaries.map((item) => (
+                <li
+                  key={item.title}
+                  className='border-2 border-dashed border-zinc-400 bg-zinc-50 p-4 dark:border-zinc-600 dark:bg-black'
+                >
+                  <h4 className='font-mono text-sm font-bold text-zinc-950 dark:text-white'>
+                    {item.title}
+                  </h4>
+                  <p className='mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
+                    {item.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
       {/* Infrastructure */}
@@ -365,8 +471,9 @@ const HomePage = () => {
             </h3>
             <p className='text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
               A lightweight WebSocket relay that introduces peers to one
-              another. It never sees, stores, or forwards your messages — only
-              ephemeral connection metadata.
+              another. It never sees or forwards your messages. It does keep a
+              row for each identity key and for which room hashes it belongs to,
+              which is how a peer stays reachable across server processes.
             </p>
           </div>
 

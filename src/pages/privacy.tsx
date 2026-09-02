@@ -26,7 +26,7 @@ const PrivacyPage = () => {
           Privacy Policy
         </h1>
         <p className='mb-8 text-sm text-zinc-400 dark:text-zinc-500'>
-          Effective date: 17 October 2024 &middot; Last updated: 25 February
+          Effective date: 17 October 2024 &middot; Last updated: 2 September
           2026
         </p>
 
@@ -75,12 +75,49 @@ const PrivacyPage = () => {
           3.1 Signaling Server
         </h3>
         <Para>
-          Our WebSocket-based signaling server processes ephemeral session
-          identifiers and WebRTC Session Description Protocol (SDP) offers and
-          answers solely to introduce peers to one another. This data is held in
-          memory only for the lifetime of the WebSocket connection and is
-          automatically discarded when the connection closes. It is never
-          written to disk.
+          Our WebSocket-based signaling server introduces peers to one another.
+          WebRTC Session Description Protocol (SDP) offers, answers, and ICE
+          candidates are forwarded between two connected peers and are not
+          written to the database.
+        </Para>
+        <Para>
+          The server does keep a small PostgreSQL database, on the same EU
+          infrastructure, so that a peer can still be reached when the service
+          runs as more than one process. It holds:
+        </Para>
+        <Ul>
+          <li>
+            <strong>One row per identity:</strong> your client&rsquo;s Ed25519
+            public key, the time it was first seen and last seen, and which
+            server process currently holds its socket. That last field is
+            cleared when you disconnect; the row itself remains, and
+            reconnecting with the same key reuses it.
+          </li>
+          <li>
+            <strong>One row per room:</strong> the SHA-512 hash of the room
+            capability &mdash; not the capability itself &mdash; and which
+            identities are members of it. Membership is removed when you leave
+            the room from inside the app; closing the tab or losing the network
+            does not remove it.
+          </li>
+          <li>
+            <strong>Short-lived routing rows:</strong> a signal addressed to a
+            peer whose socket is held by another server process. The receiving
+            process deletes the row as soon as it has delivered the signal.
+          </li>
+        </Ul>
+        <Para>
+          The server sends a ping every 10 seconds and closes a socket that has
+          not answered within 5 seconds. It does not tell the other members of a
+          room when someone&rsquo;s socket closes; your app works that out from
+          its own connections.
+        </Para>
+        <Para>
+          What this means in practice: the operator of the signaling service can
+          see which identity keys are in which room, and when they connect and
+          disconnect. It cannot see the content of anything you send. Room
+          membership and timing are not hidden from it, and we do not claim
+          otherwise.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
@@ -99,32 +136,55 @@ const PrivacyPage = () => {
         <Para>
           When two peers cannot establish a direct connection (e.g., both are
           behind symmetric NATs), data may be relayed through our TURN
-          (Traversal Using Relays around NAT) server. The relay processes IP
-          addresses and encrypted data packets in real time. All relayed traffic
-          is end-to-end encrypted with ChaChaPoly1305 — the relay cannot decrypt
-          it. No logs are retained and no traffic data is stored after the
+          (Traversal Using Relays around NAT) server. Relayed traffic is
+          encrypted twice over — by WebRTC&rsquo;s own DTLS transport, and
+          inside that by p2party&rsquo;s per-message keys — so the relay cannot
+          read it. No logs are retained and no traffic data is stored after the
           session ends.
+        </Para>
+        <Para>
+          A relay is a transport, not a privacy proxy. While an allocation is
+          open, the relay necessarily handles your IP address, the times you
+          connect, and the volume of bytes passing through. The credential the
+          signaling server issues for it expires after one hour and its username
+          field contains your client&rsquo;s Ed25519 public key.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
           3.4 Communication Content
         </h3>
         <Para>
-          Text messages and files are transmitted directly between peers via
-          WebRTC data channels. They are encrypted end-to-end using
-          ChaChaPoly1305 AEAD with ephemeral Ed25519 keys and are further
-          protected by our offensive-cryptography chunking scheme. Our servers
-          never see, store, or have the ability to decrypt the content of your
-          communications.
+          Text messages and files are transmitted directly between peers over
+          WebRTC data channels. Before either side can send anything, the two
+          browsers run a handshake that combines an interactive Diffie-Hellman
+          exchange over X25519 with a post-quantum ML-KEM exchange, and mixes
+          both into one key. Ed25519 identity keys sign that handshake; they
+          authenticate who you are talking to and are never used to encrypt.
+          After the handshake, every message is sealed with ChaCha20-Poly1305
+          under its own key from a per-peer Double Ratchet, and split into
+          fixed-size 65,490-byte cells that are padded to full whatever the
+          payload was. Our servers never see, store, or have the ability to
+          decrypt the content of your communications.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
           3.5 Local Browser Storage
         </h3>
         <Para>
-          The Service may use your browser&rsquo;s IndexedDB to persist room
-          keys or local preferences on your device only. This data never leaves
-          your browser and can be cleared at any time via your browser settings.
+          The Service uses your browser&rsquo;s IndexedDB &mdash; and, where
+          your browser supports it, the Origin Private File System for large
+          received files &mdash; to hold your long-term identity keys, your
+          saved rooms and their invite links, your address book and blacklist,
+          the ratchet state for each peer you have talked to, and your message
+          history and received file data. This data stays on your device. It is
+          never uploaded, and you can clear it at any time through your browser
+          settings.
+        </Para>
+        <Para>
+          There is currently no backup or restore flow for your identity. If you
+          clear site data, use a different browser profile, or lose the device,
+          that identity and everything stored under it is gone, and nobody
+          &mdash; including us &mdash; can recover it.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
@@ -142,8 +202,8 @@ const PrivacyPage = () => {
         </SectionHeading>
         <Para>
           Where we process personal data (IP addresses during STUN/TURN
-          sessions, ephemeral session identifiers on the signaling server), the
-          legal basis is:
+          sessions, and the identity public keys and room membership held by the
+          signaling server), the legal basis is:
         </Para>
         <Ul>
           <li>
@@ -172,9 +232,11 @@ const PrivacyPage = () => {
           <li>
             We may disclose data only if required by a binding legal obligation
             under EU or member-state law (e.g., court order, law-enforcement
-            request). Because we do not store communication content or
-            persistent connection logs, any such disclosure would be extremely
-            limited.
+            request). We hold no communication content at all, so it cannot be
+            disclosed. What the signaling database does hold, and therefore what
+            such a request could reach, is described in section 3.1: identity
+            public keys, first-seen and last-seen times, and which identities
+            are members of which room hash.
           </li>
         </Ul>
 
@@ -194,8 +256,14 @@ const PrivacyPage = () => {
         <SectionHeading>7. Data Retention</SectionHeading>
         <Ul>
           <li>
-            <strong>Signaling data:</strong> retained in volatile memory only
-            for the duration of the WebSocket session; destroyed on disconnect.
+            <strong>Signaling traffic (SDP, ICE candidates):</strong> forwarded
+            between peers and not written to the database. Cross-process routing
+            rows are deleted as soon as the signal is delivered.
+          </li>
+          <li>
+            <strong>Signaling database rows:</strong> the identity row and the
+            room-hash membership described in section 3.1 outlive a disconnect.
+            Membership is removed when you leave a room from inside the app.
           </li>
           <li>
             <strong>STUN data:</strong> not stored at all (stateless protocol).
@@ -264,26 +332,41 @@ const PrivacyPage = () => {
         <Para>We employ the following security measures:</Para>
         <Ul>
           <li>
-            End-to-end encryption of all user communications using
-            ChaChaPoly1305 AEAD with ephemeral Ed25519 keys.
+            End-to-end encryption of all user communications with
+            ChaCha20-Poly1305, under per-message keys from a per-peer Double
+            Ratchet, established by a handshake that mixes X25519 and ML-KEM and
+            is signed by Ed25519 identity keys.
           </li>
           <li>
-            Offensive-cryptography chunking that pads every message with
-            cryptographic random noise, making traffic analysis impractical.
+            Every message is split into fixed 65,490-byte cells, with the real
+            bytes at a random offset and the rest filled with random padding, so
+            the size of a cell tells an observer nothing about the size of what
+            is inside it.
           </li>
           <li>
             TLS encryption for all connections to the signaling, STUN, and TURN
             servers.
           </li>
           <li>
-            Minimal-data architecture — servers never see decrypted content and
-            do not persist connection metadata.
+            Servers never see decrypted content. The signaling database holds
+            only what section 3.1 lists.
           </li>
           <li>
             Infrastructure hosted on Hetzner (EU) with hardened server
             configurations.
           </li>
         </Ul>
+        <Para>
+          What these measures do <em>not</em> do is equally worth stating.
+          Uniform cells hide the length of a message; they do not hide that
+          cells were sent, how many, or when. A room can be created with a
+          scheduled cover policy, in which every peer emits cells on a fixed
+          rhythm whether or not it has anything to send &mdash; that is timing
+          cover, and we have measured it over a loopback connection only. We do
+          not claim resistance to traffic analysis, and we will not until there
+          is a published measurement to point at. The protocol has also not had
+          an independent third-party security audit.
+        </Para>
 
         {/* 10 */}
         <SectionHeading>10. Children&rsquo;s Privacy</SectionHeading>
@@ -306,17 +389,22 @@ const PrivacyPage = () => {
         </Para>
         <Ul>
           <li>
-            The signaling server processes only the minimum data required to
-            establish peer-to-peer connections (ephemeral public keys, room
-            identifiers, and WebRTC signaling metadata).
+            The signaling server processes only the data required to establish
+            peer-to-peer connections: identity public keys, the hash of a room
+            capability, and WebRTC signaling metadata.
           </li>
           <li>
             All user-generated content (messages, files) is end-to-end encrypted
-            with ChaChaPoly1305 and never passes through our servers.
+            with ChaCha20-Poly1305 and travels directly between browsers. Our
+            signaling server never carries it; a TURN relay carries it only when
+            a direct connection is impossible, and cannot read it.
           </li>
           <li>
-            Peer identities are pseudonymous (randomly generated UUIDs) and are
-            not linked to any real-world identity.
+            Peer identities are pseudonymous. They are cryptographic public
+            keys, not names, and we ask for nothing that ties one to a person.
+            They are not, however, per-session throwaways: the same browser
+            profile presents the same identity key every time, and the signaling
+            database recognises it as the same peer.
           </li>
           <li>
             Server logs are IP-anonymised (last octet masked) and retained for
