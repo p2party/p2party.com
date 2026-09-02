@@ -165,12 +165,11 @@ const PrivacyPage = () => {
           its own X25519 key, which is what lets you pin who you are talking to;
           the handshake itself is authenticated by three chained
           key-confirmation flights computed over the mixed key. Identity keys
-          are never used to encrypt.
-          After the handshake, every message is sealed with ChaCha20-Poly1305
-          under its own key from a per-peer Double Ratchet, and split into
-          fixed-size 65,490-byte cells that are padded to full whatever the
-          payload was. Our servers never see, store, or have the ability to
-          decrypt the content of your communications.
+          are never used to encrypt. After the handshake, every message is
+          sealed with ChaCha20-Poly1305 under its own key from a per-peer Double
+          Ratchet, and split into fixed-size 65,490-byte cells that are padded
+          to full whatever the payload was. Our servers never see, store, or
+          have the ability to decrypt the content of your communications.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>

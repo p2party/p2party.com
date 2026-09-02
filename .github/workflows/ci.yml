@@ -46,11 +46,9 @@ jobs:
       - name: Test
         run: npm test
 
-      # `npm run build` prerenders the static routes in a real browser, and
-      # npm ci installs the Playwright package but not its browser binaries.
-      - name: Install the prerender browser
-        run: npx playwright install --with-deps chromium
-
+      # `npm run build` prerenders with React in Node (scripts/prerender.mjs
+      # imports dist-ssr/entry-server.js), so no browser binary is needed here.
+      # Playwright is only used by the e2e/ harnesses, which CI does not run.
       - name: Build
         run: npm run build
 

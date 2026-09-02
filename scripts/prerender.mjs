@@ -7,10 +7,12 @@
 // JavaScript, which includes most social-preview fetchers and several search
 // engines. The blog is entirely prose and was invisible to all of them.
 //
-// Each route is loaded in a real browser and its rendered DOM written to
-// dist/<route>/index.html. The script tags survive, so the SPA still boots and
-// takes over on load; the difference is that the first response now contains
-// the text.
+// Each route is rendered with React in Node -- no browser -- by importing the
+// SSR bundle (dist-ssr/entry-server.js) after stubbing the handful of browser
+// globals the SDK touches at module scope, and the resulting HTML is written
+// into dist/<route>/index.html. The script tags survive, so the SPA still
+// boots and takes over on load; the difference is that the first response now
+// contains the text.
 //
 // Room routes are deliberately excluded. A room is addressed by a secret
 // capability, so there is nothing to prerender and nothing that should be
