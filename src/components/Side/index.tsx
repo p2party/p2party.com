@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from "react";
 
 import {
   ArchiveBoxXMarkIcon,
+  ArrowUturnLeftIcon,
   BookOpenIcon,
   Cog8ToothIcon,
   KeyIcon,
@@ -22,6 +23,7 @@ import { Link } from "../link";
 
 import SettingsAlert from "../alerts/SettingsAlert";
 import IdentityBackupAlert from "../alerts/IdentityBackupAlert";
+import RestoreIdentityAlert from "../alerts/RestoreIdentityAlert";
 import AddressBookAlert from "../alerts/AddressBookAlert";
 import BlacklistAlert from "../alerts/BlacklistAlert";
 import QRCodeAlert from "../alerts/QRCodeAlert";
@@ -49,6 +51,7 @@ const SideBar = () => {
 
   const [showSettings, setShowSettings] = useState(false);
   const [showIdentityBackup, setShowIdentityBackup] = useState(false);
+  const [showIdentityRestore, setShowIdentityRestore] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(false);
   const [showBlacklist, setShowBlacklist] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
@@ -123,6 +126,28 @@ const SideBar = () => {
               key={String(showIdentityBackup)}
               isOpen={showIdentityBackup}
               setIsOpen={setShowIdentityBackup}
+            />
+
+            {/* Restoring is its own row rather than a panel of the backup
+                dialog: it is reached from a device that has lost an identity,
+                not from one reading the identity it has, and the two share
+                nothing but the wordlist. */}
+            <SidebarItem onClick={() => setShowIdentityRestore(true)}>
+              <span className='flex min-w-0 items-center gap-3'>
+                <ArrowUturnLeftIcon className='size-9 lg:size-7' />
+                <span className='min-w-0'>
+                  <span className='block truncate text-sm/5 font-medium text-zinc-100'>
+                    Restore identity
+                  </span>
+                </span>
+              </span>
+            </SidebarItem>
+            <RestoreIdentityAlert
+              // Same reason as above: the phrase typed in here must not
+              // outlive the panel, whoever closed it.
+              key={String(showIdentityRestore)}
+              isOpen={showIdentityRestore}
+              setIsOpen={setShowIdentityRestore}
             />
           </>
         )}
