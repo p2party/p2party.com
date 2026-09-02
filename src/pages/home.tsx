@@ -135,12 +135,12 @@ const shipped = [
     body: "Save a peer under a name and the app remembers the identity key behind it. If that key ever changes, the app flags it on that contact's messages and in the verify dialog, so you can compare safety numbers before you trust the conversation.",
   },
   {
-    title: "Come back and it re-dials",
-    body: "When the tab becomes visible again, when you navigate back to it, when the window regains focus, or when the network returns, the app re-dials a room whose connection has dropped rather than waiting for you to reload the page.",
+    title: "Sleep, move, come back",
+    body: "A phone that was asleep with its radio off used to come back holding a connection the other side had already thrown away. Now an edge is bound to the certificate it was authenticated against, so a stale transport is replaced and re-authenticated rather than reused — and the app re-dials when the tab becomes visible again, when you navigate back to it, when the window regains focus, and when the network returns.",
   },
   {
-    title: "Where a message got to",
-    body: "Delivery is a caption on the message itself, not a toast that vanishes: delivered, delivered to some of the room, or not delivered — with the per-peer reason behind it.",
+    title: "A send that fails, says so",
+    body: "A message to a peer that never finishes authenticating fails with a reason inside a bounded wait instead of spinning forever. The outcome is a caption on the message itself, not a toast that vanishes: delivered, delivered to some of the room, or not delivered — with the per-peer reason behind it.",
   },
 ];
 
