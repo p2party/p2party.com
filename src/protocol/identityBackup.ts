@@ -11,11 +11,19 @@ import p2party from "./sdk";
  * through one runtime check, so a build without the API fails with a sentence
  * that says which function is missing instead of "undefined is not a function".
  *
- * The types below mirror the library's own (`RestoredIdentity`,
- * `CreatedRecoverableIdentity`, `IdentityBackupStatus`, `MnemonicValidation`).
- * Once the SDK is re-vendored the intersection collapses onto the real
- * declarations and any drift shows up as a type error here, at the one place
- * that has to know about it.
+ * That runtime check is all the pattern buys, and the claim is deliberately
+ * that narrow: `Partial<>` keeps every name optional, so a rename in the
+ * library still compiles here, and the assertion inside `identityBackupCall`
+ * keeps function types mutually comparable, so an added parameter or a changed
+ * result compiles too. The declarations below are a stand-in for the package's,
+ * not a cross-check against them.
+ *
+ * The re-vendor is where drift has to be caught. When a build that ships this
+ * API is vendored, delete `IdentityBackupApi` and the local `RestoredIdentity`,
+ * `CreatedRecoverableIdentity`, `CreateRecoverableIdentityOptions`,
+ * `IdentityBackupStatus` and `MnemonicValidation` declarations in favour of the
+ * package's own exports: importing them is the only change that turns a
+ * mismatch into a compile error instead of a browser one.
  */
 
 /** How the identity in use came into being, per the library's stored flag. */
@@ -24,6 +32,12 @@ export type IdentityDerivation = "random" | "mnemonic";
 /** A phrase check reported in a shape a form can render directly. */
 export interface MnemonicValidation {
   ok: boolean;
+  /**
+   * Quotes the offending word and its position (`Word 3, "zzz", is not in the
+   * wordlist.`), so it is part of the user's phrase: render it beside the
+   * input and put it nowhere else — never `console.*`, telemetry or a crash
+   * report.
+   */
   reason?: string;
 }
 
@@ -53,8 +67,16 @@ export interface CreateRecoverableIdentityOptions {
 
 /** The current account key, and whether a phrase can reproduce it. */
 export interface IdentityBackupStatus {
+  /** Empty when no identity is stored at all. */
   publicKey: string;
-  /** `null` when no identity is stored, or when the flag cannot be trusted. */
+  /**
+   * `"mnemonic"` only for a key derived from a recovery phrase. `"random"` and
+   * `null` both mean the same thing to a caller — no backup exists — where
+   * `null` covers no identity stored yet, provenance never recorded (which is
+   * every identity created before this feature: the library writes the flag
+   * only on the branches that mint a key), and a record that no longer binds
+   * to the stored key. Ask `identityIsRecoverable` instead of comparing this.
+   */
   derivation: IdentityDerivation | null;
 }
 
@@ -116,13 +138,28 @@ export const validateMnemonicWords = (words: string): MnemonicValidation =>
   identityBackupCall("validateMnemonicWords")(words);
 
 /**
- * The current identity, and whether a recovery phrase can reproduce it. An
- * identity created before this feature existed reports "random": it cannot be
- * exported, only replaced.
+ * The current identity, and whether a recovery phrase can reproduce it.
+ *
+ * An identity created before this feature existed reports `null`, not
+ * `"random"` — nothing recorded its provenance — and it is the common case for
+ * every user this feature exists for. Either way it cannot be exported, only
+ * replaced. `publicKey` is empty when there is no identity at all, which is how
+ * "not created yet" is told apart from "created, unrecoverable".
  */
 export const getIdentityBackupStatus =
   async (): Promise<IdentityBackupStatus> =>
     await identityBackupCall("getIdentityBackupStatus")();
+
+/**
+ * Whether a recovery phrase can reproduce the identity a status describes.
+ *
+ * The one place the three-valued `derivation` is collapsed, so no caller has to
+ * remember that `null` and `"random"` mean the same thing. A dialog keyed on
+ * `derivation === "random"` would hide the offer to switch to a recoverable
+ * identity from every identity that predates the feature.
+ */
+export const identityIsRecoverable = (status: IdentityBackupStatus): boolean =>
+  status.derivation === "mnemonic";
 
 /**
  * Replace the current identity with a fresh recoverable one and return the
@@ -145,6 +182,15 @@ export const restoreIdentityFromMnemonic = async (
   await identityBackupCall("restoreIdentityFromMnemonic")(mnemonic, password);
 
 /**
+ * What to show for a bad phrase anywhere the error's own message must not go.
+ *
+ * It quotes nothing, so it is safe in a toast, a log line or a report; the
+ * message that names the word stays in the form field.
+ */
+export const INVALID_RECOVERY_PHRASE_MESSAGE =
+  "That recovery phrase is not valid.";
+
+/**
  * Whether a rejection was a bad phrase rather than a storage or transport
  * failure — the difference between keeping the user in the form and telling
  * them something broke.
@@ -152,6 +198,13 @@ export const restoreIdentityFromMnemonic = async (
  * Matched by name: the library's `InvalidRecoveryPhraseError` class is not in
  * every build the app may be vendoring, and `instanceof` against an import the
  * build does not export cannot be written at all.
+ *
+ * The matched error's `message` is the validation reason, which quotes a word
+ * of the user's phrase and its position (`Word 3, "zzz", is not in the
+ * wordlist.`). It is secret material: show it in the form field next to the
+ * input and nowhere else — never `console.*`, telemetry or a crash report. Any
+ * path that reports generically uses `INVALID_RECOVERY_PHRASE_MESSAGE`, so the
+ * raw reason keeps a single destination.
  */
 export const isInvalidRecoveryPhraseError = (error: unknown): boolean =>
   error instanceof Error && error.name === "InvalidRecoveryPhraseError";

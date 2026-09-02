@@ -8,6 +8,7 @@ import {
   createRecoverableIdentity,
   getIdentityBackupStatus,
   identityBackupIsAvailable,
+  identityIsRecoverable,
   isInvalidRecoveryPhraseError,
   restoreIdentityFromMnemonic,
   validateMnemonicWords,
@@ -271,14 +272,17 @@ export const useRoom = ({
     /**
      * Identity backup and restore. Only an identity created from a recovery
      * phrase can be restored from one, so `getIdentityBackupStatus` is what
-     * says whether this device's identity can be backed up at all, and
-     * `createRecoverableIdentity` is how a random one is replaced by one that
-     * can — at the cost of a new identity key, which peers will see as an
-     * identity change. Both leave signaling disconnected: call `connect`
+     * says whether this device's identity can be backed up at all — read its
+     * answer through `identityIsRecoverable`, because an identity that predates
+     * this feature reports a `null` derivation rather than "random" — and
+     * `createRecoverableIdentity` is how an unrecoverable one is replaced by
+     * one that can be, at the cost of a new identity key, which peers will see
+     * as an identity change. Both leave signaling disconnected: call `connect`
      * afterwards.
      */
     identityBackupIsAvailable,
     getIdentityBackupStatus,
+    identityIsRecoverable,
     createRecoverableIdentity,
     restoreIdentityFromMnemonic,
     validateMnemonicWords,

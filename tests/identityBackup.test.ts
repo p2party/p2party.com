@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 const stored = new Map<string, string>();
 const localStorageStub: Storage = {
@@ -29,11 +29,20 @@ const { default: p2party } = await import("p2party");
 const {
   createRecoverableIdentity,
   getIdentityBackupStatus,
+  INVALID_RECOVERY_PHRASE_MESSAGE,
   identityBackupIsAvailable,
+  identityIsRecoverable,
   isInvalidRecoveryPhraseError,
   restoreIdentityFromMnemonic,
   validateMnemonicWords,
 } = await import("../src/protocol/identityBackup");
+
+const IDENTITY_BACKUP_CALLS = [
+  "createRecoverableIdentity",
+  "restoreIdentityFromMnemonic",
+  "getIdentityBackupStatus",
+  "validateMnemonicWords",
+];
 
 /**
  * The adapter reads the SDK surface at call time, which is exactly what lets a
@@ -54,6 +63,24 @@ afterEach(() => {
 });
 
 describe("identity backup adapter without an SDK build that ships it", () => {
+  // The missing state is constructed rather than inherited from whichever
+  // release happens to be vendored: re-vendoring a build that ships the API
+  // must not turn this block red, because a red suite on that step reads as a
+  // regression. What is under test is the guard, not the tarball.
+  const removed = new Map<string, unknown>();
+
+  beforeEach(() => {
+    for (const name of IDENTITY_BACKUP_CALLS) {
+      if (name in sdk) removed.set(name, sdk[name]);
+      delete sdk[name];
+    }
+  });
+
+  afterEach(() => {
+    for (const [name, value] of removed) sdk[name] = value;
+    removed.clear();
+  });
+
   test("reports the API as unavailable", () => {
     expect(identityBackupIsAvailable()).toBe(false);
   });
@@ -142,6 +169,33 @@ describe("identity backup adapter against an SDK build that ships it", () => {
   });
 });
 
+describe("deciding whether an identity has a backup", () => {
+  test("only a phrase-derived identity counts as recoverable", () => {
+    expect(
+      identityIsRecoverable({
+        publicKey: "ab".repeat(32),
+        derivation: "mnemonic",
+      }),
+    ).toBe(true);
+  });
+
+  test('"random" and null both mean no backup exists', () => {
+    // null is what every identity created before this feature reports: the SDK
+    // records provenance only when it mints a key, so a key already in storage
+    // has no record at all. A UI keyed on "random" would hide the offer to
+    // switch to a recoverable identity from exactly the users who need it.
+    expect(
+      identityIsRecoverable({
+        publicKey: "ab".repeat(32),
+        derivation: "random",
+      }),
+    ).toBe(false);
+    expect(
+      identityIsRecoverable({ publicKey: "ab".repeat(32), derivation: null }),
+    ).toBe(false);
+  });
+});
+
 describe("telling a mistyped phrase apart from a failure", () => {
   test("recognises the SDK error by name, not by class identity", () => {
     // The class is not exported by every build the app may be vendoring, so
@@ -160,5 +214,14 @@ describe("telling a mistyped phrase apart from a failure", () => {
     expect(isInvalidRecoveryPhraseError("InvalidRecoveryPhraseError")).toBe(
       false,
     );
+  });
+
+  test("offers a message that quotes nothing from the phrase", () => {
+    // The library's reason reads `Word 3, "zzz", is not in the wordlist.` —
+    // one word of the user's secret and its position. It belongs in the form
+    // field and nowhere else, so anywhere that reports generically has this
+    // instead, and the raw reason keeps a single destination.
+    expect(INVALID_RECOVERY_PHRASE_MESSAGE).not.toContain('"');
+    expect(INVALID_RECOVERY_PHRASE_MESSAGE.length).toBeGreaterThan(0);
   });
 });
