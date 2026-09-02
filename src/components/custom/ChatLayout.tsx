@@ -91,8 +91,13 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     setAlertIsOpen,
   ]);
 
+  // The deferred wake handler is read through a ref: the macrotask is scheduled
+  // by a listener from an older render, and by the time it fires the SDK's
+  // liveness check may have marked the socket disconnected and re-rendered.
+  const reconnectOnResumeRef = useRef<() => void>(() => {});
+
   useEffect(() => {
-    const onFocus = () => {
+    reconnectOnResumeRef.current = () => {
       if (
         roomUrl &&
         roomInviteError.length === 0 &&
@@ -107,11 +112,32 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       }
     };
 
-    window.addEventListener("focus", onFocus);
+    // Every wake path -- window focus, the tab becoming visible, a bfcache
+    // restore (pageshow) and the network returning (online) -- reaches the
+    // SDK's liveness check on the same event, which synchronously marks a
+    // half-open socket disconnected. Defer one macrotask so that Redux update,
+    // and the re-render it causes, land before the guard above is read.
+    const onResume = () => {
+      setTimeout(() => reconnectOnResumeRef.current(), 0);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") onResume();
+    };
+
+    window.addEventListener("focus", onResume);
+    window.addEventListener("pageshow", onResume);
+    window.addEventListener("online", onResume);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("beforeunload", disconnectFromSignalingServer);
 
     return () => {
-      window.removeEventListener("focus", onFocus);
+      // A wake macrotask still pending after unmount must not reconnect a room
+      // the user just left; on a dependency change the next run re-arms it.
+      reconnectOnResumeRef.current = () => {};
+      window.removeEventListener("focus", onResume);
+      window.removeEventListener("pageshow", onResume);
+      window.removeEventListener("online", onResume);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("beforeunload", disconnectFromSignalingServer);
     };
   }, [
