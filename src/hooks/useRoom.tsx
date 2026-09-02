@@ -5,6 +5,14 @@ import { useLocalStorage } from "usehooks-ts";
 import p2party from "../protocol/sdk";
 
 import {
+  createRecoverableIdentity,
+  getIdentityBackupStatus,
+  identityBackupIsAvailable,
+  isInvalidRecoveryPhraseError,
+  restoreIdentityFromMnemonic,
+  validateMnemonicWords,
+} from "../protocol/identityBackup";
+import {
   getTransientRoomPin,
   getTransientRoomPolicy,
 } from "../protocol/roomAccess";
@@ -260,5 +268,20 @@ export const useRoom = ({
     purge: p2party.purge,
     purgeRoom: p2party.purgeRoom,
     purgeIdentity: p2party.purgeIdentity,
+    /**
+     * Identity backup and restore. Only an identity created from a recovery
+     * phrase can be restored from one, so `getIdentityBackupStatus` is what
+     * says whether this device's identity can be backed up at all, and
+     * `createRecoverableIdentity` is how a random one is replaced by one that
+     * can — at the cost of a new identity key, which peers will see as an
+     * identity change. Both leave signaling disconnected: call `connect`
+     * afterwards.
+     */
+    identityBackupIsAvailable,
+    getIdentityBackupStatus,
+    createRecoverableIdentity,
+    restoreIdentityFromMnemonic,
+    validateMnemonicWords,
+    isInvalidRecoveryPhraseError,
   };
 };
