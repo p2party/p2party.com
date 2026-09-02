@@ -6,8 +6,9 @@ author: "Dimitris Karoukis"
 date: "2026-09-02"
 series: "Road to protocol-v3"
 seriesOrder: 7
-status: "published"
+status: "draft"
 storyPeriod: "2026-08-28 to 2026-09-02"
+blockedBy: "Held out of index.json until the site vendors an SDK build containing the peer-edge transport binding this post describes; the shipped bundle is p2party 0.14.4, which predates it."
 commitAnchors:
   - "4432feb"
   - "a923f64"

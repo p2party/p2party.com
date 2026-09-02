@@ -110,10 +110,11 @@ const RoomsPage = () => {
                 thing we are able to show a new device.
               </p>
               <p className='mt-3 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
-                The same goes for your identity: the keys this browser signs
-                with are stored here and nowhere else. There is no restore flow
-                yet, so a cleared profile is a new person as far as everyone
-                else is concerned.
+                The same goes for your identity: the secret key this browser
+                signs with never leaves it. The matching public half is what the
+                signaling server stores to recognise you, as the privacy policy
+                explains. There is no restore flow yet, so a cleared profile is
+                a new person as far as everyone else is concerned.
               </p>
               <p className='mt-3 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
                 Generate a room and it appears here once you have been in it.

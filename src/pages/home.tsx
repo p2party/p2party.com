@@ -27,7 +27,7 @@ const features = [
       </svg>
     ),
     title: "Post-Quantum Handshake",
-    desc: "Every pair of browsers runs an interactive 3DH plus a room-fixed ML-KEM-512/768/1024 exchange, mixes both into one key, and hands it to a per-peer Double Ratchet. Ed25519 identities sign the whole transcript. Messages never touch the signaling server.",
+    desc: "Every pair of browsers runs an interactive 3DH plus a room-fixed ML-KEM-512/768/1024 exchange, mixes both into one key, and hands it to a per-peer Double Ratchet. Ed25519 identities cross-sign each side's X25519 key, and three chained confirmation flights bind the transcript. Messages never touch the signaling server.",
   },
   {
     icon: (
@@ -92,7 +92,7 @@ const features = [
       </svg>
     ),
     title: "Files Up To 10 GiB",
-    desc: "Send text and large files directly between browsers — chunked, verified against a Merkle root, written straight to disk as they arrive, and never uploaded. Reload mid-transfer and it picks up the gaps.",
+    desc: "Send text and large files directly between browsers — chunked, verified against a Merkle root, written straight to disk as they arrive where the browser supports it, and never uploaded. Reload mid-transfer and it picks up the gaps.",
   },
 ];
 
@@ -120,7 +120,7 @@ const steps = [
 const shipped = [
   {
     title: "Rooms with a PIN",
-    body: "Turn one on and both sides prove they know the same PIN without ever sending it. Repeated wrong guesses are rate-limited per identity, and the room tells you how long the wait is.",
+    body: "Turn one on and both sides prove they know the same PIN without ever sending it. Get it wrong too many times and the room makes that identity wait before it will try again, and shows you the countdown.",
   },
   {
     title: "A fixed sending rhythm, if you want one",
@@ -132,15 +132,15 @@ const shipped = [
   },
   {
     title: "Contacts you can pin",
-    body: "Save a peer under a name and the app remembers the identity key behind it. If that key ever changes, you get told before you talk to them, not after.",
+    body: "Save a peer under a name and the app remembers the identity key behind it. If that key ever changes, the app flags it on that contact's messages and in the verify dialog, so you can compare safety numbers before you trust the conversation.",
   },
   {
-    title: "Sleep, move, come back",
-    body: "A phone that was asleep with its radio off used to come back holding a connection that was already dead. Now the stale transport is replaced and re-authenticated, and the app reconnects when it becomes visible again, when you navigate back to it, and when the network returns.",
+    title: "Come back and it re-dials",
+    body: "When the tab becomes visible again, when you navigate back to it, when the window regains focus, or when the network returns, the app re-dials a room whose connection has dropped rather than waiting for you to reload the page.",
   },
   {
-    title: "A send that fails, says so",
-    body: "If a peer never finishes authenticating, the message fails with a reason instead of spinning forever. Delivery, partial delivery and failure are all reported on the message itself.",
+    title: "Where a message got to",
+    body: "Delivery is a caption on the message itself, not a toast that vanishes: delivered, delivered to some of the room, or not delivered — with the per-peer reason behind it.",
   },
 ];
 
@@ -152,6 +152,10 @@ const boundaries = [
   {
     title: "Cover traffic is timing cover",
     body: "The fixed rhythm has been measured over a loopback connection, not over a real network and not against a published traffic-analysis attack. Until it has been, we call it timing cover and not resistance.",
+  },
+  {
+    title: "Written, not yet demonstrated",
+    body: "Two more things are implemented and believed correct but have never been shown working end to end: the PIN wait escalating under repeated wrong guesses, and packet traces staying indistinguishable in rooms bigger than two. Until a harness proves them, they are code and not claims.",
   },
   {
     title: "Nobody independent has audited this",

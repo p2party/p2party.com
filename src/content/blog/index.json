@@ -100,7 +100,9 @@
       "description": "Signal's SPQR fragments ML-KEM across many messages. p2party's cells already fit one whole. Same problem, inverted constraint - and why none of Signal's analysis transfers.",
       "date": "2026-07-26",
       "commitAnchors": ["f5e9dad", "d5d2ad9", "f1a3a92", "ebe03b1"]
-    },
+    }
+  ],
+  "unpublished": [
     {
       "order": 7,
       "slug": "an-open-channel-is-not-a-live-peer",
@@ -109,6 +111,7 @@
       "title": "An open channel is not a live peer: the phone that slept through its own disconnection",
       "description": "Binding every peer edge to the DTLS certificate it was authenticated against, the four smaller lies that fell out of it, and the SIGSTOP harness that had to agree first.",
       "date": "2026-09-02",
+      "blockedBy": "The site vendors p2party 0.14.4 (vendor/p2party-0.14.4.tgz), which predates the peer-edge transport binding, the signaling heartbeat watchdog and the fail-fast send this post describes. Move this entry back into `posts` in the same commit that vendors an SDK build containing them, and restore the two matching bullets in src/pages/home.tsx.",
       "commitAnchors": [
         "4432feb",
         "a923f64",

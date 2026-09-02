@@ -78,7 +78,8 @@ const PrivacyPage = () => {
           Our WebSocket-based signaling server introduces peers to one another.
           WebRTC Session Description Protocol (SDP) offers, answers, and ICE
           candidates are forwarded between two connected peers and are not
-          written to the database.
+          written to the database, except as the short-lived cross-process
+          routing rows described below.
         </Para>
         <Para>
           The server does keep a small PostgreSQL database, on the same EU
@@ -126,8 +127,9 @@ const PrivacyPage = () => {
         <Para>
           The STUN (Session Traversal Utilities for NAT) server reflects your
           public IP address back to your browser so that direct peer connections
-          can be established. STUN is a stateless protocol — the server keeps no
-          logs and stores no data.
+          can be established. STUN is a stateless protocol, so the server holds
+          no session state; as a deployment commitment, we configure it to keep
+          no logs.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
@@ -139,8 +141,9 @@ const PrivacyPage = () => {
           (Traversal Using Relays around NAT) server. Relayed traffic is
           encrypted twice over — by WebRTC&rsquo;s own DTLS transport, and
           inside that by p2party&rsquo;s per-message keys — so the relay cannot
-          read it. No logs are retained and no traffic data is stored after the
-          session ends.
+          read it. As a deployment commitment rather than a property of the
+          protocol, we configure the relay to keep no traffic logs and to retain
+          no traffic data after the session ends.
         </Para>
         <Para>
           A relay is a transport, not a privacy proxy. While an allocation is
@@ -158,8 +161,11 @@ const PrivacyPage = () => {
           WebRTC data channels. Before either side can send anything, the two
           browsers run a handshake that combines an interactive Diffie-Hellman
           exchange over X25519 with a post-quantum ML-KEM exchange, and mixes
-          both into one key. Ed25519 identity keys sign that handshake; they
-          authenticate who you are talking to and are never used to encrypt.
+          both into one key. Each side&rsquo;s Ed25519 identity key cross-signs
+          its own X25519 key, which is what lets you pin who you are talking to;
+          the handshake itself is authenticated by three chained
+          key-confirmation flights computed over the mixed key. Identity keys
+          are never used to encrypt.
           After the handshake, every message is sealed with ChaCha20-Poly1305
           under its own key from a per-peer Double Ratchet, and split into
           fixed-size 65,490-byte cells that are padded to full whatever the
@@ -257,8 +263,9 @@ const PrivacyPage = () => {
         <Ul>
           <li>
             <strong>Signaling traffic (SDP, ICE candidates):</strong> forwarded
-            between peers and not written to the database. Cross-process routing
-            rows are deleted as soon as the signal is delivered.
+            between peers and not written to the database, except as the
+            short-lived cross-process routing rows, which are deleted as soon as
+            the signal is delivered.
           </li>
           <li>
             <strong>Signaling database rows:</strong> the identity row and the
@@ -334,8 +341,10 @@ const PrivacyPage = () => {
           <li>
             End-to-end encryption of all user communications with
             ChaCha20-Poly1305, under per-message keys from a per-peer Double
-            Ratchet, established by a handshake that mixes X25519 and ML-KEM and
-            is signed by Ed25519 identity keys.
+            Ratchet, established by a handshake that mixes X25519 and ML-KEM,
+            with each side&rsquo;s X25519 key cross-signed by its Ed25519
+            identity and the handshake confirmed by three chained
+            key-confirmation flights.
           </li>
           <li>
             Every message is split into fixed 65,490-byte cells, with the real
@@ -344,8 +353,10 @@ const PrivacyPage = () => {
             is inside it.
           </li>
           <li>
-            TLS encryption for all connections to the signaling, STUN, and TURN
-            servers.
+            A deployment commitment, not a protocol property: we configure our
+            signaling and TURN servers to accept only TLS-protected connections.
+            STUN itself is a stateless UDP protocol and is not encrypted; it
+            reflects your public address back to you and carries nothing else.
           </li>
           <li>
             Servers never see decrypted content. The signaling database holds
@@ -407,8 +418,9 @@ const PrivacyPage = () => {
             database recognises it as the same peer.
           </li>
           <li>
-            Server logs are IP-anonymised (last octet masked) and retained for
-            no more than 30 days.
+            As a deployment commitment rather than a property of the published
+            source: we configure our servers so that logs are IP-anonymised
+            (last octet masked) and retained for no more than 30 days.
           </li>
           <li>
             All infrastructure is located exclusively within the European Union

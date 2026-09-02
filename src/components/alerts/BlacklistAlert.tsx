@@ -68,9 +68,9 @@ const BlacklistAlert: FC<BlacklistAlertProps> = ({ isOpen, setIsOpen }) => {
     <Alert open={isOpen} onClose={setIsOpen} size='lg'>
       <AlertTitle>Blacklist</AlertTitle>
       <AlertDescription className='text-justify text-zinc-950 dark:text-white'>
-        These are peers that can never see your IP or your connection status,
-        therefore you cannot connect with them, unless you remove them from this
-        list.
+        These peers never get a connection from you, so they never learn your IP
+        address. They can still see from the signaling server that you are in
+        the room. You cannot talk to them until you remove them from this list.
       </AlertDescription>
       <AlertBody>
         <Table>
