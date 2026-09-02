@@ -25,6 +25,15 @@ import type { Dispatch, SetStateAction } from "react";
 
 export interface IdentityBackupAlertProps {
   isOpen: boolean;
+  /**
+   * Closing through the dialog's own buttons drops the recovery phrase from
+   * memory on the way out. A parent that flips this to `false` behind the
+   * dialog's back — a "close everything" path, a route change — does not, so
+   * mount this component under `key={String(isOpen)}`: the remount is what
+   * guarantees the phrase and the typed password never outlive the panel that
+   * showed them, whoever closed it. The cost is the 100ms leave transition,
+   * which the remount skips.
+   */
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }
 
@@ -177,9 +186,25 @@ const IdentityBackupAlert = ({
   };
 
   /**
-   * The identity has already been swapped by the time this runs, and the swap
-   * leaves signaling disconnected. Rejoining is the last step, so the user ends
-   * up where they started rather than silently offline.
+   * Rejoin the room under the identity that has just replaced the old one.
+   *
+   * Creating the identity disconnects signaling and tears the room's transports
+   * down, and nothing in the app brings them back on its own: the layout's
+   * auto-connect fires once per room and has already fired, so the only other
+   * thing that would reconnect is a window focus or a visibility change the
+   * user may never produce. Every way out of the phrase panel therefore runs
+   * this, not just the Done button.
+   */
+  const reconnectAfterSwap = useCallback(async () => {
+    if (!roomUrl) return;
+    await connect(roomUrl);
+  }, [connect, roomUrl]);
+
+  /**
+   * The identity has already been swapped by the time this runs. Rejoining is
+   * the last step, so the user ends up where they started rather than silently
+   * offline; a failure keeps the dialog open with the reason on it, and the
+   * ways out of it retry.
    */
   const handleDone = async () => {
     setError("");
@@ -190,7 +215,7 @@ const IdentityBackupAlert = ({
 
     setIsWorking(true);
     try {
-      await connect(roomUrl);
+      await reconnectAfterSwap();
       close();
     } catch (cause) {
       setError(
@@ -231,8 +256,17 @@ const IdentityBackupAlert = ({
       // Closable from the keyboard and the backdrop, except while a write is in
       // flight: abandoning a creation half-way would swap the identity and take
       // the only copy of its phrase with it.
+      //
+      // Once a swap has happened -- `created` is set only then -- escaping is
+      // still leaving a new identity behind on a connection the swap took
+      // down, so this exit rejoins the room too. It does not wait for the
+      // result the way Done does: the user asked to be gone, and a rejoin that
+      // fails here is picked up by the layout's wake handlers on the next
+      // focus.
       onClose={() => {
-        if (!isWorking) close();
+        if (isWorking) return;
+        if (created !== null) void reconnectAfterSwap().catch(() => undefined);
+        close();
       }}
       size='xl'
     >
@@ -271,9 +305,14 @@ const IdentityBackupAlert = ({
 
             {status !== null && recoverable && (
               <>
+                {/* No word count here. The library records only that a phrase
+                    was used, not how long it was, and a restore accepts any
+                    valid length -- so the number would be a guess about the
+                    user's own phrase. The phrase panel below states a count
+                    because it counts the words it is showing. */}
                 <Text>
-                  This identity was created from a 24-word recovery phrase. That
-                  phrase still restores it, here or on another device.
+                  This identity was created from a recovery phrase. That phrase
+                  still restores it, here or on another device.
                 </Text>
                 <Text>
                   The phrase is not kept by this app or by the library, so it

@@ -4,6 +4,7 @@ import {
   ArchiveBoxXMarkIcon,
   BookOpenIcon,
   Cog8ToothIcon,
+  KeyIcon,
   QrCodeIcon,
 } from "@heroicons/react/20/solid";
 
@@ -20,6 +21,7 @@ import {
 import { Link } from "../link";
 
 import SettingsAlert from "../alerts/SettingsAlert";
+import IdentityBackupAlert from "../alerts/IdentityBackupAlert";
 import AddressBookAlert from "../alerts/AddressBookAlert";
 import BlacklistAlert from "../alerts/BlacklistAlert";
 import QRCodeAlert from "../alerts/QRCodeAlert";
@@ -37,12 +39,16 @@ export interface SideBarProps {
 }
 
 const SideBar = () => {
-  const { roomUrl, roomPolicy } = useRoom({
+  const { roomUrl, roomPolicy, identityBackupIsAvailable } = useRoom({
     subscribeToMessages: false,
   });
   const inviteUrl = roomUrl ? absoluteRoomInviteUrl(roomUrl, roomPolicy) : "";
+  // A vendored build from before the identity backup API would show an entry
+  // whose every button throws, so ask the build first.
+  const canBackUpIdentity = identityBackupIsAvailable();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showIdentityBackup, setShowIdentityBackup] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(false);
   const [showBlacklist, setShowBlacklist] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
@@ -91,6 +97,35 @@ const SideBar = () => {
           </span>
           <SettingsAlert isOpen={showSettings} setIsOpen={setShowSettings} />
         </SidebarItem>
+
+        {/* The sidebar is the whole app's reach: on a phone it is what the
+            hamburger opens, so one entry here covers both layouts and the
+            navbar keeps the room it has. The dialog sits outside the item
+            because a portal's clicks still bubble through the React tree, and
+            a click on its Done button would land on this row's onClick and
+            reopen what it had just closed. */}
+        {canBackUpIdentity && (
+          <>
+            <SidebarItem onClick={() => setShowIdentityBackup(true)}>
+              <span className='flex min-w-0 items-center gap-3'>
+                <KeyIcon className='size-9 lg:size-7' />
+                <span className='min-w-0'>
+                  <span className='block truncate text-sm/5 font-medium text-zinc-100'>
+                    Back up identity
+                  </span>
+                </span>
+              </span>
+            </SidebarItem>
+            <IdentityBackupAlert
+              // Remounting on every open and close is what drops the recovery
+              // phrase from memory even when something other than the dialog's
+              // own buttons closes it.
+              key={String(showIdentityBackup)}
+              isOpen={showIdentityBackup}
+              setIsOpen={setShowIdentityBackup}
+            />
+          </>
+        )}
 
         <SidebarItem onClick={() => setShowAddressBook(true)}>
           <span className='flex min-w-0 items-center gap-3'>
