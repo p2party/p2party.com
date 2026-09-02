@@ -362,11 +362,17 @@ exists: copy `docs/assetlinks.json.example` to
 only the copied web assets (`android/app/src/main/assets/public`,
 `ios/App/App/public`), `capacitor.config.json` / `capacitor.plugins.json`, and
 the plugin Gradle and CocoaPods wiring. `AndroidManifest.xml`,
-`app/build.gradle`, `variables.gradle`, `Podfile` and `project.pbxproj` are
+`app/build.gradle`, `variables.gradle` and `project.pbxproj` are
 hand-maintained and are never restored by a sync — the app-link intent filter
 for `https://p2party.com/r` (`android:autoVerify="true"`) and the
 `androidx.core.content.FileProvider` declaration both live in the committed
 manifest. Edit those files deliberately and commit them like source.
+
+The `Podfile` is the mixed case: `cap sync` rewrites its
+`def capacitor_pods ... end` block in place from the installed plugins, so pod
+lines are generated, while everything around that block — the `platform :ios`
+line and any pod you added yourself — is yours to maintain. Review that file's
+diff after a sync rather than assuming either.
 
 ---
 
@@ -384,7 +390,13 @@ blog manifest/content consistency, and two chat-layout regressions
 
 Four Playwright + headless-Chromium harnesses that drive the **real app**
 against **real WebRTC** (real `RTCPeerConnection`, DTLS/SCTP data channels).
-They are not wired into CI. Each reads two environment variables:
+They are not wired into CI.
+
+`npm ci` installs the Playwright package but not its browser binaries, so run
+`npx playwright install chromium` once before the first harness run. The
+build's prerender step needs no browser; only these harnesses do.
+
+Each reads two environment variables:
 
 - `APP_URL` — where the app is served, default `http://localhost:5190`;
 - `SIGNALING_URL` — a protocol-v4 signaling service. Left unset, the harness
