@@ -47,7 +47,7 @@ authoritative resolver and lock.
 `package.json` depends on an immutable local tarball, not a registry range:
 
 ```text
-"p2party": "file:vendor/p2party-0.14.5.tgz"      // package.json, dependencies
+"p2party": "file:vendor/p2party-0.14.6.tgz"      // package.json, dependencies
 ```
 
 Four things to know: what that pins, how the WebAssembly module is served, the
@@ -56,7 +56,7 @@ convention — `npm run provenance:check` fails the build otherwise.
 
 ### 1. The bytes are pinned
 
-`vendor/p2party-0.14.5.tgz` is committed. `package-lock.json` records its
+`vendor/p2party-0.14.6.tgz` is committed. `package-lock.json` records its
 SHA-512, so `npm ci` from a clean clone installs exactly those bytes, with
 nothing about the SDK resolved over the network. (The other dependencies are
 ordinary registry packages and are still fetched.)
@@ -73,13 +73,13 @@ be the version-matched artifact file:vendor/p2party-<version>.tgz`. So run
 ### 2. The WASM is self-hosted, and still SRI-checked
 
 The SDK's cryptography is a WebAssembly module. Its default source is
-`https://cdn.p2party.com/@0.14.5/libcrypto.wasm`. `src/protocol/sdk.ts` — the
+`https://cdn.p2party.com/@0.14.6/libcrypto.wasm`. `src/protocol/sdk.ts` — the
 only module that may `import "p2party"` directly — calls `setWasmSourceUrl()`
-to redirect it to `/vendor/p2party-0.14.5/libcrypto.wasm`
+to redirect it to `/vendor/p2party-0.14.6/libcrypto.wasm`
 (`src/protocol/wasm.ts`), a copy committed under `public/`.
 
 Redirecting the source does not weaken the integrity check. The SDK fetches
-that URL with `{ integrity: "sha384-xhO/aA9PVAK17BjqHHo25MVhidxGD4R8Ny6WIRQJx3Zw78ZQ8WpZVEUJR6pIQYZv" }`,
+that URL with `{ integrity: "sha384-K0QqktkF2/8IHMDEgDIcyDl/ywcUXUO8fF1ZzcwhVrUYfGn8jN8Foohn1+bw4HmZ" }`,
 a hash pinned when the SDK was built, so the browser rejects any bytes that do
 not match — from the CDN or from us. (Verified by reading the built bundle:
 `node_modules/p2party/lib/index.js` holds both the default URL and the
@@ -115,8 +115,8 @@ It prints the two hashes a release record needs. Run here:
 
 ```text
 $ npm run provenance:check
-p2party artifact SHA-256: 66a8cede03711ccdb846fd77c470d28c10c3b289a21e8536f88a757fa01b5473
-p2party WASM SHA-256: d40f62bbf0ebe17453962e1c5795629e17a6dc4e4fbf774201f061539363d66a
+p2party artifact SHA-256: 7e12fc56e3d538500af4bcf0728a70a23e668fc34e04a3e4834466dcecd2a649
+p2party WASM SHA-256: 7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76
 ```
 
 CI runs it **before** `npm ci`, so a broken vendoring fails the build before a
@@ -159,8 +159,9 @@ npm ci && npm test && npm run build
 
 Step 4's `tar` invocation was run against the current release: the extracted
 bytes are byte-identical to the committed
-`public/vendor/p2party-0.14.5/libcrypto.wasm` (both SHA-256
-`d40f62bb…9363d66a`).
+`public/vendor/p2party-0.14.6/libcrypto.wasm` and to the installed
+`node_modules/p2party/lib/libcrypto.wasm` (all three SHA-256
+`7fc91b61…a17c4d76`).
 
 Never replace a published artifact while keeping its version number.
 
@@ -413,7 +414,7 @@ Serve the built site first — verified working here:
 npm run build
 npx vite preview --port 5820 --strictPort
 # GET /                                     → 200
-# GET /vendor/p2party-0.14.5/libcrypto.wasm → 200, 211367 bytes
+# GET /vendor/p2party-0.14.6/libcrypto.wasm → 200, 211350 bytes
 ```
 
 `vite preview` answers `/r` with `dist/index.html` rather than the prerendered
@@ -469,7 +470,7 @@ and that they cover one preset and one payload size.
 
 ## What the app does today
 
-Grounded in the vendored `p2party` 0.14.5 and in this repository's code.
+Grounded in the vendored `p2party` 0.14.6 and in this repository's code.
 
 - **Handshake.** Every peer edge runs interactive 3DH together with one
   room-pinned ML-KEM suite — ML-KEM-512, ML-KEM-768 (default), or ML-KEM-1024.
@@ -516,6 +517,16 @@ Grounded in the vendored `p2party` 0.14.5 and in this repository's code.
   The two surfaces are the note in `MessageSenderDropdown` and the
   `VerifyIdentityAlert` dialog — a warning you can find, not one that
   interrupts you before you talk to them.
+- **Identity backup and restore.** The identity menu in the sidebar and the
+  navbar offers "Back up identity" and "Restore identity". Backing up does not
+  export the key in use: only an identity that was _created_ from a recovery
+  phrase can be reproduced, so a device holding a randomly generated one is
+  told so and offered a replacement, at the cost of a new identity key that
+  contacts will see change. The phrase is shown once, is stored by neither the
+  SDK nor this app, and the "Done" button stays disabled until you confirm you
+  wrote it down. Restoring on a new device replaces whatever identity is there,
+  regenerates the X25519 identity and re-cross-signs it. See
+  [What 0.14.6 added](#what-0146-added-and-how-it-was-checked-here).
 - **Waking up.** `src/components/custom/ChatLayout.tsx` re-dials the room on
   window `focus`, `visibilitychange` to visible, `pageshow` (bfcache restore)
   and `online`, deferred one macrotask so the SDK's liveness state lands first.
@@ -527,6 +538,53 @@ Grounded in the vendored `p2party` 0.14.5 and in this repository's code.
   [What 0.14.5 added](#what-0145-added-and-how-it-was-checked-here) for what
   that was and was not checked against here.
 
+### What 0.14.6 added, and how it was checked here
+
+`p2party-0.14.6.tgz` is the first vendored build that ships identity backup and
+restore: `createRecoverableIdentity`, `restoreIdentityFromMnemonic`,
+`getIdentityBackupStatus`, `validateMnemonicWords` and
+`InvalidRecoveryPhraseError` are exported from the package root and declared in
+`lib/index.d.ts`. `src/protocol/identityBackup.ts` is typed against those
+declarations rather than against a local copy of them, so a rename in the
+library is now a compile error here; the runtime check it wraps them in stays,
+because a build could ship the declarations without the code.
+
+The derivation is the SDK's existing one-way phrase derivation: the phrase,
+plus an optional password as the salt, stretched by argon2id into an Ed25519
+seed. It borrows the BIP-39 English wordlist and nothing else — different
+checksum, different KDF — so **no BIP-39 wallet can restore one of these
+identities**, which the vendored package's own README states at
+`node_modules/p2party/README.md`.
+
+**What was measured on the built site, and what was not.** One headless-Chromium
+run drove `dist/` through a static server on `:5190` and the SDK repository's
+Bun relay (`p2party-js/docs/e2e/desync/relay.ts`) on `:5811`, in three browser
+contexts, entirely through the rendered UI — the menu, the dialog buttons, the
+composer — and asserted, in order: the backup dialog reports this device's
+identity as generated at random and therefore not exportable; creating a
+recoverable identity yields 24 words and a new key that replaces the random one;
+"Done" is disabled until the written-it-down checkbox is ticked; a second
+context joins by invite link and the edge authenticates; a message goes
+byte-exact each way; that context saves the first as a contact, pinning the key
+just created; the first context is **closed entirely**; a fresh context, which
+had no identity of its own, types the 24 words and is shown the same key; it
+rejoins the room, exchanges a byte-exact message each way, and the peer's sender
+menu still shows the saved contact with **no** "identity key changed" warning.
+The restored device came back under the same peer id because this relay keys
+peers by public key, exactly as the real server's `peer.upsert` does.
+
+A separate network capture of a page minting an identity on the same build
+recorded three 200s for `/vendor/p2party-0.14.6/libcrypto.wasm` and zero
+requests to `cdn.p2party.com`, so the cryptography those steps ran on was the
+self-hosted copy, accepted by the browser under the SDK's pinned SRI.
+
+That is one run, on one machine, over loopback, with the same Chromium build on
+both sides and a relay that mirrors the real signaling server's message flow
+rather than being it. It is evidence that the flow works end to end. It is not
+a measurement of the derivation's strength, and it does not exercise the
+optional recovery password, whose wrong value silently restores a different
+identity.
+
 ### What 0.14.5 added, and how it was checked here
 
 `p2party-0.14.5.tgz` is the first vendored build that binds a peer edge to the
@@ -537,9 +595,9 @@ re-authenticated in place. It also re-dials the room after a failure teardown
 authenticates inside a bounded wait instead of hanging, and adds a signaling
 heartbeat watchdog that marks a half-open socket disconnected.
 
-Checked by grepping the installed bundle (`node_modules/p2party/lib/index.js`)
-against the one inside `p2party-0.14.4.tgz`, since the build is minified and
-only literals survive:
+Checked, when 0.14.5 was the vendored build, by grepping the then-installed
+bundle (`node_modules/p2party/lib/index.js`) against the one inside
+`p2party-0.14.4.tgz`, since the build is minified and only literals survive:
 
 | Evidence in the bundle                                              | 0.14.4 | 0.14.5  |
 | ------------------------------------------------------------------- | ------ | ------- |

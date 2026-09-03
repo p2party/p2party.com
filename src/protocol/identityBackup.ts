@@ -1,102 +1,58 @@
 import p2party from "./sdk";
 
+import type {
+  CreatedRecoverableIdentity,
+  CreateRecoverableIdentityOptions,
+  IdentityBackupStatus,
+  IdentityDerivation,
+  MnemonicValidation,
+  RestoredIdentity,
+} from "p2party";
+
 /**
  * The identity backup and restore surface, adapted for the app.
  *
- * The library grew this API after the vendored release was cut, so the app has
- * to compile against a package whose declarations do not mention it yet. Rather
- * than widen the SDK to `any` at every call site — which would silently survive
- * a rename and fail in the browser — the surface is declared once here and the
- * SDK object is treated as *possibly* implementing it. Every call then goes
- * through one runtime check, so a build without the API fails with a sentence
- * that says which function is missing instead of "undefined is not a function".
+ * The vendored build ships this API and declares it, so nothing here describes
+ * it a second time: `IdentityBackupApi` is a `Pick` of the SDK object's own
+ * type, and every type a dialog names is re-exported straight from `p2party`.
+ * A rename or a changed signature in the library is now a compile error in this
+ * file, which is the entire reason to import them. What this module carried
+ * before was a hand-written copy behind `Partial<>`, and a `Partial<>` of names
+ * nobody cross-checks compiles against any build at all — including one that
+ * never had the API.
  *
- * That runtime check is all the pattern buys, and the claim is deliberately
- * that narrow: `Partial<>` keeps every name optional, so a rename in the
- * library still compiles here, and the assertion inside `identityBackupCall`
- * keeps function types mutually comparable, so an added parameter or a changed
- * result compiles too. The declarations below are a stand-in for the package's,
- * not a cross-check against them.
- *
- * The re-vendor is where drift has to be caught. When a build that ships this
- * API is vendored, delete `IdentityBackupApi` and the local `RestoredIdentity`,
- * `CreatedRecoverableIdentity`, `CreateRecoverableIdentityOptions`,
- * `IdentityBackupStatus` and `MnemonicValidation` declarations in favour of the
- * package's own exports: importing them is the only change that turns a
- * mismatch into a compile error instead of a browser one.
+ * The runtime check stays. Declarations and code are two separate files in the
+ * same tarball: `lib/index.d.ts` promises a call, `lib/index.js` has to export
+ * it, and only the second one runs. If a build ever ships one without the
+ * other, every call site fails with a sentence naming the missing function
+ * instead of "undefined is not a function", and `identityBackupIsAvailable`
+ * lets the menus decline to offer a button that cannot work.
  */
 
-/** How the identity in use came into being, per the library's stored flag. */
-export type IdentityDerivation = "random" | "mnemonic";
-
-/** A phrase check reported in a shape a form can render directly. */
-export interface MnemonicValidation {
-  ok: boolean;
-  /**
-   * Quotes the offending word and its position (`Word 3, "zzz", is not in the
-   * wordlist.`), so it is part of the user's phrase: render it beside the
-   * input and put it nowhere else — never `console.*`, telemetry or a crash
-   * report.
-   */
-  reason?: string;
-}
-
-/** What a restore hands back: the account key, and nothing more identifying. */
-export interface RestoredIdentity {
-  publicKey: string;
-}
-
-export interface CreatedRecoverableIdentity extends RestoredIdentity {
-  /**
-   * Shown to the user exactly once. Neither the SDK nor the app stores it, by
-   * design, so a caller that drops it before the user has written it down has
-   * destroyed the only backup of that identity.
-   */
-  mnemonic: string;
-}
-
-export interface CreateRecoverableIdentityOptions {
-  /** Entropy bits: 128 gives a 12-word phrase, 256 a 24-word one. */
-  strength?: 128 | 256;
-  /**
-   * Folded into the derivation. It is never stored and never checked, so
-   * restoring with a different password yields a different identity.
-   */
-  password?: string;
-}
-
-/** The current account key, and whether a phrase can reproduce it. */
-export interface IdentityBackupStatus {
-  /** Empty when no identity is stored at all. */
-  publicKey: string;
-  /**
-   * `"mnemonic"` only for a key derived from a recovery phrase. `"random"` and
-   * `null` both mean the same thing to a caller — no backup exists — where
-   * `null` covers no identity stored yet, provenance never recorded (which is
-   * every identity created before this feature: the library writes the flag
-   * only on the branches that mint a key), and a record that no longer binds
-   * to the stored key. Ask `identityIsRecoverable` instead of comparing this.
-   */
-  derivation: IdentityDerivation | null;
-}
-
-interface IdentityBackupApi {
-  createRecoverableIdentity: (
-    options?: CreateRecoverableIdentityOptions,
-  ) => Promise<CreatedRecoverableIdentity>;
-  restoreIdentityFromMnemonic: (
-    mnemonic: string,
-    password?: string,
-  ) => Promise<RestoredIdentity>;
-  getIdentityBackupStatus: () => Promise<IdentityBackupStatus>;
-  validateMnemonicWords: (words: string) => MnemonicValidation;
-}
+export type {
+  CreatedRecoverableIdentity,
+  CreateRecoverableIdentityOptions,
+  IdentityBackupStatus,
+  IdentityDerivation,
+  MnemonicValidation,
+  RestoredIdentity,
+};
 
 /**
- * The SDK as it may be: the vendored declarations, plus the identity-backup
- * calls when the build in use has them.
+ * The four calls this module adapts, named once and typed from the SDK object
+ * itself. `Pick` is the cross-check: drop or rename one in the library and this
+ * line stops compiling.
  */
-const sdk = p2party as typeof p2party & Partial<IdentityBackupApi>;
+type IdentityBackupApi = Pick<
+  typeof p2party,
+  | "createRecoverableIdentity"
+  | "restoreIdentityFromMnemonic"
+  | "getIdentityBackupStatus"
+  | "validateMnemonicWords"
+>;
+
+/** The SDK, narrowed to the calls this module is about. */
+const sdk: IdentityBackupApi = p2party;
 
 const IDENTITY_BACKUP_CALLS = [
   "createRecoverableIdentity",
@@ -118,7 +74,7 @@ const identityBackupCall = <K extends keyof IdentityBackupApi>(
       `SDK build without identity backup: p2party.${name} is missing. Vendor a p2party release that ships the identity backup API.`,
     );
 
-  return call as IdentityBackupApi[K];
+  return call;
 };
 
 /**
@@ -133,6 +89,11 @@ export const identityBackupIsAvailable = (): boolean =>
 /**
  * Check a phrase's words without hashing it: length, and membership of the
  * wordlist. Cheap enough to run on every keystroke.
+ *
+ * The `reason` it hands back quotes the offending word and its position (`Word
+ * 3, "zzz", is not in the wordlist.`), so it is part of the user's phrase:
+ * render it beside the input and put it nowhere else — never `console.*`,
+ * telemetry or a crash report.
  */
 export const validateMnemonicWords = (words: string): MnemonicValidation =>
   identityBackupCall("validateMnemonicWords")(words);
@@ -195,9 +156,10 @@ export const INVALID_RECOVERY_PHRASE_MESSAGE =
  * failure — the difference between keeping the user in the form and telling
  * them something broke.
  *
- * Matched by name: the library's `InvalidRecoveryPhraseError` class is not in
- * every build the app may be vendoring, and `instanceof` against an import the
- * build does not export cannot be written at all.
+ * Matched by name rather than by `instanceof`: the library's
+ * `InvalidRecoveryPhraseError` class is not in every build the app may be
+ * vendoring — 0.14.5, the release before this one, does not export it — so a
+ * check written against the import would not survive a rollback.
  *
  * The matched error's `message` is the validation reason, which quotes a word
  * of the user's phrase and its position (`Word 3, "zzz", is not in the

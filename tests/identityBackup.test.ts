@@ -51,15 +51,38 @@ const IDENTITY_BACKUP_CALLS = [
  * never handed a stand-in module.
  */
 const sdk = p2party as unknown as Record<string, unknown>;
-const installed = new Set<string>();
+
+/**
+ * What the vendored build had before a test touched a name, so it can be put
+ * back exactly. Restoring rather than deleting is what lets these tests run
+ * against a build that ships the API: the calls belong to the real default
+ * export, which is shared by every test file in the process, and a test that
+ * deleted one would take it away from the rest of the run.
+ */
+const original = new Map<string, { present: boolean; value: unknown }>();
+
+const remember = (name: string) => {
+  if (!original.has(name))
+    original.set(name, { present: name in sdk, value: sdk[name] });
+};
+
 const install = (name: string, implementation: unknown) => {
-  installed.add(name);
+  remember(name);
   sdk[name] = implementation;
 };
 
+/** Take a call away, whether or not the vendored build shipped it. */
+const uninstall = (name: string) => {
+  remember(name);
+  delete sdk[name];
+};
+
 afterEach(() => {
-  for (const name of installed) delete sdk[name];
-  installed.clear();
+  for (const [name, { present, value }] of original) {
+    if (present) sdk[name] = value;
+    else delete sdk[name];
+  }
+  original.clear();
 });
 
 describe("identity backup adapter without an SDK build that ships it", () => {
@@ -67,18 +90,8 @@ describe("identity backup adapter without an SDK build that ships it", () => {
   // release happens to be vendored: re-vendoring a build that ships the API
   // must not turn this block red, because a red suite on that step reads as a
   // regression. What is under test is the guard, not the tarball.
-  const removed = new Map<string, unknown>();
-
   beforeEach(() => {
-    for (const name of IDENTITY_BACKUP_CALLS) {
-      if (name in sdk) removed.set(name, sdk[name]);
-      delete sdk[name];
-    }
-  });
-
-  afterEach(() => {
-    for (const [name, value] of removed) sdk[name] = value;
-    removed.clear();
+    for (const name of IDENTITY_BACKUP_CALLS) uninstall(name);
   });
 
   test("reports the API as unavailable", () => {
@@ -108,6 +121,11 @@ describe("identity backup adapter without an SDK build that ships it", () => {
 
 describe("identity backup adapter against an SDK build that ships it", () => {
   test("reports the API as available only when every call exists", () => {
+    // Half of the API present is also a constructed state, for the same reason
+    // the block above constructs the empty one: the vendored build ships all
+    // four, so a partial build has to be built here before it can be observed.
+    for (const name of IDENTITY_BACKUP_CALLS) uninstall(name);
+
     install("validateMnemonicWords", () => ({ ok: true }));
     expect(identityBackupIsAvailable()).toBe(false);
 

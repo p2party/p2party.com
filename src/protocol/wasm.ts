@@ -12,7 +12,7 @@
  * scripts/verifyLocalDependency.mjs derives the expected public path from the
  * lockfile version and fails the build if they diverge.
  */
-export const SELF_HOSTED_WASM_PATH = "/vendor/p2party-0.14.5/libcrypto.wasm";
+export const SELF_HOSTED_WASM_PATH = "/vendor/p2party-0.14.6/libcrypto.wasm";
 
 let cachedWasmBinary: Promise<ArrayBuffer> | undefined;
 
