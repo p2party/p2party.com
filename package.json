@@ -43,7 +43,7 @@
     "class-validator": "^0.15.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
-    "p2party": "file:vendor/p2party-0.14.6.tgz",
+    "p2party": "file:vendor/p2party-0.14.7.tgz",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
