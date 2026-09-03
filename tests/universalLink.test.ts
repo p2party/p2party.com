@@ -13,6 +13,25 @@ describe("resolveUniversalLinkTarget", () => {
     ).toBe(`/r?auth=pin&pq=1024${fragment}`);
   });
 
+  test("accepts a native link whose room shape rides in the fragment", () => {
+    // Links this build produces put the policy after the "#", so the native
+    // deep-link gate has to let it through or every PIN, non-default-suite
+    // and scheduled invitation stops opening the app.
+    expect(
+      resolveUniversalLinkTarget(`https://p2party.com/r${fragment}&auth=pin`),
+    ).toBe(`/r${fragment}&auth=pin`);
+    expect(
+      resolveUniversalLinkTarget(
+        `https://p2party.com/r${fragment}&auth=pin&pq=1024`,
+      ),
+    ).toBe(`/r${fragment}&auth=pin&pq=1024`);
+    expect(
+      resolveUniversalLinkTarget(
+        `https://p2party.com/r${fragment}&policy=${"A".repeat(43)}`,
+      ),
+    ).toBe(`/r${fragment}&policy=${"A".repeat(43)}`);
+  });
+
   test.each([
     `http://p2party.com/r${fragment}`,
     `https://evilp2party.com/r${fragment}`,

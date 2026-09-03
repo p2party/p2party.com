@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
+// Type-only: erased at compile time, so it cannot import the SDK before the
+// localStorage stub below is in place.
+import type { RoomPolicyV1 } from "../src/protocol/v4";
+
 const stored = new Map<string, string>();
 const localStorageStub: Storage = {
   get length() {
@@ -40,37 +44,156 @@ describe("room invitation routing", () => {
   const compact = p2party.encodeRoomCapabilityBase64Url(capability);
   const canonicalRoomUrl = p2party.normalizeRoomCapability(compact);
 
-  test("keeps capability after the fragment while query policy stays public", () => {
-    const path = roomInvitePath(
-      canonicalRoomUrl,
-      immediateRoomPolicy("pin", "hybrid-mlkem1024"),
-    );
-    const [publicRequest, fragment] = path.split("#");
+  /** Split a produced invite path the way a browser splits a location. */
+  const splitInvitePath = (
+    path: string,
+  ): { pathname: string; search: string; hash: string } => {
+    const hashIndex = path.indexOf("#");
+    const beforeHash = hashIndex < 0 ? path : path.slice(0, hashIndex);
+    const hash = hashIndex < 0 ? "" : path.slice(hashIndex);
+    const searchIndex = beforeHash.indexOf("?");
+    return {
+      pathname: searchIndex < 0 ? beforeHash : beforeHash.slice(0, searchIndex),
+      search: searchIndex < 0 ? "" : beforeHash.slice(searchIndex),
+      hash,
+    };
+  };
 
-    expect(publicRequest).toBe("/r?auth=pin&pq=1024");
-    expect(publicRequest).not.toContain(compact);
-    expect(publicRequest).not.toContain(canonicalRoomUrl);
-    expect(fragment).toBe(`v1.${compact}`);
+  const resolvePath = (path: string) => {
+    const { pathname, search, hash } = splitInvitePath(path);
+    return resolveRoomInvite(pathname, hash, search);
+  };
 
-    const resolved = resolveRoomInvite(
-      "/r",
-      `#${fragment}`,
-      "?v=4&auth=pin&pq=1024",
-    );
+  test("a PIN room's invitation sends no query string at all", () => {
+    const path = roomInvitePath(canonicalRoomUrl, immediateRoomPolicy("pin"));
+
+    // Everything before the "#" is what the browser puts on the wire, so the
+    // room's shape has to live after it, next to the capability: a query
+    // string would tell the origin server and every CDN in front of it, once
+    // per invitation click, that this room is PIN-protected.
+    expect(path).toBe(`/r#v1.${compact}&auth=pin`);
+    expect(path).not.toContain("?");
+    expect(splitInvitePath(path).search).toBe("");
+
+    const resolved = resolvePath(path);
     expect(resolved.kind).toBe("valid");
     if (resolved.kind !== "valid") throw new Error("invite did not resolve");
     expect(resolved.roomUrl).toBe(canonicalRoomUrl);
     expect(resolved.policy.authMode).toBe("pin");
-    expect(resolved.policy.pqMode).toBe("hybrid-mlkem1024");
+    expect(resolved.specifiedPolicy.authMode).toBe(true);
+  });
 
-    const retired = resolveRoomInvite(
+  test("a non-default ML-KEM suite stays out of the query string too", () => {
+    const path = roomInvitePath(
+      canonicalRoomUrl,
+      immediateRoomPolicy("nopin", "hybrid-mlkem512"),
+    );
+
+    expect(path).toBe(`/r#v1.${compact}&pq=512`);
+    expect(path).not.toContain("?");
+
+    const resolved = resolvePath(path);
+    expect(resolved.kind).toBe("valid");
+    if (resolved.kind !== "valid") throw new Error("invite did not resolve");
+    expect(resolved.policy.pqMode).toBe("hybrid-mlkem512");
+    expect(resolved.specifiedPolicy.pqMode).toBe(true);
+  });
+
+  test("a legacy query-string invitation resolves exactly as it did", () => {
+    const legacy = resolveRoomInvite(
       "/r",
-      `#${fragment}`,
+      `#v1.${compact}`,
+      "?v=4&auth=pin&pq=1024",
+    );
+    expect(legacy.kind).toBe("valid");
+    if (legacy.kind !== "valid")
+      throw new Error("legacy invite did not resolve");
+    expect(legacy.roomUrl).toBe(canonicalRoomUrl);
+    expect(legacy.policy.authMode).toBe("pin");
+    expect(legacy.policy.pqMode).toBe("hybrid-mlkem1024");
+    expect(legacy.specifiedPolicy).toEqual({
+      wireVersion: true,
+      authMode: true,
+      pqMode: true,
+      coverMode: false,
+    });
+
+    // ...and its fragment-form equivalent says precisely the same thing.
+    const modern = resolveRoomInvite(
+      "/r",
+      `#v1.${compact}&v=4&auth=pin&pq=1024`,
+      "",
+    );
+    expect(modern).toEqual(legacy);
+  });
+
+  test("the retired protocol v3 is rejected from either half", () => {
+    const fromQuery = resolveRoomInvite(
+      "/r",
+      `#v1.${compact}`,
       "?v=3&auth=pin&pq=1024",
     );
-    expect(retired.kind).toBe("invalid");
-    if (retired.kind !== "invalid") throw new Error("v3 invite resolved");
-    expect(retired.error).toContain("retired protocol v3");
+    expect(fromQuery.kind).toBe("invalid");
+    if (fromQuery.kind !== "invalid") throw new Error("v3 invite resolved");
+    expect(fromQuery.error).toContain("retired protocol v3");
+
+    const fromFragment = resolveRoomInvite(
+      "/r",
+      `#v1.${compact}&v=3&auth=pin&pq=1024`,
+      "",
+    );
+    expect(fromFragment.kind).toBe("invalid");
+    if (fromFragment.kind !== "invalid") throw new Error("v3 invite resolved");
+    expect(fromFragment.error).toContain("retired protocol v3");
+  });
+
+  test("an unknown parameter is rejected wherever it appears", () => {
+    const fromQuery = resolveRoomInvite(
+      "/r",
+      `#v1.${compact}`,
+      "?secret=value",
+    );
+    expect(fromQuery.kind).toBe("invalid");
+    if (fromQuery.kind !== "invalid") throw new Error("invite resolved");
+    expect(fromQuery.error).toContain("Unsupported room invitation parameter");
+
+    const fromFragment = resolveRoomInvite(
+      "/r",
+      `#v1.${compact}&secret=value`,
+      "",
+    );
+    expect(fromFragment.kind).toBe("invalid");
+    if (fromFragment.kind !== "invalid") throw new Error("invite resolved");
+    expect(fromFragment.error).toContain(
+      "Unsupported room invitation parameter",
+    );
+
+    // The single-occurrence rule travels with it.
+    const twice = resolveRoomInvite("/r", `#v1.${compact}&pq=768&pq=1024`, "");
+    expect(twice.kind).toBe("invalid");
+    if (twice.kind !== "invalid") throw new Error("invite resolved");
+    expect(twice.error).toContain("must occur once");
+  });
+
+  test("an invitation that states two different policies is rejected", () => {
+    const disagreeing = resolveRoomInvite(
+      "/r",
+      `#v1.${compact}&auth=pin`,
+      "?auth=nopin",
+    );
+    expect(disagreeing.kind).toBe("invalid");
+    if (disagreeing.kind !== "invalid") throw new Error("invite resolved");
+    expect(disagreeing.error).toContain("two different room policies");
+
+    // Saying the same thing twice is not a contradiction.
+    const agreeing = resolveRoomInvite(
+      "/r",
+      `#v1.${compact}&auth=pin`,
+      "?auth=pin",
+    );
+    expect(agreeing.kind).toBe("valid");
+    if (agreeing.kind !== "valid") throw new Error("invite did not resolve");
+    expect(agreeing.policy.authMode).toBe("pin");
   });
 
   test("uses the shortest fragment URL for the exact default policy", () => {
@@ -104,16 +227,16 @@ describe("room invitation routing", () => {
       ).toEqual(policy);
 
       const path = roomInvitePath(canonicalRoomUrl, policy);
-      const [publicRequest, fragment] = path.split("#");
-      expect(publicRequest).toMatch(/^\/r\?policy=[A-Za-z0-9_-]{43}$/u);
-      expect(publicRequest).not.toContain("auth=");
-      expect(publicRequest).not.toContain(compact);
-
-      const resolved = resolveRoomInvite(
-        "/r",
-        `#${fragment}`,
-        publicRequest.slice("/r".length),
+      // The whole 32-byte policy - cadence, lanes, frames, duration and all -
+      // is the most identifying thing an invitation carries after the
+      // capability, and it too now rides behind the "#".
+      expect(path).toMatch(
+        /^\/r#v1\.[A-Za-z0-9_-]{43}&policy=[A-Za-z0-9_-]{43}$/u,
       );
+      expect(path).not.toContain("?");
+      expect(splitInvitePath(path).search).toBe("");
+
+      const resolved = resolvePath(path);
       expect(resolved.kind).toBe("valid");
       if (resolved.kind !== "valid") throw new Error("invite did not resolve");
       expect(resolved.roomUrl).toBe(canonicalRoomUrl);
@@ -133,9 +256,10 @@ describe("room invitation routing", () => {
       "hybrid-mlkem768",
       SCHEDULED_COVER_PRESETS[0],
     );
-    const search = roomInvitePath(canonicalRoomUrl, policy)
-      .split("#")[0]
-      .slice("/r".length);
+    const search = `?${roomInvitePath(canonicalRoomUrl, policy)
+      .split("&")
+      .slice(1)
+      .join("&")}`;
 
     expect(() => parseRoomPolicyInvite(`${search}&auth=pin`)).toThrow(
       "cannot combine",
@@ -161,9 +285,9 @@ describe("room invitation routing", () => {
       "hybrid-mlkem768",
       SCHEDULED_COVER_PRESETS[0],
     );
-    const canonical = roomInvitePath(canonicalRoomUrl, scheduled)
-      .split("#")[0]
-      .slice("/r?policy=".length);
+    const canonical = roomInvitePath(canonicalRoomUrl, scheduled).slice(
+      `/r#v1.${compact}&policy=`.length,
+    );
     expect(() => parseRoomPolicyInvite(`?policy=${canonical}`)).not.toThrow();
     const alphabet =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -174,6 +298,51 @@ describe("room invitation routing", () => {
     expect(() => parseRoomPolicyInvite(`?policy=${smuggled}`)).toThrow(
       "malformed policy parameter",
     );
+  });
+
+  test("round-trips every room shape through the fragment alone", () => {
+    const cases: { name: string; policy: RoomPolicyV1 }[] = [
+      { name: "immediate", policy: immediateRoomPolicy("nopin") },
+      { name: "pin", policy: immediateRoomPolicy("pin") },
+      {
+        name: "non-default suite",
+        policy: immediateRoomPolicy("nopin", "hybrid-mlkem1024"),
+      },
+      {
+        name: "pin + non-default suite",
+        policy: immediateRoomPolicy("pin", "hybrid-mlkem512"),
+      },
+      {
+        name: "scheduled",
+        policy: scheduledRoomPolicy(
+          "pin",
+          "hybrid-mlkem1024",
+          SCHEDULED_COVER_PRESETS[0],
+        ),
+      },
+    ];
+
+    for (const { name, policy } of cases) {
+      const path = roomInvitePath(canonicalRoomUrl, policy);
+      expect(`${name}: ${path}`).not.toContain("?");
+
+      const resolved = resolvePath(path);
+      expect(resolved.kind).toBe("valid");
+      if (resolved.kind !== "valid")
+        throw new Error(`${name} invite did not resolve`);
+      expect(resolved.roomUrl).toBe(canonicalRoomUrl);
+      expect(resolved.policy).toEqual(policy);
+      // The specified flags survive too: they are what stops a saved room's
+      // policy from being overwritten by a link that never mentioned it.
+      expect(resolved.specifiedPolicy).toEqual({
+        wireVersion: policy.coverMode === "scheduled",
+        authMode: policy.coverMode === "scheduled" || policy.authMode === "pin",
+        pqMode:
+          policy.coverMode === "scheduled" ||
+          policy.pqMode !== "hybrid-mlkem768",
+        coverMode: policy.coverMode === "scheduled",
+      });
+    }
   });
 
   test("rejects every capability-bearing HTTP room path", () => {

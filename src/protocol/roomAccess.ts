@@ -190,6 +190,39 @@ export const parseRoomPolicyInvite = (
   };
 };
 
+/**
+ * The character that ends the capability and begins the room's shape inside
+ * the fragment.
+ *
+ * `p2party.encodeRoomInviteFragment` emits exactly `"v1."` followed by 43
+ * characters of the base64url alphabet (`A-Z`, `a-z`, `0-9`, `-`, `_`), and
+ * `decodeRoomCapabilityBase64Url` enforces that shape with
+ * `/^[A-Za-z0-9_-]{43}$/` before it will decode anything. `&` is not in that
+ * alphabet and is not one of `v`, `1` or `.`, so it cannot occur anywhere in a
+ * capability fragment the library produces, nor in one it would accept. The
+ * first `&` in the hash is therefore an unambiguous end-of-capability marker —
+ * and what follows it is an ordinary query-shaped body that URLSearchParams,
+ * and so parseRoomPolicyInvite, already read.
+ */
+const FRAGMENT_POLICY_SEPARATOR = "&";
+
+const roomPolicyInviteParams = (policy: RoomPolicyV1): URLSearchParams => {
+  const params = new URLSearchParams();
+  if (policy.coverMode === "scheduled") {
+    // A scheduled room MUST share its complete policy: a joiner that guesses
+    // the schedule fails the authenticated handshake (policy hash mismatch).
+    params.set(
+      "policy",
+      p2party.encodeRoomCapabilityBase64Url(p2party.encodeRoomPolicyV1(policy)),
+    );
+  } else {
+    if (policy.authMode === "pin") params.set("auth", "pin");
+    if (policy.pqMode !== "hybrid-mlkem768")
+      params.set("pq", pqModeToQuery(policy.pqMode));
+  }
+  return params;
+};
+
 export const roomInvitePath = (
   roomUrl: string,
   policy: RoomPolicyV1,
@@ -199,23 +232,17 @@ export const roomInvitePath = (
   const capability = p2party.decodeRoomCapability(roomUrl);
   try {
     const fragment = p2party.encodeRoomInviteFragment(capability);
-    const params = new URLSearchParams();
-    if (policy.coverMode === "scheduled") {
-      // A scheduled room MUST share its complete policy: a joiner that guesses
-      // the schedule fails the authenticated handshake (policy hash mismatch).
-      params.set(
-        "policy",
-        p2party.encodeRoomCapabilityBase64Url(
-          p2party.encodeRoomPolicyV1(policy),
-        ),
-      );
-    } else {
-      if (policy.authMode === "pin") params.set("auth", "pin");
-      if (policy.pqMode !== "hybrid-mlkem768")
-        params.set("pq", pqModeToQuery(policy.pqMode));
-    }
-    const query = params.size > 0 ? `?${params.toString()}` : "";
-    return `/r${query}#${fragment}`;
+    const params = roomPolicyInviteParams(policy);
+    // The room's shape rides in the fragment, beside the capability, because
+    // only the fragment stays off the wire. It used to ride in the query
+    // string, which the browser sends on every click: the origin server and
+    // any CDN in front of it learned, per invitation opened, whether the room
+    // is PIN-protected, which ML-KEM suite it pins, and for a scheduled room
+    // its entire 32-byte policy. The capability was always safe here; the
+    // room's shape was not.
+    const publicPolicy =
+      params.size > 0 ? `${FRAGMENT_POLICY_SEPARATOR}${params.toString()}` : "";
+    return `/r#${fragment}${publicPolicy}`;
   } finally {
     capability.fill(0);
   }
@@ -252,6 +279,79 @@ export type RoomInviteResolution =
 const errorMessage = (cause: unknown): string =>
   cause instanceof Error ? cause.message : "Malformed room invitation";
 
+/** Split a hash into the capability it always carries and the policy it may. */
+const splitInviteFragment = (
+  hash: string,
+): { capability: string; policy: string } => {
+  const separatorIndex = hash.indexOf(FRAGMENT_POLICY_SEPARATOR);
+  return separatorIndex < 0
+    ? { capability: hash, policy: "" }
+    : {
+        capability: hash.slice(0, separatorIndex),
+        policy: hash.slice(separatorIndex + 1),
+      };
+};
+
+/** Did this half of the invitation pin anything down, or is it silent? */
+const statesAPolicy = (parsed: ParsedRoomPolicyInvite): boolean =>
+  parsed.specified.wireVersion ||
+  parsed.specified.authMode ||
+  parsed.specified.pqMode ||
+  parsed.specified.coverMode;
+
+const statesTheSame = (
+  first: ParsedRoomPolicyInvite,
+  second: ParsedRoomPolicyInvite,
+): boolean =>
+  // Compare the canonical 32-byte wire form rather than field by field, so a
+  // policy field added to the library is compared without being listed here.
+  p2party.encodeRoomCapabilityBase64Url(
+    p2party.encodeRoomPolicyV1(first.policy),
+  ) ===
+    p2party.encodeRoomCapabilityBase64Url(
+      p2party.encodeRoomPolicyV1(second.policy),
+    ) &&
+  first.specified.wireVersion === second.specified.wireVersion &&
+  first.specified.authMode === second.specified.authMode &&
+  first.specified.pqMode === second.specified.pqMode &&
+  first.specified.coverMode === second.specified.coverMode;
+
+/**
+ * Read the room's shape from the two places an invitation can state it.
+ *
+ * The fragment is the new home and the query string is the old one, so both
+ * are read: invitations already shared in the world carry their policy in the
+ * query and must keep working exactly as they do. Both halves are parsed
+ * before either is chosen, so the allowlist, the single-occurrence rule and
+ * the retired-v3 rejection apply to a parameter wherever it appears.
+ *
+ * When only one half states anything, that half is the answer. When both do,
+ * the invitation is rejected unless they state precisely the same thing — the
+ * same 32-byte policy and the same set of parameters actually pinned down.
+ * Nothing has ever produced both halves at once: this app wrote the query form
+ * before and writes the fragment form now, never both, so a link that states
+ * two different policies is not a link anyone made, and choosing between them
+ * would be guessing. Silently preferring the fragment is defensible too — it
+ * is the half no intermediary can see or rewrite — but it would let a mangled
+ * link join under a shape its sender never chose, and a joiner whose policy
+ * disagrees with the room's fails the authenticated handshake anyway. An
+ * explicit refusal here beats an unexplained handshake failure later.
+ */
+const parseRoomPolicyInvitation = (
+  fragmentPolicy: string,
+  search: string,
+): ParsedRoomPolicyInvite => {
+  const fromFragment = parseRoomPolicyInvite(fragmentPolicy);
+  const fromQuery = parseRoomPolicyInvite(search);
+  if (!statesAPolicy(fromFragment)) return fromQuery;
+  if (!statesAPolicy(fromQuery)) return fromFragment;
+  if (!statesTheSame(fromFragment, fromQuery))
+    throw new Error(
+      "Room invitation states two different room policies; ask the sender for a fresh invitation",
+    );
+  return fromFragment;
+};
+
 /** Resolve one fragment invite to the canonical internal server/database key. */
 export const resolveRoomInvite = (
   pathname: string,
@@ -265,9 +365,13 @@ export const resolveRoomInvite = (
   try {
     if (hash.length === 0)
       throw new Error("Room invitation fragment is missing");
-    capability = p2party.decodeRoomInviteFragment(hash);
+    const fragment = splitInviteFragment(hash);
+    // Only the capability half reaches the library's fragment codec: it
+    // demands the exact "v1." + 43 base64url characters and would reject the
+    // policy riding behind the separator.
+    capability = p2party.decodeRoomInviteFragment(fragment.capability);
 
-    const parsedPolicy = parseRoomPolicyInvite(search);
+    const parsedPolicy = parseRoomPolicyInvitation(fragment.policy, search);
     const roomUrl = p2party.normalizeRoomCapability(
       p2party.encodeRoomCapabilityBase64Url(capability),
     );
