@@ -2,10 +2,8 @@ import { lazy, Suspense, useState } from "react";
 
 import {
   ArchiveBoxXMarkIcon,
-  ArrowUturnLeftIcon,
   BookOpenIcon,
   Cog8ToothIcon,
-  KeyIcon,
   QrCodeIcon,
 } from "@heroicons/react/20/solid";
 
@@ -34,6 +32,7 @@ import p2party from "../../protocol/sdk";
 
 const SignalingDropdown = lazy(() => import("./SignalingDropdown"));
 const PeerDropdown = lazy(() => import("./PeerDropdown"));
+const IdentityDropdown = lazy(() => import("./IdentityDropdown"));
 const DeleteDropdown = lazy(() => import("./DeleteDropdown"));
 
 export interface SideBarProps {
@@ -101,57 +100,6 @@ const SideBar = () => {
           <SettingsAlert isOpen={showSettings} setIsOpen={setShowSettings} />
         </SidebarItem>
 
-        {/* The sidebar is the whole app's reach: on a phone it is what the
-            hamburger opens, so one entry here covers both layouts and the
-            navbar keeps the room it has. The dialog sits outside the item
-            because a portal's clicks still bubble through the React tree, and
-            a click on its Done button would land on this row's onClick and
-            reopen what it had just closed. */}
-        {canBackUpIdentity && (
-          <>
-            <SidebarItem onClick={() => setShowIdentityBackup(true)}>
-              <span className='flex min-w-0 items-center gap-3'>
-                <KeyIcon className='size-9 lg:size-7' />
-                <span className='min-w-0'>
-                  <span className='block truncate text-sm/5 font-medium text-zinc-100'>
-                    Back up identity
-                  </span>
-                </span>
-              </span>
-            </SidebarItem>
-            <IdentityBackupAlert
-              // Remounting on every open and close is what drops the recovery
-              // phrase from memory even when something other than the dialog's
-              // own buttons closes it.
-              key={String(showIdentityBackup)}
-              isOpen={showIdentityBackup}
-              setIsOpen={setShowIdentityBackup}
-            />
-
-            {/* Restoring is its own row rather than a panel of the backup
-                dialog: it is reached from a device that has lost an identity,
-                not from one reading the identity it has, and the two share
-                nothing but the wordlist. */}
-            <SidebarItem onClick={() => setShowIdentityRestore(true)}>
-              <span className='flex min-w-0 items-center gap-3'>
-                <ArrowUturnLeftIcon className='size-9 lg:size-7' />
-                <span className='min-w-0'>
-                  <span className='block truncate text-sm/5 font-medium text-zinc-100'>
-                    Restore identity
-                  </span>
-                </span>
-              </span>
-            </SidebarItem>
-            <RestoreIdentityAlert
-              // Same reason as above: the phrase typed in here must not
-              // outlive the panel, whoever closed it.
-              key={String(showIdentityRestore)}
-              isOpen={showIdentityRestore}
-              setIsOpen={setShowIdentityRestore}
-            />
-          </>
-        )}
-
         <SidebarItem onClick={() => setShowAddressBook(true)}>
           <span className='flex min-w-0 items-center gap-3'>
             <BookOpenIcon className='size-9 lg:size-7' />
@@ -197,6 +145,43 @@ const SideBar = () => {
           </span>
           <BlacklistAlert isOpen={showBlacklist} setIsOpen={setShowBlacklist} />
         </SidebarItem>
+
+        {/* Backing an identity up and restoring one are a menu of their own,
+            sitting beside the delete menu rather than inside it: that menu is
+            destruction — purge the identity, the room, everything — and the
+            item that hands a lost identity back does not belong one tap away
+            from the item that destroys it.
+
+            Both dialogs are mounted out here rather than in the menu. A
+            Headless UI menu unmounts its panel as it closes, which would take
+            an open dialog with it, and a portal's clicks still bubble through
+            the React tree, so a click on the dialog's Done button would land
+            on the row that opened it and reopen what it had just closed. */}
+        {canBackUpIdentity && (
+          <>
+            <Suspense>
+              <IdentityDropdown
+                setShowIdentityBackup={setShowIdentityBackup}
+                setShowIdentityRestore={setShowIdentityRestore}
+              />
+            </Suspense>
+            <IdentityBackupAlert
+              // Remounting on every open and close is what drops the recovery
+              // phrase from memory even when something other than the dialog's
+              // own buttons closes it.
+              key={String(showIdentityBackup)}
+              isOpen={showIdentityBackup}
+              setIsOpen={setShowIdentityBackup}
+            />
+            <RestoreIdentityAlert
+              // Same reason as above: the phrase typed in here must not
+              // outlive the panel, whoever closed it.
+              key={String(showIdentityRestore)}
+              isOpen={showIdentityRestore}
+              setIsOpen={setShowIdentityRestore}
+            />
+          </>
+        )}
 
         <Suspense>
           <DeleteDropdown />
