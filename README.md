@@ -339,9 +339,10 @@ What the app actually uses natively:
 
 - **`@capacitor/app`** — `appUrlOpen` plus `getLaunchUrl()` for universal
   links (`src/hooks/useUniversalLink.tsx`). Only
-  `https://p2party.com/r#v1.<43 base64url chars>` is accepted, and only with no
-  port, no credentials, and that exact path
-  (`src/protocol/universalLink.ts`); everything else is ignored.
+  `https://p2party.com/r#v1.<43 base64url chars>`, optionally followed by `&`
+  and the room's shape, is accepted, and only with no port, no credentials,
+  and that exact path (`src/protocol/universalLink.ts`); everything else is
+  ignored.
 - **`@capacitor/status-bar` + `@capacitor-community/safe-area`**
   (`src/App.tsx`) — status-bar style and insets follow the dark-mode setting.
 - **`@capacitor/filesystem`** and
@@ -512,8 +513,12 @@ Grounded in the vendored `p2party` 0.14.6 and in this repository's code.
   receiver streams large files to OPFS where the browser provides it, and a
   reload fills the gaps rather than starting over. A transfer resumes across a
   replaced peer connection.
-- **Invitations and identity.** A room invitation carries the full room policy;
-  the address book pins a contact's Ed25519 identity and warns when it changes.
+- **Invitations and identity.** A room invitation carries the room's policy in
+  the URL fragment, beside the capability and never in the query string
+  (`/r#v1.<capability>&auth=pin`), so opening one sends the server nothing but
+  `GET /r`; a link from an older build, which put that policy in the query, is
+  refused with a message asking the sender for a fresh one. The address book
+  pins a contact's Ed25519 identity and warns when it changes.
   The two surfaces are the note in `MessageSenderDropdown` and the
   `VerifyIdentityAlert` dialog — a warning you can find, not one that
   interrupts you before you talk to them.
@@ -639,9 +644,11 @@ outcome is correct; the latency is not yet.
   or of this client.
 - **Long-term identities live only in browser storage**, and there is no
   backup or restore flow yet. Clearing site data loses the identity.
-- The room secret lives in the URL **fragment**, which a browser never puts in
-  an HTTP request — but it is still in the link, and joining transmits the
-  capability to the signaling service.
+- The room secret and the room's shape both live in the URL **fragment**,
+  which a browser never puts in an HTTP request — but they are still in the
+  link, and joining transmits the capability to the signaling service. A
+  request for `/r` is still made, so the server still learns that someone
+  opened an invitation, from which address and when.
 
 If you are about to add a sentence to the UI or to these docs, the project rule
 is in the SDK's `ROADMAP.md` non-goals: _if a guarantee is not tested, it does

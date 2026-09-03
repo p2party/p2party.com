@@ -38,7 +38,7 @@ const log = (...a) =>
   console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
 
 /**
- * Build the ?policy= parameter with the LIBRARY's own codec rather than a
+ * Build the policy= parameter with the LIBRARY's own codec rather than a
  * hand-rolled byte layout — a guessed layout silently produces an invalid
  * invitation, and the app then never reaches the connect flow.
  */
@@ -132,8 +132,8 @@ const run = async () => {
     await probePage.goto(APP, { waitUntil: "networkidle" });
     const policyParam = await encodePolicyParam(probePage, scheduledPolicy);
     await probe.close();
-    const roomPath = `${APP}/r?policy=${policyParam}#v1.${capability.toString("base64url")}`;
-    log(`scheduled-cover invite: /r?policy=${policyParam.slice(0, 12)}…`);
+    const roomPath = `${APP}/r#v1.${capability.toString("base64url")}&policy=${policyParam}`;
+    log(`scheduled-cover invite: /r#v1.…&policy=${policyParam.slice(0, 12)}…`);
 
     const contexts = [];
     for (const tag of ["A", "B"]) {

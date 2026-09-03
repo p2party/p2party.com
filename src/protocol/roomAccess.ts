@@ -102,18 +102,30 @@ const pqModeToQuery = (pqMode: RoomPqMode): string => {
   return "1024";
 };
 
+/**
+ * The four parameters with which an invitation may state the room's shape.
+ *
+ * They are read from the fragment and nowhere else. The query string is
+ * matched against this same set for one purpose only: to recognise a link
+ * from an older build and say so.
+ */
+const POLICY_PARAMETERS = new Set(["v", "auth", "pq", "policy"]);
+
+// `stated` is the query-shaped body in which an invitation states the room's
+// shape — in every link this app produces or accepts, the part of the fragment
+// that follows the capability.
+//
 // The policy parameter is the canonical base64url of the 32-byte RoomPolicyV1
 // wire form. The library's capability codec is exactly that — a strict
 // 32-byte base64url codec that rejects non-canonical spellings (it checks the
 // final sextet's unused bits and re-encodes to compare), so the policy
 // parameter reuses it rather than carrying a second implementation.
 export const parseRoomPolicyInvite = (
-  search: string,
+  stated: string,
 ): ParsedRoomPolicyInvite => {
-  const params = new URLSearchParams(search);
-  const allowed = new Set(["v", "auth", "pq", "policy"]);
+  const params = new URLSearchParams(stated);
   for (const key of params.keys()) {
-    if (!allowed.has(key))
+    if (!POLICY_PARAMETERS.has(key))
       throw new Error(`Unsupported room invitation parameter: ${key}`);
   }
 
@@ -292,67 +304,40 @@ const splitInviteFragment = (
       };
 };
 
-/** Did this half of the invitation pin anything down, or is it silent? */
-const statesAPolicy = (parsed: ParsedRoomPolicyInvite): boolean =>
-  parsed.specified.wireVersion ||
-  parsed.specified.authMode ||
-  parsed.specified.pqMode ||
-  parsed.specified.coverMode;
-
-const statesTheSame = (
-  first: ParsedRoomPolicyInvite,
-  second: ParsedRoomPolicyInvite,
-): boolean =>
-  // Compare the canonical 32-byte wire form rather than field by field, so a
-  // policy field added to the library is compared without being listed here.
-  p2party.encodeRoomCapabilityBase64Url(
-    p2party.encodeRoomPolicyV1(first.policy),
-  ) ===
-    p2party.encodeRoomCapabilityBase64Url(
-      p2party.encodeRoomPolicyV1(second.policy),
-    ) &&
-  first.specified.wireVersion === second.specified.wireVersion &&
-  first.specified.authMode === second.specified.authMode &&
-  first.specified.pqMode === second.specified.pqMode &&
-  first.specified.coverMode === second.specified.coverMode;
-
 /**
- * Read the room's shape from the two places an invitation can state it.
+ * Refuse a query string on /r, which no longer says anything about a room.
  *
- * The fragment is the new home and the query string is the old one, so both
- * are read: invitations already shared in the world carry their policy in the
- * query and must keep working exactly as they do. Both halves are parsed
- * before either is chosen, so the allowlist, the single-occurrence rule and
- * the retired-v3 rejection apply to a parameter wherever it appears.
+ * An invitation states the room's shape in its fragment and only there, so a
+ * link still carrying `v`, `auth`, `pq` or `policy` in its query was written
+ * by an older build. Resolving it silently to the default shape would be
+ * worse than refusing it: the joiner of a PIN room would be dropped into an
+ * authenticated handshake that fails on a policy hash mismatch, with nothing
+ * on screen to say why. Name it instead, exactly as the retired protocol v3
+ * is named, and send the visitor back to the sender for a link this build can
+ * read.
  *
- * When only one half states anything, that half is the answer. When both do,
- * the invitation is rejected unless they state precisely the same thing — the
- * same 32-byte policy and the same set of parameters actually pinned down.
- * Nothing has ever produced both halves at once: this app wrote the query form
- * before and writes the fragment form now, never both, so a link that states
- * two different policies is not a link anyone made, and choosing between them
- * would be guessing. Silently preferring the fragment is defensible too — it
- * is the half no intermediary can see or rewrite — but it would let a mangled
- * link join under a shape its sender never chose, and a joiner whose policy
- * disagrees with the room's fails the authenticated handshake anyway. An
- * explicit refusal here beats an unexplained handshake failure later.
+ * A query that never carried a policy keeps the treatment it already had: an
+ * empty one resolves, an unrelated parameter is refused by name. Neither was
+ * part of what leaked, so neither changes meaning here.
  */
-const parseRoomPolicyInvitation = (
-  fragmentPolicy: string,
-  search: string,
-): ParsedRoomPolicyInvite => {
-  const fromFragment = parseRoomPolicyInvite(fragmentPolicy);
-  const fromQuery = parseRoomPolicyInvite(search);
-  if (!statesAPolicy(fromFragment)) return fromQuery;
-  if (!statesAPolicy(fromQuery)) return fromFragment;
-  if (!statesTheSame(fromFragment, fromQuery))
-    throw new Error(
-      "Room invitation states two different room policies; ask the sender for a fresh invitation",
-    );
-  return fromFragment;
+const rejectInviteQuery = (search: string): void => {
+  const keys = [...new URLSearchParams(search).keys()];
+  if (keys.length === 0) return;
+  throw new Error(
+    keys.some((key) => POLICY_PARAMETERS.has(key))
+      ? "Room invitation is from an older build; ask the sender for a fresh invitation"
+      : `Unsupported room invitation parameter: ${keys[0]}`,
+  );
 };
 
-/** Resolve one fragment invite to the canonical internal server/database key. */
+/**
+ * Resolve one fragment invite to the canonical internal server/database key.
+ *
+ * `search` is not a source of policy — nothing this app produces puts policy
+ * there any more, and nothing reads it back. It is passed in so that a link
+ * from an older build can be refused out loud rather than silently downgraded
+ * to the default room shape.
+ */
 export const resolveRoomInvite = (
   pathname: string,
   hash: string,
@@ -363,6 +348,7 @@ export const resolveRoomInvite = (
 
   let capability: Uint8Array | undefined;
   try {
+    rejectInviteQuery(search);
     if (hash.length === 0)
       throw new Error("Room invitation fragment is missing");
     const fragment = splitInviteFragment(hash);
@@ -371,7 +357,7 @@ export const resolveRoomInvite = (
     // policy riding behind the separator.
     capability = p2party.decodeRoomInviteFragment(fragment.capability);
 
-    const parsedPolicy = parseRoomPolicyInvitation(fragment.policy, search);
+    const parsedPolicy = parseRoomPolicyInvite(fragment.policy);
     const roomUrl = p2party.normalizeRoomCapability(
       p2party.encodeRoomCapabilityBase64Url(capability),
     );

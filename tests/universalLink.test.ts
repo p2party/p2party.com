@@ -5,7 +5,12 @@ import { resolveUniversalLinkTarget } from "../src/protocol/universalLink";
 const fragment = `#v1.${"A".repeat(43)}`;
 
 describe("resolveUniversalLinkTarget", () => {
-  test("accepts only the canonical HTTPS room route", () => {
+  test("accepts the canonical HTTPS room route, query and all", () => {
+    // Nothing produces this shape any more, and the app now refuses it as an
+    // invitation from an older build. The query still has to reach the app to
+    // be refused: drop it here and the native shell would resolve an old PIN
+    // link to the default no-PIN policy and fail the handshake in silence,
+    // while the same link opened in a browser says what is wrong.
     expect(
       resolveUniversalLinkTarget(
         `https://p2party.com/r?auth=pin&pq=1024${fragment}`,

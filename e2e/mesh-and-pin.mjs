@@ -149,7 +149,7 @@ const run = async () => {
     {
       const capability = randomBytes(32);
       const roomUrl = capability.toString("hex");
-      const roomPath = `${APP}/r?auth=pin#v1.${capability.toString("base64url")}`;
+      const roomPath = `${APP}/r#v1.${capability.toString("base64url")}&auth=pin`;
       const host = await newContext(browser, "host");
       const joiner = await newContext(browser, "joiner");
 

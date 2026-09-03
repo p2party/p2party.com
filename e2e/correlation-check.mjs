@@ -96,7 +96,7 @@ const run = async () => {
       );
     }, scheduledPolicy);
     await probe.close();
-    const roomPath = `${APP}/r?policy=${policyParam}#v1.${capability.toString("base64url")}`;
+    const roomPath = `${APP}/r#v1.${capability.toString("base64url")}&policy=${policyParam}`;
 
     const contexts = [];
     for (const tag of ["A", "B"]) {
