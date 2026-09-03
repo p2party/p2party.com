@@ -30,9 +30,9 @@ That distinction was written down a while ago. This release is what it cost to a
 
 Put a phone in your pocket. The screen goes off, the page is frozen, the radio is powered down. Nothing on the phone gets told about any of this. The WebSocket to the signaling server does not fire `close`, because there is no packet to trigger it; the TCP stack finds out minutes later, if at all. The peer connection is in exactly the same state.
 
-Meanwhile the other side — a laptop, awake, on Wi-Fi — sees its edge fail, tears it down, and dials again. It builds a new `RTCPeerConnection`, which mints a new DTLS certificate, and offers it.
+Meanwhile the other side, a laptop, awake, on Wi-Fi, sees its edge fail, tears it down, and dials again. It builds a new `RTCPeerConnection`, which mints a new DTLS certificate, and offers it.
 
-Now take the phone out of your pocket. It has an authenticated session — transcript, ratchet, message keys — all of which were proven against a certificate that no longer exists on the other end. The browser is happy to accept the new remote description and re-run DTLS on the old peer connection. Everything looks connected. Nothing decrypts.
+Now take the phone out of your pocket. It has an authenticated session. Transcript, ratchet, message keys, all of them proven against a certificate that no longer exists on the other end. The browser is happy to accept the new remote description and re-run DTLS on the old peer connection. Everything looks connected. Nothing decrypts.
 
 The room shows two people in it and no way to talk.
 
@@ -52,7 +52,7 @@ Fixing the identity of an edge exposed four smaller lies of the same family, eac
 
 **A send whose peer never authenticates fails.** It used to wait, indefinitely, for a handshake that no longer had a transport to complete on. It now returns an error naming the reason, which the app puts on the message where you sent it.
 
-**The signaling socket has a wall-clock watchdog.** The server pings every 10 seconds and closes a socket that misses a pong by 5. The client had no equivalent, so a half-open socket stayed "connected" in the UI for as long as the operating system took to notice. The watchdog checks on an interval and, more usefully, immediately on `visibilitychange`, `pageshow`, `online` and `focus` — because timers are throttled while a page is hidden, and the first useful moment to notice a dead socket is the moment the page wakes up.
+**The signaling socket has a wall-clock watchdog.** The server pings every 10 seconds and closes a socket that misses a pong by 5. The client had no equivalent, so a half-open socket stayed "connected" in the UI for as long as the operating system took to notice. The watchdog checks on an interval and, more usefully, immediately on `visibilitychange`, `pageshow`, `online` and `focus`, because timers are throttled while a page is hidden, and the first useful moment to notice a dead socket is the moment the page wakes up.
 
 **The app reconnects on the same four events.** Coming back to the tab, restoring it from the back/forward cache, and the network returning are all now reconnect triggers, deferred by one macrotask so the watchdog's verdict lands first.
 
@@ -60,14 +60,14 @@ Fixing the identity of an edge exposed four smaller lies of the same family, eac
 
 A bug that only appears when a phone's radio is off is not a bug you fix by reasoning about it.
 
-The harness runs two headless Chromium instances in a real room. It floods one instance's UDP buffers, `SIGSTOP`s the process, waits long enough for the other side to give up and rebuild its edge, then `SIGCONT`s it — which is as close as a laptop gets to being a phone that has been in a pocket for two minutes. It then asserts the thing a user would assert: both sides converge, and a message sent after the wake arrives.
+The harness runs two headless Chromium instances in a real room. It floods one instance's UDP buffers, `SIGSTOP`s the process, waits long enough for the other side to give up and rebuild its edge, then `SIGCONT`s it. That is as close as a laptop gets to being a phone that has been in a pocket for two minutes. It then asserts the thing a user would assert: both sides converge, and a message sent after the wake arrives.
 
-It reproduced the desync before the change and does not after it. That is the entire claim, and it is a claim about two headless browsers on one machine — not about every phone, network and NAT in the world.
+It reproduced the desync before the change and does not after it. That is the entire claim, and it is a claim about two headless browsers on one machine, not about every phone, network and NAT in the world.
 
 ## What this is not
 
 This is a reliability fix. It is not a privacy property, and it does not move the boundary in any direction.
 
-The signaling operator still sees the room hash, which identity keys are members of it, and when they connect — and this work adds a little to that, because an edge that re-dials is an edge the operator watches re-dial. Scheduled cover is still timing cover measured over loopback. There has still been no independent audit.
+The signaling operator still sees the room hash, which identity keys are members of it, and when they connect. This work adds a little to that, because an edge that re-dials is an edge the operator watches re-dial. Scheduled cover is still timing cover measured over loopback. There has still been no independent audit.
 
 What changed is narrower and, if you have ever watched a room go quiet for no reason, more immediately useful: the software now agrees with the other side about whether you are connected.

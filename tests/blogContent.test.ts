@@ -23,9 +23,9 @@ describe("protocol-v3 blog series", () => {
   test("has one ordered, unique route for every source file", () => {
     expect(manifest.series.id).toBe("road-to-protocol-v3");
     expect(manifest.series.status).toBe("published");
-    expect(manifest.posts).toHaveLength(6);
+    expect(manifest.posts).toHaveLength(7);
     expect(manifest.posts.map(({ order }) => order)).toEqual([
-      1, 2, 3, 4, 5, 6,
+      1, 2, 3, 4, 5, 6, 7,
     ]);
     expect(new Set(manifest.posts.map(({ slug }) => slug)).size).toBe(
       manifest.posts.length,
