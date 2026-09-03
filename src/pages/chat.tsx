@@ -13,6 +13,7 @@ import {
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
 import HandshakeStatusBanner from "../components/custom/HandshakeStatusBanner";
+import { unresolvedHandshakeFailures } from "../protocol/handshakeFailures";
 import {
   isLayoutOnlyMessageScroll,
   isNearMessageBottom,
@@ -63,10 +64,12 @@ const ChatPage = () => {
   } = useRoom();
 
   // A failed handshake is reported by its own banner; showing "waiting for
-  // peers" alongside it would contradict the real state.
-  const hasHandshakeFailure = Object.values(handshakeStatusByPeer).some(
-    (status) => status.status === "failed",
-  );
+  // peers" alongside it would contradict the real state. This has to ask the
+  // same question the banner asks, or a failure the banner has decided is
+  // stale still suppresses "waiting for peers" and the room says nothing at
+  // all.
+  const hasHandshakeFailure =
+    unresolvedHandshakeFailures(handshakeStatusByPeer, peers).length > 0;
 
   const [isDragging, setIsDragging] = useState(false);
   const [dots, setDots] = useState("");

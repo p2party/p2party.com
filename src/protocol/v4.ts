@@ -26,10 +26,24 @@ export type PeerDeliveryOutcome = SendMessageResult["outcomes"][number];
  */
 export type RoomCoverStatus = NonNullable<Room["coverStatusByPeer"]>[string];
 
-/** Live authenticated-handshake state for one peer edge. */
+/**
+ * Live authenticated-handshake state for one peer edge.
+ *
+ * `peerPublicKey` is the stable identity the status describes. A peerId is a
+ * per-session signaling handle — a peer that fails and reconnects arrives
+ * under a new one, and a joiner that fails is dropped from `peers` outright —
+ * so it is the identity, not the peerId, that says whether a recorded failure
+ * still describes reality (see ./handshakeFailures).
+ *
+ * The intersection is a forward declaration, not an invention: the library
+ * records the field as an optional property of the same status, and this
+ * spelling lets the app read it against a vendored release that predates it,
+ * where it is simply absent. It becomes a no-op once the release carrying it
+ * is vendored.
+ */
 export type PeerHandshakeStatus = NonNullable<
   Room["handshakeStatusByPeer"]
->[string];
+>[string] & { peerPublicKey?: string };
 
 /**
  * Keep the version-specific calls visible at the integration boundary. These

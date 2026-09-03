@@ -205,6 +205,52 @@ const run = async () => {
           "✅ WRONG PIN: the UI states the reason instead of waiting forever",
         );
 
+      // The joiner is the side that actually got it wrong, and the side the
+      // failure used to be invisible on: its edge is torn down, signaling
+      // drops the peer, and a banner keyed on the roster had nothing left to
+      // render. It must see the reason AND a way back to the PIN field.
+      const joinerRoster = await joiner.page.evaluate(roomState, roomUrl);
+      log(
+        `joiner roster: ${JSON.stringify(joinerRoster?.peers ?? null)} peer(s)`,
+      );
+      const joinerBanner = await joiner.page
+        .getByRole("status")
+        .first()
+        .textContent()
+        .catch(() => null);
+      log(`joiner banner: ${JSON.stringify(joinerBanner)}`);
+      if (!joinerBanner || !/PIN/i.test(joinerBanner))
+        failures.push("the joiner was not told its PIN was wrong");
+      else log("✅ WRONG PIN: the joiner is told, not left in an empty room");
+
+      const retryButton = joiner.page.getByRole("button", {
+        name: /Enter the PIN again|Try again in/,
+      });
+      await retryButton.waitFor({ timeout: 10000 }).catch(() => {});
+      if ((await retryButton.count()) === 0) {
+        failures.push("the joiner had no way to retry the PIN");
+      } else if (await retryButton.first().isDisabled()) {
+        // Only legitimate while a throttle countdown is on screen.
+        if (
+          !/Try again in/.test((await retryButton.first().textContent()) ?? "")
+        )
+          failures.push("the retry was offered but disabled with no countdown");
+        else log("✅ RETRY: held until the throttle countdown expires");
+      } else {
+        await retryButton.first().click();
+        const field = joiner.page.getByLabel("Room PIN", { exact: false });
+        await field.waitFor({ timeout: 15000 });
+        if ((await field.inputValue()) !== "")
+          failures.push("the retry kept the rejected PIN in the field");
+        else if (
+          /already loaded/i.test(
+            (await field.getAttribute("placeholder")) ?? "",
+          )
+        )
+          failures.push("the retry kept the rejected PIN in memory");
+        else log("✅ RETRY: the dialog returns with the rejected PIN cleared");
+      }
+
       // Repeat until the library reports a throttle with a retry deadline.
       let throttled = null;
       for (let attempt = 0; attempt < 6 && !throttled; attempt++) {

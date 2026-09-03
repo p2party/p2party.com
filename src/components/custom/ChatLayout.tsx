@@ -1,9 +1,9 @@
 import { useEffect, useRef, FC, lazy } from "react";
 import { Outlet } from "react-router";
-import { useLocalStorage } from "usehooks-ts";
 
 import { SidebarLayout } from "../sidebar-layout";
 
+import { useConnectDialog } from "../../hooks/useConnectDialog";
 import { useRoom } from "../../hooks/useRoom";
 import { hasTransientRoomPin } from "../../protocol/roomAccess";
 
@@ -34,16 +34,15 @@ const ChatLayout: FC<PropsWithChildren> = () => {
   const pinRequired = roomPolicy.authMode === "pin";
   const hasPin = roomUrl ? hasTransientRoomPin(roomUrl) : false;
 
-  // let [alertIsOpen, setAlertIsOpen] = useState(false);
-  const [alertIsOpen, setAlertIsOpen] = useLocalStorage(
-    "alertIsOpenInRoom" + roomUrl,
-    true,
-  );
-  // let [pressedCancelInConnect, setPressedCancelInConnect] = useState(false);
-  const [pressedCancelInConnect, setPressedCancelInConnect] = useLocalStorage(
-    "pressedCancelButtonInRoom" + roomUrl,
-    true,
-  );
+  // Shared with the room view, which raises this dialog again after a PIN
+  // failure; both flags outlive a reload so an answered question is not
+  // re-asked.
+  const {
+    isOpen: alertIsOpen,
+    setIsOpen: setAlertIsOpen,
+    wasDismissed: pressedCancelInConnect,
+    setWasDismissed: setPressedCancelInConnect,
+  } = useConnectDialog(roomUrl);
   const autoConnectAttemptedRoomRef = useRef<string | null>(null);
 
   useEffect(() => {

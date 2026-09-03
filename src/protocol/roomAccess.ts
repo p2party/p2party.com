@@ -52,6 +52,21 @@ export const getTransientRoomPolicy = (
   return policy ? copyPolicy(policy) : undefined;
 };
 
+/**
+ * Drop only the PIN, keeping the room policy.
+ *
+ * After the library reports "pin-mismatch" the held PIN is known wrong, and a
+ * retry that silently reuses it is not a retry. The policy is a different
+ * thing entirely: it is fixed when the room is created, it is not what the
+ * user got wrong, and it is what tells the join dialog to ask for a PIN at
+ * all — so forgetting it too would break the very retry this enables.
+ */
+export const forgetRoomPin = (roomUrl: string): void => {
+  const roomKey = canonicalRoomKey(roomUrl);
+  transientPins.get(roomKey)?.fill(0);
+  transientPins.delete(roomKey);
+};
+
 export const forgetRoomAccess = (roomUrl: string): void => {
   const roomKey = canonicalRoomKey(roomUrl);
   transientPins.get(roomKey)?.fill(0);

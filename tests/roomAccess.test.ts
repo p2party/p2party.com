@@ -20,8 +20,10 @@ Object.defineProperty(globalThis, "localStorage", { value: localStorageStub });
 const { default: p2party } = await import("p2party");
 const {
   forgetRoomAccess,
+  forgetRoomPin,
   getTransientRoomPin,
   getTransientRoomPolicy,
+  hasTransientRoomPin,
   parseRoomPolicyInvite,
   rememberRoomAccess,
   resolveRoomInvite,
@@ -194,6 +196,30 @@ describe("room invitation routing", () => {
     expect(getTransientRoomPolicy(compact)).toBeUndefined();
     expect(getTransientRoomPin(compact)).toBeUndefined();
     pin.fill(0);
+  });
+
+  test("a rejected PIN is dropped without losing the room policy", () => {
+    // Retrying after "PIN did not match" has to start from an empty field, or
+    // the retry is silently the same value. The policy is not the user's
+    // mistake and must survive: it is what tells the join dialog to ask for a
+    // PIN at all, and it is fixed when the room is created.
+    const policy = immediateRoomPolicy("pin", "hybrid-mlkem512");
+    const pin = new TextEncoder().encode("wrong horse");
+    rememberRoomAccess(compact, policy, pin);
+
+    forgetRoomPin(canonicalRoomUrl);
+    expect(getTransientRoomPin(compact)).toBeUndefined();
+    expect(hasTransientRoomPin(compact)).toBe(false);
+    expect(getTransientRoomPolicy(compact)).toEqual(policy);
+
+    // ...and the next attempt is remembered normally.
+    const retry = new TextEncoder().encode("correct horse");
+    rememberRoomAccess(compact, policy, retry);
+    expect(getTransientRoomPin(canonicalRoomUrl)).toEqual(retry);
+
+    forgetRoomAccess(canonicalRoomUrl);
+    pin.fill(0);
+    retry.fill(0);
   });
 
   test("rejects ambiguous or unsupported public policy", () => {

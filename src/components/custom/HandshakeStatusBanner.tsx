@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 
 import { Badge } from "../badge";
+import { Button } from "../button";
 
+import { useConnectDialog } from "../../hooks/useConnectDialog";
 import { useRoom } from "../../hooks/useRoom";
+import { forgetRoomPin } from "../../protocol/roomAccess";
+import {
+  handshakeRetry,
+  unresolvedHandshakeFailures,
+  worstHandshakeFailure,
+} from "../../protocol/handshakeFailures";
 
 import type { PeerHandshakeStatus } from "../../protocol/v4";
 
@@ -22,7 +30,7 @@ const describe = (
       return {
         text: "PIN did not match",
         detail:
-          "The room PIN you entered does not match the one this room was created with. Open Connect and try again.",
+          "The room PIN you entered does not match the one this room was created with. Try again with the right one.",
       };
     case "pin-throttled": {
       const remaining = (failure.retryAfter ?? 0) - now;
@@ -54,49 +62,46 @@ const describe = (
  * connect() resolves at signaling, long before any peer edge is
  * authenticated, so a failed handshake used to look exactly like an empty
  * room. This surfaces the library's per-peer handshake state: what failed,
- * and — for a throttled PIN — when it can be retried.
+ * when a throttled PIN can be retried — and, for the failures the user can
+ * actually do something about, the way back to the join dialog.
  */
 const HandshakeStatusBanner = () => {
-  const { handshakeStatusByPeer, peers } = useRoom({
+  const { handshakeStatusByPeer, peers, roomUrl } = useRoom({
     subscribeToMessages: false,
   });
+  const { open: openConnectDialog } = useConnectDialog(roomUrl);
   const [now, setNow] = useState(() => Date.now());
 
-  // Only report a peer that is still here and still failed.
-  //
-  // A dropped edge leaves its "failed" entry behind, and a peer that
-  // reconnects arrives under a new id, so the old entry outlives the problem.
-  // The banner is fixed-position over the room header, so a stale entry landed
-  // on top of "connected with …" and told people a working room was broken.
-  const present = new Set(peers.map((peer) => peer.peerId));
-  const failures = Object.entries(handshakeStatusByPeer).filter(
-    ([peerId, value]) => value.status === "failed" && present.has(peerId),
-  );
-  const throttled = failures.some(
-    ([, value]) => value.reason === "pin-throttled",
-  );
+  const failures = unresolvedHandshakeFailures(handshakeStatusByPeer, peers);
+  const worst = worstHandshakeFailure(failures);
+  const retry = worst
+    ? handshakeRetry(worst.status, now)
+    : { offered: false, waitUntil: undefined };
+  const waiting = retry.waitUntil !== undefined;
 
-  // Only run a timer while a countdown is actually on screen.
+  // Only run a timer while a countdown is actually on screen; it is what
+  // re-enables the retry the moment the throttle expires.
   useEffect(() => {
-    if (!throttled) return;
+    if (!waiting) return;
     const timer = setInterval(() => {
       setNow(Date.now());
     }, 1000);
     return () => {
       clearInterval(timer);
     };
-  }, [throttled]);
+  }, [waiting]);
 
-  if (failures.length === 0) return null;
+  if (!worst) return null;
 
-  // One banner: report the most actionable failure rather than one per peer.
-  const priority = ["pin-throttled", "pin-mismatch", "policy", "transport"];
-  const [, worst] = failures.sort(
-    (a, b) =>
-      priority.indexOf(a[1].reason ?? "transport") -
-      priority.indexOf(b[1].reason ?? "transport"),
-  )[0];
-  const { text, detail } = describe(worst, now);
+  const { text, detail } = describe(worst.status, now);
+
+  // The held PIN is the one the room just rejected, so a retry that reuses it
+  // is not a retry. Dropping it forces the dialog to ask for a new one; the
+  // room policy stays, which is what keeps the PIN field on screen at all.
+  const handleRetry = () => {
+    if (roomUrl) forgetRoomPin(roomUrl);
+    openConnectDialog();
+  };
 
   return (
     <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-1 px-3 py-2'>
@@ -110,6 +115,18 @@ const HandshakeStatusBanner = () => {
       <p className='border-2 border-zinc-950 bg-white px-3 py-1.5 text-center text-xs leading-relaxed text-zinc-700 dark:border-zinc-200 dark:bg-black dark:text-zinc-300'>
         {detail}
       </p>
+      {retry.offered && (
+        <Button
+          type='button'
+          onClick={handleRetry}
+          disabled={waiting}
+          className='mt-1 w-full font-mono text-xs font-bold tracking-[0.1em] uppercase'
+        >
+          {waiting
+            ? `Try again in ${countdown((retry.waitUntil ?? 0) - now)}`
+            : "Enter the PIN again"}
+        </Button>
+      )}
     </div>
   );
 };
