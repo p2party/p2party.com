@@ -416,11 +416,20 @@ npm run build
 npx vite preview --port 5820 --strictPort
 # GET /                                     → 200
 # GET /vendor/p2party-0.14.7/libcrypto.wasm → 200, 211350 bytes
+# GET /r                                    → 302 to /r/
+# GET /r/                                   → 200, the prerendered document
 ```
 
-`vite preview` answers `/r` with `dist/index.html` rather than the prerendered
-`dist/r/index.html`, so a harness that wants the document the deployment
-actually serves needs a static server that tries `<route>/index.html` first.
+`vite preview` used to answer `/r` with `dist/index.html` rather than the
+prerendered `dist/r/index.html`, and a harness that wanted the document the
+deployment actually serves needed its own static server. It no longer does:
+`vite.config.ts` turns the SPA fallback off for preview and adds the
+directory redirect the bucket performs, so preview and the origin answer the
+same way. That is not a convenience. While preview served the landing page's
+markup for every route, React reported a hydration mismatch on `/blog`,
+`/privacy-policy` and `/rooms` that the deployed site does not have, and a
+local check could not be trusted to tell a real defect from an artefact of the
+server it ran against. `tests/previewParity.test.ts` pins both behaviours.
 
 Then, in another shell:
 
