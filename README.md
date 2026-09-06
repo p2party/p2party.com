@@ -47,7 +47,7 @@ authoritative resolver and lock.
 `package.json` depends on an immutable local tarball, not a registry range:
 
 ```text
-"p2party": "file:vendor/p2party-0.14.6.tgz"      // package.json, dependencies
+"p2party": "file:vendor/p2party-0.14.7.tgz"      // package.json, dependencies
 ```
 
 Four things to know: what that pins, how the WebAssembly module is served, the
@@ -56,7 +56,7 @@ convention — `npm run provenance:check` fails the build otherwise.
 
 ### 1. The bytes are pinned
 
-`vendor/p2party-0.14.6.tgz` is committed. `package-lock.json` records its
+`vendor/p2party-0.14.7.tgz` is committed. `package-lock.json` records its
 SHA-512, so `npm ci` from a clean clone installs exactly those bytes, with
 nothing about the SDK resolved over the network. (The other dependencies are
 ordinary registry packages and are still fetched.)
@@ -73,9 +73,9 @@ be the version-matched artifact file:vendor/p2party-<version>.tgz`. So run
 ### 2. The WASM is self-hosted, and still SRI-checked
 
 The SDK's cryptography is a WebAssembly module. Its default source is
-`https://cdn.p2party.com/@0.14.6/libcrypto.wasm`. `src/protocol/sdk.ts` — the
+`https://cdn.p2party.com/@0.14.7/libcrypto.wasm`. `src/protocol/sdk.ts` — the
 only module that may `import "p2party"` directly — calls `setWasmSourceUrl()`
-to redirect it to `/vendor/p2party-0.14.6/libcrypto.wasm`
+to redirect it to `/vendor/p2party-0.14.7/libcrypto.wasm`
 (`src/protocol/wasm.ts`), a copy committed under `public/`.
 
 Redirecting the source does not weaken the integrity check. The SDK fetches
@@ -115,7 +115,7 @@ It prints the two hashes a release record needs. Run here:
 
 ```text
 $ npm run provenance:check
-p2party artifact SHA-256: 7e12fc56e3d538500af4bcf0728a70a23e668fc34e04a3e4834466dcecd2a649
+p2party artifact SHA-256: 446d2a943e95b1294eb08b8c43813dec47b230b002715a0d5376ce63da4f5913
 p2party WASM SHA-256: 7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76
 ```
 
@@ -159,7 +159,7 @@ npm ci && npm test && npm run build
 
 Step 4's `tar` invocation was run against the current release: the extracted
 bytes are byte-identical to the committed
-`public/vendor/p2party-0.14.6/libcrypto.wasm` and to the installed
+`public/vendor/p2party-0.14.7/libcrypto.wasm` and to the installed
 `node_modules/p2party/lib/libcrypto.wasm` (all three SHA-256
 `7fc91b61…a17c4d76`).
 
@@ -415,7 +415,7 @@ Serve the built site first — verified working here:
 npm run build
 npx vite preview --port 5820 --strictPort
 # GET /                                     → 200
-# GET /vendor/p2party-0.14.6/libcrypto.wasm → 200, 211350 bytes
+# GET /vendor/p2party-0.14.7/libcrypto.wasm → 200, 211350 bytes
 ```
 
 `vite preview` answers `/r` with `dist/index.html` rather than the prerendered
@@ -471,7 +471,7 @@ and that they cover one preset and one payload size.
 
 ## What the app does today
 
-Grounded in the vendored `p2party` 0.14.6 and in this repository's code.
+Grounded in the vendored `p2party` 0.14.7 and in this repository's code.
 
 - **Handshake.** Every peer edge runs interactive 3DH together with one
   room-pinned ML-KEM suite — ML-KEM-512, ML-KEM-768 (default), or ML-KEM-1024.
@@ -642,8 +642,11 @@ outcome is correct; the latency is not yet.
 - **Cover traffic is timing cover, verified on loopback.** See `e2e/` above.
 - **There has been no independent third-party security audit** of the protocol
   or of this client.
-- **Long-term identities live only in browser storage**, and there is no
-  backup or restore flow yet. Clearing site data loses the identity.
+- **Long-term identities live only in browser storage.** An identity created
+  from a 24-word recovery phrase can be restored from those words, and the
+  password chosen for them if one was set. An identity created without a phrase
+  cannot: the derivation runs one way only, so no phrase can be produced after
+  the fact. Clearing site data loses any identity that has no phrase.
 - The room secret and the room's shape both live in the URL **fragment**,
   which a browser never puts in an HTTP request — but they are still in the
   link, and joining transmits the capability to the signaling service. A

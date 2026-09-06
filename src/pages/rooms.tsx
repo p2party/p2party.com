@@ -113,8 +113,10 @@ const RoomsPage = () => {
                 The same goes for your identity: the secret key this browser
                 signs with never leaves it. The matching public half is what the
                 signaling server stores to recognise you, as the privacy policy
-                explains. There is no restore flow yet, so a cleared profile is
-                a new person as far as everyone else is concerned.
+                explains. An identity created from a recovery phrase can be
+                rebuilt from those words in another browser; one created without
+                a phrase cannot, so for it a cleared profile is a new person as
+                far as everyone else is concerned.
               </p>
               <p className='mt-3 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
                 Generate a room and it appears here once you have been in it.

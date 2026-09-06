@@ -139,6 +139,10 @@ const shipped = [
     body: "A phone that was asleep with its radio off used to come back holding a connection the other side had already thrown away. Now an edge is bound to the certificate it was authenticated against, so a stale transport is replaced and re-authenticated rather than reused — and the app re-dials when the tab becomes visible again, when you navigate back to it, when the window regains focus, and when the network returns.",
   },
   {
+    title: "An identity you can carry to another browser",
+    body: "Create one from a 24-word recovery phrase and it can be rebuilt anywhere from those words, and the password you chose for them if you set one. The phrase is shown once, at creation: it is run one way into the key, so the app keeps nothing it could show you later and nothing an attacker could take from it. An identity made without a phrase stays in the browser that made it.",
+  },
+  {
     title: "A send that fails, says so",
     body: "A message to a peer that never finishes authenticating fails with a reason inside a bounded wait instead of spinning forever. The outcome is a caption on the message itself, not a toast that vanishes: delivered, delivered to some of the room, or not delivered — with the per-peer reason behind it.",
   },
@@ -162,8 +166,8 @@ const boundaries = [
     body: "The protocol has had no third-party cryptographic review. The source and the threat model are public so that it can be checked; that is not the same as having been checked.",
   },
   {
-    title: "Your identity lives in this browser only",
-    body: "There is no backup or restore yet. Clear site data and the identity is gone for good. A recovery flow is the next thing being built.",
+    title: "Your identity is only as recoverable as you made it",
+    body: "An identity created from a recovery phrase can be rebuilt in another browser from those words. An identity created without one cannot, because the phrase is run one way into the key and there is nothing to hand back after the fact. Clear site data on an identity that has no phrase and it is gone for good.",
   },
 ];
 

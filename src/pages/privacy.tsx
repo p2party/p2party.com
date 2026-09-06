@@ -186,10 +186,15 @@ const PrivacyPage = () => {
           settings.
         </Para>
         <Para>
-          There is currently no backup or restore flow for your identity. If you
-          clear site data, use a different browser profile, or lose the device,
-          that identity and everything stored under it is gone, and nobody
-          &mdash; including us &mdash; can recover it.
+          An identity created from a recovery phrase can be restored in another
+          browser from those 24 words, together with the password you chose for
+          them if you set one. That phrase is derived one way into the key and
+          is shown once, at creation; it is never stored, so we could not
+          produce it for you, and it cannot be taken from this device later. An
+          identity created without a phrase has no such route: if you clear site
+          data, use a different browser profile, or lose the device, that
+          identity and everything stored under it is gone, and nobody &mdash;
+          including us &mdash; can recover it.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
