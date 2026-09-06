@@ -115,7 +115,7 @@ It prints the two hashes a release record needs. Run here:
 
 ```text
 $ npm run provenance:check
-p2party artifact SHA-256: 446d2a943e95b1294eb08b8c43813dec47b230b002715a0d5376ce63da4f5913
+p2party artifact SHA-256: 761c5dd9d0d50c2691eb2a13403aa11d95f7a870d72bba7cc5dc0af28bb01ad8
 p2party WASM SHA-256: 7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76
 ```
 
