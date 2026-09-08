@@ -6,6 +6,10 @@ import { SidebarLayout } from "../sidebar-layout";
 import { useConnectDialog } from "../../hooks/useConnectDialog";
 import { useRoom } from "../../hooks/useRoom";
 import { hasTransientRoomPin } from "../../protocol/roomAccess";
+import {
+  shouldAutoConnect,
+  shouldReleaseAutoConnectAttempt,
+} from "../../lib/autoConnectGate";
 
 import type { PropsWithChildren } from "react";
 
@@ -58,17 +62,20 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     }
 
     if (
-      roomUrl &&
-      roomInviteError.length === 0 &&
-      (!pinRequired || hasPin) &&
-      !pressedCancelInConnect &&
-      !alertIsOpen &&
-      !isConnected &&
-      !isEstablishingConnection &&
-      autoConnectAttemptedRoomRef.current !== roomUrl
+      shouldAutoConnect({
+        roomUrl,
+        roomInviteErrorLength: roomInviteError.length,
+        pinRequired,
+        hasPin,
+        pressedCancelInConnect,
+        alertIsOpen,
+        isConnected,
+        isEstablishingConnection,
+        attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
+      })
     ) {
-      autoConnectAttemptedRoomRef.current = roomUrl;
-      void connect(roomUrl).catch(() => {
+      autoConnectAttemptedRoomRef.current = roomUrl ?? null;
+      void connect(roomUrl!).catch(() => {
         autoConnectAttemptedRoomRef.current = null;
         setAlertIsOpen(true);
       });
@@ -89,6 +96,20 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     roomInviteError,
     setAlertIsOpen,
   ]);
+
+  // C4: a socket that dropped after a successful auto-connect must let the
+  // room try again. The SDK's own bounded backoff is the primary repair; this
+  // stops the layout's one-shot ref from permanently disarming the UI path.
+  useEffect(() => {
+    if (
+      shouldReleaseAutoConnectAttempt({
+        isConnected,
+        isEstablishingConnection,
+        attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
+      })
+    )
+      autoConnectAttemptedRoomRef.current = null;
+  }, [isConnected, isEstablishingConnection]);
 
   // The deferred wake handler is read through a ref: the macrotask is scheduled
   // by a listener from an older render, and by the time it fires the SDK's
