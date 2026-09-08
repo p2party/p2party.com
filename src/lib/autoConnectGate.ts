@@ -1,11 +1,9 @@
 /**
  * The room auto-connect decision, lifted out of ChatLayout so it is testable.
  *
- * `attemptedRoomUrl` is the ref the layout keeps: "we already fired connect()
- * for this room URL". Before the C4 fix it was cleared only when connect()
- * rejected, so a socket that dropped AFTER a successful connect left the ref
- * set forever and the effect — which does re-run, isConnected is in its deps —
- * was blocked every time. A focused desktop tab therefore never reconnected.
+ * The layout owns room admission; SDK 0.14.8 owns reconnection after admission.
+ * Clearing the admission on socket loss bypasses the SDK's backoff and its
+ * terminal 1008 refusal, so two tabs can evict one another hundreds of times.
  */
 
 export interface AutoConnectGateInput {
@@ -31,18 +29,27 @@ export const shouldAutoConnect = (input: AutoConnectGateInput): boolean =>
   !input.isEstablishingConnection &&
   input.attemptedRoomUrl !== input.roomUrl;
 
-/**
- * Release the recorded attempt exactly once per socket-down transition. The
- * caller runs this from an effect keyed on the two socket flags, so a repeated
- * failure cannot spin: connect()'s own rejection path opens the alert, which
- * shouldAutoConnect then blocks on.
- */
-export const shouldReleaseAutoConnectAttempt = (
-  input: Pick<
-    AutoConnectGateInput,
-    "isConnected" | "isEstablishingConnection" | "attemptedRoomUrl"
-  >,
-): boolean =>
-  input.attemptedRoomUrl !== null &&
-  !input.isConnected &&
-  !input.isEstablishingConnection;
+/** Advance the actual admission latch for one layout effect pass. */
+export const advanceAutoConnectAttempt = (
+  input: AutoConnectGateInput,
+): { attemptedRoomUrl: string | null; shouldConnect: boolean } => {
+  // Manual Connect bypasses the auto-connect branch. Observe its socket as
+  // well, or its first later disconnect would still trigger an automatic retry.
+  const admittedRoom =
+    input.roomUrl && (input.isConnected || input.isEstablishingConnection)
+      ? input.roomUrl
+      : input.attemptedRoomUrl;
+  const shouldConnect = shouldAutoConnect({
+    ...input,
+    attemptedRoomUrl: admittedRoom,
+  });
+  return {
+    shouldConnect,
+    attemptedRoomUrl:
+      input.alertIsOpen || input.pressedCancelInConnect
+        ? null
+        : shouldConnect
+          ? (input.roomUrl ?? null)
+          : admittedRoom,
+  };
+};

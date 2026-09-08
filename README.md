@@ -390,7 +390,7 @@ blog manifest/content consistency, and two chat-layout regressions
 
 ### Browser — `e2e/`
 
-Four Playwright + headless-Chromium harnesses that drive the **real app**
+Five Playwright + headless-Chromium harnesses that drive the **real app**
 against **real WebRTC** (real `RTCPeerConnection`, DTLS/SCTP data channels).
 They are not wired into CI.
 
@@ -398,7 +398,7 @@ They are not wired into CI.
 `npx playwright install chromium` once before the first harness run. The
 build's prerender step needs no browser; only these harnesses do.
 
-Each reads two environment variables:
+The four existing transfer/mesh/capture harnesses read two environment variables:
 
 - `APP_URL` — where the app is served, default `http://localhost:5190`;
 - `SIGNALING_URL` — a protocol-v4 signaling service. Left unset, the harness
@@ -453,6 +453,28 @@ pair authenticated, and one send delivered byte-exact to **both** other peers.
 Then a wrong-PIN joiner: the handshake must fail, the UI must say so rather
 than sit on "Waiting for peers", and repeated attempts must be throttled with a
 retry deadline.
+
+#### `e2e/desync-local-stack.mjs`
+
+This runner uses the built site and starts the actual `p2party-server` as an
+owned child process against an already migrated throwaway PostgreSQL database.
+It rejects a database on port 5432 and refuses to replace an existing server
+listener. Build the site, serve it on port 5840, then run:
+
+```bash
+APP_URL=http://127.0.0.1:5840 \
+DATABASE_URL='postgresql://p2party_desync@127.0.0.1:6543/p2party_desync?sslmode=disable' \
+node e2e/desync-local-stack.mjs
+```
+
+It joins through the Connect dialog and exchanges messages through the composer;
+kills and restarts its server on port 5841, requiring both pages to verify and
+rejoin without focus, clicks or reloads before exchanging another message;
+opens a second tab with the same stored identity and requires authentication
+within 20 seconds; and samples a one-character-wrong PIN for 120 seconds,
+requiring the failure banner to remain visible with no new peer transports.
+Only the child server is stopped. The report and server log are written to
+`logs/desync/<timestamp>/`. `DESYNC_SERVER_PORT` changes the server port.
 
 #### `e2e/packet-trace.mjs`
 

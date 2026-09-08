@@ -1,14 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  shouldAutoConnect,
-  shouldReleaseAutoConnectAttempt,
-} from "../src/lib/autoConnectGate";
+import { advanceAutoConnectAttempt } from "../src/lib/autoConnectGate";
 import type { AutoConnectGateInput } from "../src/lib/autoConnectGate";
 
 const ROOM = "ab".repeat(32);
-
-const base = {
+const OTHER_ROOM = "cd".repeat(32);
+const base: AutoConnectGateInput = {
   roomUrl: ROOM,
   roomInviteErrorLength: 0,
   pinRequired: false,
@@ -17,190 +14,94 @@ const base = {
   alertIsOpen: false,
   isConnected: false,
   isEstablishingConnection: false,
-  attemptedRoomUrl: null as string | null,
+  attemptedRoomUrl: null,
 };
 
-describe("room auto-connect gate", () => {
-  test("a fresh room with nothing in the way connects", () => {
-    expect(shouldAutoConnect(base)).toBe(true);
+// This is the actual transition used by ChatLayout, exercised across socket
+// lifetimes. The SDK alone decides whether a disconnect may be retried.
+const step = (
+  attemptedRoomUrl: string | null,
+  flags: Partial<AutoConnectGateInput> = {},
+) => advanceAutoConnectAttempt({ ...base, ...flags, attemptedRoomUrl });
+
+describe("room admission and SDK reconnect ownership", () => {
+  test("a fresh room or a reloaded page admits exactly once", () => {
+    const first = step(null);
+    expect(first).toEqual({ attemptedRoomUrl: ROOM, shouldConnect: true });
+    expect(step(first.attemptedRoomUrl).shouldConnect).toBe(false);
+    // A reload creates a new layout/ref; remembered consent still permits join.
+    expect(step(null).shouldConnect).toBe(true);
   });
 
-  test("an attempt already made for this room does not repeat", () => {
-    expect(shouldAutoConnect({ ...base, attemptedRoomUrl: ROOM })).toBe(false);
+  test("a terminal 1008 eviction cannot turn two tabs into competing reconnectors", () => {
+    let attempt = step(null).attemptedRoomUrl;
+    attempt = step(attempt, { isConnected: true }).attemptedRoomUrl;
+    for (let render = 0; render < 20; render++) {
+      const afterEviction = step(attempt);
+      expect(afterEviction.shouldConnect).toBe(false);
+      attempt = afterEviction.attemptedRoomUrl;
+    }
   });
 
-  test("a PIN room without a PIN waits", () => {
-    expect(
-      shouldAutoConnect({ ...base, pinRequired: true, hasPin: false }),
-    ).toBe(false);
-    expect(
-      shouldAutoConnect({ ...base, pinRequired: true, hasPin: true }),
-    ).toBe(true);
+  test("the first manual Connect also latches ownership before its socket drops", () => {
+    const manualAttempt = step(null, { isEstablishingConnection: true });
+    expect(manualAttempt).toEqual({
+      attemptedRoomUrl: ROOM,
+      shouldConnect: false,
+    });
+    expect(step(manualAttempt.attemptedRoomUrl).shouldConnect).toBe(false);
+    const alreadyConnected = step(null, { isConnected: true });
+    expect(step(alreadyConnected.attemptedRoomUrl).shouldConnect).toBe(false);
   });
 
-  test("a dismissed dialog, an open alert or an invite error all block", () => {
-    expect(shouldAutoConnect({ ...base, pressedCancelInConnect: true })).toBe(
+  test("transient failures leave every reconnect delay and retry to the SDK", () => {
+    let attempt = step(null).attemptedRoomUrl;
+    for (const isEstablishingConnection of [
+      true,
       false,
-    );
-    expect(shouldAutoConnect({ ...base, alertIsOpen: true })).toBe(false);
-    expect(shouldAutoConnect({ ...base, roomInviteErrorLength: 1 })).toBe(
+      true,
       false,
-    );
-    expect(shouldAutoConnect({ ...base, roomUrl: undefined })).toBe(false);
-  });
-
-  test("a live or establishing socket does not re-connect", () => {
-    expect(shouldAutoConnect({ ...base, isConnected: true })).toBe(false);
-    expect(shouldAutoConnect({ ...base, isEstablishingConnection: true })).toBe(
+      true,
       false,
-    );
+    ]) {
+      const next = step(attempt, { isEstablishingConnection });
+      expect(next.shouldConnect).toBe(false);
+      expect(next.attemptedRoomUrl).toBe(ROOM);
+      attempt = next.attemptedRoomUrl;
+    }
+    expect(step(attempt, { isConnected: true }).shouldConnect).toBe(false);
   });
 
-  // C4: the whole point. A socket that dropped after a successful auto-connect
-  // must be able to auto-connect again. Without the release the ref stays set
-  // to this room forever and a focused desktop tab never reconnects.
-  test("a socket that dropped releases the recorded attempt", () => {
-    expect(
-      shouldReleaseAutoConnectAttempt({
-        isConnected: false,
-        isEstablishingConnection: false,
-        attemptedRoomUrl: ROOM,
-      }),
-    ).toBe(true);
+  test("a deliberate retry dialog releases admission while preventing an automatic join", () => {
+    const dialog = step(ROOM, { alertIsOpen: true });
+    expect(dialog).toEqual({ attemptedRoomUrl: null, shouldConnect: false });
+    expect(step(dialog.attemptedRoomUrl).shouldConnect).toBe(true);
+    const dismissed = step(ROOM, { pressedCancelInConnect: true });
+    expect(dismissed).toEqual({ attemptedRoomUrl: null, shouldConnect: false });
   });
 
-  test("a released attempt makes the room eligible again", () => {
-    const dropped = { ...base, attemptedRoomUrl: ROOM };
-    expect(shouldAutoConnect(dropped)).toBe(false);
-    expect(shouldReleaseAutoConnectAttempt(dropped)).toBe(true);
-    expect(shouldAutoConnect({ ...dropped, attemptedRoomUrl: null })).toBe(
+  test("opening a different room does not inherit the prior room admission", () => {
+    expect(step(ROOM, { roomUrl: OTHER_ROOM })).toEqual({
+      attemptedRoomUrl: OTHER_ROOM,
+      shouldConnect: true,
+    });
+  });
+
+  test("a PIN invitation waits for its PIN", () => {
+    expect(step(null, { pinRequired: true }).shouldConnect).toBe(false);
+    expect(step(null, { pinRequired: true, hasPin: true }).shouldConnect).toBe(
       true,
     );
   });
 
-  test("a live socket, an in-flight attempt, or no recorded attempt release nothing", () => {
-    expect(
-      shouldReleaseAutoConnectAttempt({
-        isConnected: true,
-        isEstablishingConnection: false,
-        attemptedRoomUrl: ROOM,
-      }),
-    ).toBe(false);
-    expect(
-      shouldReleaseAutoConnectAttempt({
-        isConnected: false,
-        isEstablishingConnection: true,
-        attemptedRoomUrl: ROOM,
-      }),
-    ).toBe(false);
-    expect(
-      shouldReleaseAutoConnectAttempt({
-        isConnected: false,
-        isEstablishingConnection: false,
-        attemptedRoomUrl: null,
-      }),
-    ).toBe(false);
-  });
-});
-
-// C4 review finding: the two predicates above are correct in isolation, but
-// ChatLayout originally called them from two separate effects, and React runs
-// passive effects in hook-declaration order within one commit. The
-// auto-connect effect (declared first) re-ran on the isConnected true->false
-// transition and read the ref BEFORE the release effect (declared second) had
-// a chance to clear it, so it saw a still-"attempted" ref and skipped
-// connect(). The release effect then cleared the ref, but mutating a ref
-// schedules no render -- nothing re-ran the auto-connect effect afterward, so
-// a bare drop (no other dependency changing) never reconnected. Same
-// user-visible bug as before the fix, via a different mechanism.
-//
-// These two functions model the two orderings ChatLayout's single effect
-// could run its statements in, without mounting React (this repo has no
-// jsdom/happy-dom/@testing-library/react). They are what let this test tell
-// the fixed wiring apart from the one the review caught.
-type EffectFlags = Omit<AutoConnectGateInput, "attemptedRoomUrl">;
-
-interface EffectPassResult {
-  attemptedRoomUrl: string | null;
-  connectCalled: boolean;
-}
-
-/** The FIXED wiring: release is read and applied before shouldAutoConnect is
- * evaluated, in the same synchronous pass -- one effect, one commit. */
-function runFixedEffectPass(
-  attemptedRoomUrl: string | null,
-  flags: EffectFlags,
-): EffectPassResult {
-  let ref = attemptedRoomUrl;
-
-  if (
-    shouldReleaseAutoConnectAttempt({
-      isConnected: flags.isConnected,
-      isEstablishingConnection: flags.isEstablishingConnection,
-      attemptedRoomUrl: ref,
-    })
-  ) {
-    ref = null;
-  }
-
-  const connectCalled = shouldAutoConnect({ ...flags, attemptedRoomUrl: ref });
-  if (connectCalled) ref = flags.roomUrl ?? null;
-
-  return { attemptedRoomUrl: ref, connectCalled };
-}
-
-/** The ORIGINAL (buggy) two-effect wiring: the auto-connect effect (declared
- * first) reads the ref and decides BEFORE the release effect (declared
- * second, same commit) has run. */
-function runBrokenEffectPass(
-  attemptedRoomUrl: string | null,
-  flags: EffectFlags,
-): EffectPassResult {
-  let ref = attemptedRoomUrl;
-
-  // Effect 1 (auto-connect) runs first, reading the still-stale ref.
-  const connectCalled = shouldAutoConnect({ ...flags, attemptedRoomUrl: ref });
-  if (connectCalled) ref = flags.roomUrl ?? null;
-
-  // Effect 2 (release) runs second in the same commit -- too late to change
-  // effect 1's decision this pass.
-  if (
-    shouldReleaseAutoConnectAttempt({
-      isConnected: flags.isConnected,
-      isEstablishingConnection: flags.isEstablishingConnection,
-      attemptedRoomUrl: ref,
-    })
-  ) {
-    ref = null;
-  }
-
-  return { attemptedRoomUrl: ref, connectCalled };
-}
-
-describe("auto-connect effect wiring: release must land before the same-pass check (C4)", () => {
-  const flagsAfterDrop: EffectFlags = {
-    roomUrl: ROOM,
-    roomInviteErrorLength: 0,
-    pinRequired: false,
-    hasPin: false,
-    pressedCancelInConnect: false,
-    alertIsOpen: false,
-    isConnected: false,
-    isEstablishingConnection: false,
-  };
-
-  test("the fixed single-pass wiring reconnects a socket that dropped silently", () => {
-    const result = runFixedEffectPass(ROOM, flagsAfterDrop);
-    expect(result.connectCalled).toBe(true);
-    expect(result.attemptedRoomUrl).toBe(ROOM);
-  });
-
-  // This is the regression the review caught: a test that runs the predicates
-  // in the order the original two-effect design actually ran them in. It must
-  // fail to connect -- proving the bug was in the wiring, not the predicates,
-  // and proving this test is capable of catching that class of bug.
-  test("the original two-effect wiring misses the same drop", () => {
-    const result = runBrokenEffectPass(ROOM, flagsAfterDrop);
-    expect(result.connectCalled).toBe(false);
+  test("missing rooms, rejected invitations and open dialogs never admit", () => {
+    for (const flags of [
+      { roomUrl: undefined },
+      { roomUrl: "" },
+      { roomInviteErrorLength: 1 },
+      { alertIsOpen: true },
+      { pressedCancelInConnect: true },
+    ])
+      expect(step(null, flags).shouldConnect).toBe(false);
   });
 });

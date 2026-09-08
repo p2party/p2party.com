@@ -6,10 +6,7 @@ import { SidebarLayout } from "../sidebar-layout";
 import { useConnectDialog } from "../../hooks/useConnectDialog";
 import { useRoom } from "../../hooks/useRoom";
 import { hasTransientRoomPin } from "../../protocol/roomAccess";
-import {
-  shouldAutoConnect,
-  shouldReleaseAutoConnectAttempt,
-} from "../../lib/autoConnectGate";
+import { advanceAutoConnectAttempt } from "../../lib/autoConnectGate";
 
 import type { PropsWithChildren } from "react";
 
@@ -33,8 +30,6 @@ const ChatLayout: FC<PropsWithChildren> = () => {
   const isConnected = signalingServerConnectionState.isConnected;
   const isEstablishingConnection =
     signalingServerConnectionState.isEstablishingConnection;
-  const signalingServerHasUrl =
-    signalingServerConnectionState.serverUrl.length > 0;
   const pinRequired = roomPolicy.authMode === "pin";
   const hasPin = roomUrl ? hasTransientRoomPin(roomUrl) : false;
 
@@ -50,24 +45,6 @@ const ChatLayout: FC<PropsWithChildren> = () => {
   const autoConnectAttemptedRoomRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // C4: a socket that dropped after a successful auto-connect must let the
-    // room try again. This has to run FIRST, in the same pass that reads the
-    // ref below -- a ref mutation schedules no render, so a separate effect
-    // that clears it afterward is one commit too late: on a bare drop with no
-    // other dependency change, the auto-connect check below would already
-    // have read the stale ref by the time that effect ran. The SDK's own
-    // bounded backoff is the primary repair; this stops the layout's one-shot
-    // ref from permanently disarming the UI path.
-    if (
-      shouldReleaseAutoConnectAttempt({
-        isConnected,
-        isEstablishingConnection,
-        attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
-      })
-    ) {
-      autoConnectAttemptedRoomRef.current = null;
-    }
-
     if (
       roomUrl &&
       roomInviteError.length === 0 &&
@@ -79,30 +56,24 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       setAlertIsOpen(true);
     }
 
-    if (
-      roomUrl &&
-      shouldAutoConnect({
-        roomUrl,
-        roomInviteErrorLength: roomInviteError.length,
-        pinRequired,
-        hasPin,
-        pressedCancelInConnect,
-        alertIsOpen,
-        isConnected,
-        isEstablishingConnection,
-        attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
-      })
-    ) {
-      autoConnectAttemptedRoomRef.current = roomUrl;
+    const admission = advanceAutoConnectAttempt({
+      roomUrl,
+      roomInviteErrorLength: roomInviteError.length,
+      pinRequired,
+      hasPin,
+      pressedCancelInConnect,
+      alertIsOpen,
+      isConnected,
+      isEstablishingConnection,
+      attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
+    });
+    autoConnectAttemptedRoomRef.current = admission.attemptedRoomUrl;
+    if (roomUrl && admission.shouldConnect) {
       void connect(roomUrl).catch(() => {
         autoConnectAttemptedRoomRef.current = null;
         setAlertIsOpen(true);
       });
     }
-
-    if (pressedCancelInConnect || alertIsOpen) {
-      autoConnectAttemptedRoomRef.current = null;
-    }
   }, [
     alertIsOpen,
     pressedCancelInConnect,
@@ -115,70 +86,16 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     roomInviteError,
     setAlertIsOpen,
   ]);
-
-  // The deferred wake handler is read through a ref: the macrotask is scheduled
-  // by a listener from an older render, and by the time it fires the SDK's
-  // liveness check may have marked the socket disconnected and re-rendered.
-  const reconnectOnResumeRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    reconnectOnResumeRef.current = () => {
-      if (
-        roomUrl &&
-        roomInviteError.length === 0 &&
-        !isConnected &&
-        !isEstablishingConnection &&
-        signalingServerHasUrl &&
-        (!pinRequired || hasPin) &&
-        !alertIsOpen &&
-        !pressedCancelInConnect
-      ) {
-        void connect(roomUrl).catch(() => setAlertIsOpen(true));
-      }
-    };
-
-    // Every wake path -- window focus, the tab becoming visible, a bfcache
-    // restore (pageshow) and the network returning (online) -- reaches the
-    // SDK's liveness check on the same event, which synchronously marks a
-    // half-open socket disconnected. Defer one macrotask so that Redux update,
-    // and the re-render it causes, land before the guard above is read.
-    const onResume = () => {
-      setTimeout(() => reconnectOnResumeRef.current(), 0);
-    };
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") onResume();
-    };
-
-    window.addEventListener("focus", onResume);
-    window.addEventListener("pageshow", onResume);
-    window.addEventListener("online", onResume);
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    // The SDK's heartbeat and reconnect controller own focus, visibility,
+    // pageshow and online recovery, including terminal refusal and backoff.
+    // A second UI wake handler would bypass those decisions with connect().
     window.addEventListener("beforeunload", disconnectFromSignalingServer);
-
     return () => {
-      // A wake macrotask still pending after unmount must not reconnect a room
-      // the user just left; on a dependency change the next run re-arms it.
-      reconnectOnResumeRef.current = () => {};
-      window.removeEventListener("focus", onResume);
-      window.removeEventListener("pageshow", onResume);
-      window.removeEventListener("online", onResume);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("beforeunload", disconnectFromSignalingServer);
     };
-  }, [
-    roomUrl,
-    isConnected,
-    isEstablishingConnection,
-    signalingServerHasUrl,
-    pressedCancelInConnect,
-    alertIsOpen,
-    connect,
-    disconnectFromSignalingServer,
-    hasPin,
-    pinRequired,
-    roomInviteError,
-    setAlertIsOpen,
-  ]);
+  }, [disconnectFromSignalingServer]);
 
   return (
     <SidebarLayout
