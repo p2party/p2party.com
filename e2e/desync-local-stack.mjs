@@ -5,8 +5,14 @@
 //   node e2e/desync-local-stack.mjs
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
-import { mkdirSync, openSync, closeSync, writeFileSync } from "node:fs";
+import { createHash, randomBytes } from "node:crypto";
+import {
+  mkdirSync,
+  openSync,
+  closeSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,7 +50,34 @@ const output = path.join(
 );
 mkdirSync(output, { recursive: true });
 const serverLog = openSync(path.join(output, "server.log"), "a");
-const report = { started, app, signaling, scenarios: {}, errors: [] };
+const manifest = JSON.parse(
+  readFileSync(path.join(siteRoot, "package.json"), "utf8"),
+);
+const sdkManifest = JSON.parse(
+  readFileSync(
+    path.join(siteRoot, "node_modules/p2party/package.json"),
+    "utf8",
+  ),
+);
+const artifact = manifest.dependencies.p2party.slice("file:".length);
+const wasmPath = `/vendor/p2party-${sdkManifest.version}/libcrypto.wasm`;
+const sha256 = (file) =>
+  createHash("sha256").update(readFileSync(file)).digest("hex");
+const report = {
+  started,
+  app,
+  signaling,
+  sdk: {
+    version: sdkManifest.version,
+    artifact,
+    artifactSha256: sha256(path.join(siteRoot, artifact)),
+    wasmPath,
+    wasmSha256: sha256(path.join(siteRoot, "public", wasmPath)),
+  },
+  wasmResponses: [],
+  scenarios: {},
+  errors: [],
+};
 const log = (...args) => console.log(new Date().toISOString(), ...args);
 let server;
 let browser;
@@ -127,6 +160,10 @@ async function stopServer(signal = "SIGTERM") {
 async function newContext(tag) {
   const context = await browser.newContext();
   await context.addInitScript((url) => {
+    // Playwright also runs init scripts in a new tab's opaque about:blank
+    // document, where localStorage is unavailable. The actual HTTP navigation
+    // gets its own invocation and the same observation hooks below.
+    if (location.protocol !== "http:" && location.protocol !== "https:") return;
     localStorage.setItem("signalingServerUrl", JSON.stringify(url));
     window.__desync = {
       pcCreated: 0,
@@ -175,6 +212,15 @@ async function newContext(tag) {
     page.on("pageerror", (error) =>
       report.errors.push(`${tag}: ${error.message}`),
     );
+  });
+  context.on("response", (response) => {
+    if (response.url().includes("libcrypto.wasm")) {
+      report.wasmResponses.push({
+        context: tag,
+        url: response.url(),
+        status: response.status(),
+      });
+    }
   });
   return context;
 }
@@ -377,6 +423,32 @@ try {
     otherTab,
     `replacement-tab-${randomBytes(6).toString("hex")}`,
   );
+  const stableTabs = [oldTab, replacementTab, otherTab];
+  const stableOpens = await Promise.all(
+    stableTabs.map(
+      async (page) =>
+        (await page.evaluate(roomState, invitation.roomUrl)).counters.wsOpened,
+    ),
+  );
+  for (let sample = 0; sample < 10; sample++) {
+    await delay(1000);
+    const states = await Promise.all(
+      stableTabs.map((page) => page.evaluate(roomState, invitation.roomUrl)),
+    );
+    assert.deepEqual(
+      states.map((state) => state.counters.wsOpened),
+      stableOpens,
+      "same-identity tabs must not compete for the signaling socket",
+    );
+    assert.equal(
+      states[1].handshakes[states[2].peerId]?.status,
+      "authenticated",
+    );
+    assert.equal(
+      states[2].handshakes[states[1].peerId]?.status,
+      "authenticated",
+    );
+  }
   report.scenarios.secondTab = {
     passed: true,
     replacedRole: "responder",
@@ -478,6 +550,23 @@ try {
   );
   await hostContext.close();
   await joinerContext.close();
+  for (const context of ["A", "B", "PIN host", "PIN joiner"]) {
+    assert(
+      report.wasmResponses.some(
+        (response) =>
+          response.context === context &&
+          new URL(response.url).pathname === wasmPath &&
+          response.status === 200,
+      ),
+      `${context} must use the vendored WASM`,
+    );
+  }
+  assert(
+    report.wasmResponses.every(
+      (response) => new URL(response.url).origin === new URL(app).origin,
+    ),
+    "the local stack must not fetch cryptography from a CDN",
+  );
   assert.deepEqual(report.errors, [], "browser page errors are failures");
   report.passed = true;
 } catch (error) {

@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useSyncExternalStore } from "react";
 import { shallowEqual, useSelector } from "react-redux";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -47,6 +47,9 @@ interface UseRoomOptions {
 
 export const DEFAULT_SIGNALING_URL = "wss://signaling.p2party.com/ws";
 export const DEFAULT_STUN_URLS = ["stun:stun.p2party.com:3478"];
+const subscribeNever = () => () => undefined;
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
 
 export const useRoom = ({
   subscribeToMessages = true,
@@ -56,14 +59,27 @@ export const useRoom = ({
   const [percentageFilledChunk] = useLocalStorage("percentageFilledChunk", 90);
   const [chunks] = useLocalStorage("chunksToSplitMessage", 1);
 
-  const [signalingServerUrl, setSignalingServerUrl] = useLocalStorage(
+  const [storedSignalingServerUrl, setSignalingServerUrl] = useLocalStorage(
     "signalingServerUrl",
     DEFAULT_SIGNALING_URL,
   );
-  const [stunServerUrls, setStunServerUrls] = useLocalStorage<string[]>(
+  const [storedStunServerUrls, setStunServerUrls] = useLocalStorage<string[]>(
     "stunServerUrls",
     DEFAULT_STUN_URLS,
   );
+  // Prerendering cannot know a browser's saved server preferences. Match its
+  // default labels on the first hydration render, then reveal the already-read
+  // saved values. The room invitation uses the same hydration boundary, so an
+  // initial automatic join cannot race ahead with the default server URL.
+  const hydrated = useSyncExternalStore(
+    subscribeNever,
+    clientSnapshot,
+    serverSnapshot,
+  );
+  const signalingServerUrl = hydrated
+    ? storedSignalingServerUrl
+    : DEFAULT_SIGNALING_URL;
+  const stunServerUrls = hydrated ? storedStunServerUrls : DEFAULT_STUN_URLS;
 
   const keyPair = useSelector(p2party.keyPairSelector);
   const roomView = useSelector((state: State) => {

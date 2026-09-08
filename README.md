@@ -47,7 +47,7 @@ authoritative resolver and lock.
 `package.json` depends on an immutable local tarball, not a registry range:
 
 ```text
-"p2party": "file:vendor/p2party-0.14.7.tgz"      // package.json, dependencies
+"p2party": "file:vendor/p2party-0.14.8.tgz"      // package.json, dependencies
 ```
 
 Four things to know: what that pins, how the WebAssembly module is served, the
@@ -56,7 +56,7 @@ convention — `npm run provenance:check` fails the build otherwise.
 
 ### 1. The bytes are pinned
 
-`vendor/p2party-0.14.7.tgz` is committed. `package-lock.json` records its
+`vendor/p2party-0.14.8.tgz` is committed. `package-lock.json` records its
 SHA-512, so `npm ci` from a clean clone installs exactly those bytes, with
 nothing about the SDK resolved over the network. (The other dependencies are
 ordinary registry packages and are still fetched.)
@@ -73,9 +73,9 @@ be the version-matched artifact file:vendor/p2party-<version>.tgz`. So run
 ### 2. The WASM is self-hosted, and still SRI-checked
 
 The SDK's cryptography is a WebAssembly module. Its default source is
-`https://cdn.p2party.com/@0.14.7/libcrypto.wasm`. `src/protocol/sdk.ts` — the
+`https://cdn.p2party.com/@0.14.8/libcrypto.wasm`. `src/protocol/sdk.ts` — the
 only module that may `import "p2party"` directly — calls `setWasmSourceUrl()`
-to redirect it to `/vendor/p2party-0.14.7/libcrypto.wasm`
+to redirect it to `/vendor/p2party-0.14.8/libcrypto.wasm`
 (`src/protocol/wasm.ts`), a copy committed under `public/`.
 
 Redirecting the source does not weaken the integrity check. The SDK fetches
@@ -115,7 +115,7 @@ It prints the two hashes a release record needs. Run here:
 
 ```text
 $ npm run provenance:check
-p2party artifact SHA-256: 761c5dd9d0d50c2691eb2a13403aa11d95f7a870d72bba7cc5dc0af28bb01ad8
+p2party artifact SHA-256: 631bdc04b1b3591b644d48a0d63d35d20bf60af7f1d6c817e869015e7bbbc076
 p2party WASM SHA-256: 7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76
 ```
 
@@ -159,7 +159,7 @@ npm ci && npm test && npm run build
 
 Step 4's `tar` invocation was run against the current release: the extracted
 bytes are byte-identical to the committed
-`public/vendor/p2party-0.14.7/libcrypto.wasm` and to the installed
+`public/vendor/p2party-0.14.8/libcrypto.wasm` and to the installed
 `node_modules/p2party/lib/libcrypto.wasm` (all three SHA-256
 `7fc91b61…a17c4d76`).
 
@@ -390,7 +390,7 @@ blog manifest/content consistency, and two chat-layout regressions
 
 ### Browser — `e2e/`
 
-Five Playwright + headless-Chromium harnesses that drive the **real app**
+Six Playwright + headless-Chromium harnesses that drive the **real app**
 against **real WebRTC** (real `RTCPeerConnection`, DTLS/SCTP data channels).
 They are not wired into CI.
 
@@ -415,7 +415,7 @@ Serve the built site first — verified working here:
 npm run build
 npx vite preview --port 5820 --strictPort
 # GET /                                     → 200
-# GET /vendor/p2party-0.14.7/libcrypto.wasm → 200, 211350 bytes
+# GET /vendor/p2party-0.14.8/libcrypto.wasm → 200, 211350 bytes
 # GET /r                                    → 302 to /r/
 # GET /r/                                   → 200, the prerendered document
 ```
@@ -471,10 +471,47 @@ It joins through the Connect dialog and exchanges messages through the composer;
 kills and restarts its server on port 5841, requiring both pages to verify and
 rejoin without focus, clicks or reloads before exchanging another message;
 opens a second tab with the same stored identity and requires authentication
-within 20 seconds; and samples a one-character-wrong PIN for 120 seconds,
-requiring the failure banner to remain visible with no new peer transports.
+within 20 seconds, followed by 10 seconds without competing socket opens;
+and samples a one-character-wrong PIN for 120 seconds, requiring the failure
+banner to remain visible with no new peer transports. It also checks remembered
+consent after reload and successful delivery after correcting the PIN through
+the retry dialog.
 Only the child server is stopped. The report and server log are written to
 `logs/desync/<timestamp>/`. `DESYNC_SERVER_PORT` changes the server port.
+
+#### `e2e/room-hydration.mjs`
+
+Run `APP_URL=http://127.0.0.1:5840 node e2e/room-hydration.mjs` against the built
+site. Saved signaling and STUN preferences must survive navigation and reload
+on `/r` and `/rooms` without a hydration error or an unrequested connection.
+The first hydration render uses the prerendered defaults; the browser's saved
+values become visible at the same hydration boundary as the room invitation.
+
+#### Recorded desync results — 2026-09-08
+
+The commands above passed against the built site with the vendored SDK 0.14.8
+artifact identified in the provenance section, actual signaling server 0.1.2
+and an isolated PostgreSQL database on port 6543. The browser runner's report
+is `logs/desync/2026-09-08T15-47-27.597Z/result.json` (local, ignored), with its
+server log beside it. This is a loopback Chromium measurement.
+
+| Scenario                                    | Result                                                                                             |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Connect and send through the UI             | Message delivered over a real RTC data channel                                                     |
+| Reload with remembered consent              | Same identity rejoined and exchanged a message in 882 ms                                           |
+| Kill and restart the signaling process      | Both pages verified and rejoined in 3,536 ms without focus, clicks or reloads; UI delivery resumed |
+| Second tab replacing the identity responder | Authenticated in 886 ms; another 10 s showed no competing socket opens                             |
+| One-character-wrong PIN                     | Failure stayed visible for 120.6 s across 120 samples, with exactly one peer transport per side    |
+| Correct the PIN through the retry dialog    | Authenticated and delivered a UI message                                                           |
+| Saved signaling and STUN preferences        | `/r` and `/rooms` hydrated and reloaded without errors or an unrequested signaling connection      |
+
+The complete run had no browser page errors. Every context fetched the
+self-hosted 0.14.8 WASM. Before the fixes, the old SDK/site pair failed the
+responder replacement and created hundreds of competing signaling sockets;
+wrong-PIN failure created replacement transports. The focused hydration check
+also failed before the preference snapshot fix, on all four navigation/reload
+cases. Clean offline `npm ci`, provenance, the site build, 116 unit tests with
+410 assertions, typecheck and lint passed.
 
 #### `e2e/packet-trace.mjs`
 
@@ -502,7 +539,7 @@ and that they cover one preset and one payload size.
 
 ## What the app does today
 
-Grounded in the vendored `p2party` 0.14.7 and in this repository's code.
+Grounded in the vendored `p2party` 0.14.8 and in this repository's code.
 
 - **Handshake.** Every peer edge runs interactive 3DH together with one
   room-pinned ML-KEM suite — ML-KEM-512, ML-KEM-768 (default), or ML-KEM-1024.
