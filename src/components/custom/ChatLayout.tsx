@@ -50,6 +50,24 @@ const ChatLayout: FC<PropsWithChildren> = () => {
   const autoConnectAttemptedRoomRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // C4: a socket that dropped after a successful auto-connect must let the
+    // room try again. This has to run FIRST, in the same pass that reads the
+    // ref below -- a ref mutation schedules no render, so a separate effect
+    // that clears it afterward is one commit too late: on a bare drop with no
+    // other dependency change, the auto-connect check below would already
+    // have read the stale ref by the time that effect ran. The SDK's own
+    // bounded backoff is the primary repair; this stops the layout's one-shot
+    // ref from permanently disarming the UI path.
+    if (
+      shouldReleaseAutoConnectAttempt({
+        isConnected,
+        isEstablishingConnection,
+        attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
+      })
+    ) {
+      autoConnectAttemptedRoomRef.current = null;
+    }
+
     if (
       roomUrl &&
       roomInviteError.length === 0 &&
@@ -62,6 +80,7 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     }
 
     if (
+      roomUrl &&
       shouldAutoConnect({
         roomUrl,
         roomInviteErrorLength: roomInviteError.length,
@@ -74,8 +93,8 @@ const ChatLayout: FC<PropsWithChildren> = () => {
         attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
       })
     ) {
-      autoConnectAttemptedRoomRef.current = roomUrl ?? null;
-      void connect(roomUrl!).catch(() => {
+      autoConnectAttemptedRoomRef.current = roomUrl;
+      void connect(roomUrl).catch(() => {
         autoConnectAttemptedRoomRef.current = null;
         setAlertIsOpen(true);
       });
@@ -96,20 +115,6 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     roomInviteError,
     setAlertIsOpen,
   ]);
-
-  // C4: a socket that dropped after a successful auto-connect must let the
-  // room try again. The SDK's own bounded backoff is the primary repair; this
-  // stops the layout's one-shot ref from permanently disarming the UI path.
-  useEffect(() => {
-    if (
-      shouldReleaseAutoConnectAttempt({
-        isConnected,
-        isEstablishingConnection,
-        attemptedRoomUrl: autoConnectAttemptedRoomRef.current,
-      })
-    )
-      autoConnectAttemptedRoomRef.current = null;
-  }, [isConnected, isEstablishingConnection]);
 
   // The deferred wake handler is read through a ref: the macrotask is scheduled
   // by a listener from an older render, and by the time it fires the SDK's
