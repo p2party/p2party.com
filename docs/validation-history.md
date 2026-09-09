@@ -5,7 +5,49 @@ SDK package, browser, native build, or production network. Raw browser reports
 under `logs/` are local and ignored because captures can contain sensitive data.
 The reproducible runners remain in `e2e/`; see [Browser testing](browser-testing.md).
 
-## Production smoke and CSP follow-up — 2026-09-09
+## Completed production Cloudflare rollout — 2026-09-09
+
+Frontend tag `deploy-2026-09-09.2` was deployed with SDK 0.14.10 and signaling
+server 0.1.4 (protocol 4). The public homepage, room, saved-room and new
+release/research article HTML matched the tested local build byte-for-byte.
+The decoded self-hosted WASM retained SHA-256
+`7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76`,
+with `application/wasm` and gzip encoding.
+
+The reviewed Terraform apply created one Cloudflare response-header ruleset,
+changed no other resources and destroyed none. A subsequent full Terraform plan
+reported zero changes. The public frontend now returns the exact CSP,
+Permissions-Policy, Referrer-Policy, HSTS and X-Content-Type-Options values in
+[Deployment](deployment.md).
+
+An independent production Chromium run checked all 15 routes and 66 distinct
+same-origin page/asset responses with the actual edge headers. No headers were
+injected and no responses were rewritten. All five header values matched;
+there were no executable inline scripts, inline event handlers, failed resource
+loads, CSP violations, uncaught page errors or console errors. Client navigation
+from the homepage to the blog and then the new article passed. WebSockets were
+blocked for this route-only check, and none were attempted.
+
+A separate two-peer smoke exercised the real room flow under the live headers.
+UI text crossed WebRTC, and a 40,000-byte file arrived byte-exact. Receiver reload
+retained the file and restored message delivery in 1,239 ms. A second tab with
+the same identity took over and remained stable for five seconds. This run had
+zero CSP violations and uncaught page errors. Four handled transport console
+errors occurred during reload/replacement, matching the earlier pre-header
+smoke's count and message types; the check does not establish an exact cause
+for every event. Test-room memberships were explicitly left and the browser
+contexts closed.
+
+Reports are `logs/deployment-check-2026-09-09/cloudflare-followup-readiness.json`,
+`production-csp-hydration-result.json` and `post-headers-live-result.json` in
+that same directory (local, ignored). The server repository retains the reviewed
+apply and subsequent full-plan summaries. These are bounded observations of one
+Chromium environment, not long-term reliability, load, mobile or forced-TURN
+validation. They do not verify production database TLS configuration or establish
+cryptographic security. Blind rendezvous, private invitation retrieval and
+PoW/passkey admission remain experimental and outside the deployed room flow.
+
+## Initial production smoke and CSP investigation — 2026-09-09
 
 After the operator deployed SDK 0.14.10 and server 0.1.4, bounded public checks
 confirmed the server's health/version/protocol, signature challenge, correlated
@@ -38,8 +80,9 @@ completed Suspense boundaries in place. It rejects script-bearing route markup
 during the build. All 15 rebuilt pages passed `e2e/csp-hydration.mjs` under the
 strict policy, with no inline executable scripts, uncaught errors, CSP violations
 or external requests. This includes the new release/research article, client
-navigation, and opening invitation consent without connecting. Deploy this
-frontend build before enabling the Terraform-managed edge policy.
+navigation, and opening invitation consent without connecting. This corrected
+build was subsequently released as `deploy-2026-09-09.2`; the completed rollout
+and production checks are recorded above.
 
 Raw reports are under `logs/deployment-check-2026-09-09/` and
 `logs/csp-hydration/result.json` (local, ignored). These observations apply to

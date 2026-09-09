@@ -91,14 +91,20 @@ the current content-addressed assets.
 
 Open a fresh browser profile and use a new invitation to check delivery between
 two test peers, one small file, reload recovery, and a second tab sharing one
-identity. Close the test peers afterward. Keep restart, fault-injection, large
-transfer, and load tests on the disposable local stack described in
+identity. Explicitly leave the test room with each active identity, then close
+the test peers. Keep restart, fault-injection, large transfer, and load tests on
+the disposable local stack described in
 [Browser testing](browser-testing.md).
 
-The production smoke on 2026-09-09 matched the deployed homepage to the local
-release build and verified the WASM, public routes, authenticated signaling,
-text/file delivery over WebRTC, reload persistence, and same-identity tab
-replacement. At that check, the five frontend response headers above were
-absent; signaling responses had their expected headers. This remains an edge
-configuration task until a public response confirms the values. See
-[Validation history](validation-history.md) for the tested scope and limits.
+On 2026-09-09, frontend tag `deploy-2026-09-09.2` was deployed before the
+Cloudflare rule was activated. The reviewed Terraform apply created one ruleset,
+changed no other resources and destroyed none; a subsequent full plan reported
+zero changes. All five headers above are now present on the public frontend.
+
+An actual production Chromium check verified all 15 pages and 66 distinct
+page/asset responses with the expected headers, without injecting or rewriting
+responses. No executable inline scripts, CSP violations or uncaught page errors
+occurred, and homepage-to-blog-to-article navigation passed. A separate room smoke
+confirmed WebRTC text and byte-exact file delivery, reload persistence and
+same-identity tab replacement under the live policy. See
+[Validation history](validation-history.md) for measurements and limitations.
