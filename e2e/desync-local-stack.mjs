@@ -24,6 +24,9 @@ const siteRoot = path.resolve(
   "..",
 );
 const serverRoot = path.resolve(siteRoot, "../p2party-server");
+const serverManifest = JSON.parse(
+  readFileSync(path.join(serverRoot, "package.json"), "utf8"),
+);
 const app = process.env.APP_URL ?? "http://127.0.0.1:5840";
 const port = Number(process.env.DESYNC_SERVER_PORT ?? 5841);
 const databaseUrl = process.env.DATABASE_URL;
@@ -31,9 +34,11 @@ assert(databaseUrl, "DATABASE_URL must identify a migrated throwaway database");
 const database = new URL(databaseUrl);
 assert(["127.0.0.1", "localhost", "[::1]"].includes(database.hostname));
 assert(
-  Number(database.port) > 5000,
+  Number(database.port) > 5000 && Number(database.port) !== 5432,
   "the existing Postgres on 5432 is out of scope",
 );
+if (!database.searchParams.has("sslmode"))
+  database.searchParams.set("sslmode", "disable");
 assert(Number.isSafeInteger(port) && port > 5000 && port <= 65535);
 assert(
   new URL(app).hostname === "127.0.0.1" ||
@@ -106,14 +111,22 @@ async function assertPortFree() {
 
 async function startServer() {
   await assertPortFree();
-  const env = { ...process.env, DATABASE_URL: databaseUrl, PORT: String(port) };
+  const env = {
+    ...process.env,
+    DATABASE_URL: database.toString(),
+    PORT: String(port),
+  };
   delete env.COTURN_SECRET;
   delete env.COTURN_URLS;
-  server = spawn(process.env.BUN ?? "bun", ["run", "src/index.ts"], {
-    cwd: serverRoot,
-    env,
-    stdio: ["ignore", serverLog, serverLog],
-  });
+  server = spawn(
+    process.env.BUN ?? "bun",
+    ["run", "--no-env-file", "src/index.ts"],
+    {
+      cwd: serverRoot,
+      env,
+      stdio: ["ignore", serverLog, serverLog],
+    },
+  );
   let spawnError;
   server.once("error", (error) => {
     spawnError = error;
@@ -136,7 +149,7 @@ async function startServer() {
     (value) => value?.status === "ok",
     20000,
   );
-  assert.equal(health.version, "0.1.2");
+  assert.equal(health.version, serverManifest.version);
   assert.equal(health.protocolVersion, 4);
   log("server ready", { pid: server.pid, ...health });
   return health;

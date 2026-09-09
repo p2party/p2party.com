@@ -47,7 +47,7 @@ authoritative resolver and lock.
 `package.json` depends on an immutable local tarball, not a registry range:
 
 ```text
-"p2party": "file:vendor/p2party-0.14.8.tgz"      // package.json, dependencies
+"p2party": "file:vendor/p2party-0.14.9.tgz"      // package.json, dependencies
 ```
 
 Four things to know: what that pins, how the WebAssembly module is served, the
@@ -56,7 +56,7 @@ convention — `npm run provenance:check` fails the build otherwise.
 
 ### 1. The bytes are pinned
 
-`vendor/p2party-0.14.8.tgz` is committed. `package-lock.json` records its
+`vendor/p2party-0.14.9.tgz` is committed. `package-lock.json` records its
 SHA-512, so `npm ci` from a clean clone installs exactly those bytes, with
 nothing about the SDK resolved over the network. (The other dependencies are
 ordinary registry packages and are still fetched.)
@@ -73,9 +73,9 @@ be the version-matched artifact file:vendor/p2party-<version>.tgz`. So run
 ### 2. The WASM is self-hosted, and still SRI-checked
 
 The SDK's cryptography is a WebAssembly module. Its default source is
-`https://cdn.p2party.com/@0.14.8/libcrypto.wasm`. `src/protocol/sdk.ts` — the
+`https://cdn.p2party.com/@0.14.9/libcrypto.wasm`. `src/protocol/sdk.ts` — the
 only module that may `import "p2party"` directly — calls `setWasmSourceUrl()`
-to redirect it to `/vendor/p2party-0.14.8/libcrypto.wasm`
+to redirect it to `/vendor/p2party-0.14.9/libcrypto.wasm`
 (`src/protocol/wasm.ts`), a copy committed under `public/`.
 
 Redirecting the source does not weaken the integrity check. The SDK fetches
@@ -115,7 +115,7 @@ It prints the two hashes a release record needs. Run here:
 
 ```text
 $ npm run provenance:check
-p2party artifact SHA-256: 631bdc04b1b3591b644d48a0d63d35d20bf60af7f1d6c817e869015e7bbbc076
+p2party artifact SHA-256: 61a719a28652704d1e6d599c9eed0cf394e1805d1a344e0e71320eb2423a917e
 p2party WASM SHA-256: 7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76
 ```
 
@@ -154,12 +154,12 @@ tar -xzOf vendor/p2party-<version>.tgz package/lib/libcrypto.wasm \
 npm run provenance:check
 npm ci && npm test && npm run build
 
-# 7. Delete the previous vendor/*.tgz and public/vendor/p2party-<old>/.
+# 7. Retain earlier versioned artifacts while older deployed pages use them.
 ```
 
 Step 4's `tar` invocation was run against the current release: the extracted
 bytes are byte-identical to the committed
-`public/vendor/p2party-0.14.8/libcrypto.wasm` and to the installed
+`public/vendor/p2party-0.14.9/libcrypto.wasm` and to the installed
 `node_modules/p2party/lib/libcrypto.wasm` (all three SHA-256
 `7fc91b61…a17c4d76`).
 
@@ -415,7 +415,7 @@ Serve the built site first — verified working here:
 npm run build
 npx vite preview --port 5820 --strictPort
 # GET /                                     → 200
-# GET /vendor/p2party-0.14.8/libcrypto.wasm → 200, 211350 bytes
+# GET /vendor/p2party-0.14.9/libcrypto.wasm → 200, 211350 bytes
 # GET /r                                    → 302 to /r/
 # GET /r/                                   → 200, the prerendered document
 ```
@@ -467,6 +467,11 @@ DATABASE_URL='postgresql://p2party_desync@127.0.0.1:6543/p2party_desync?sslmode=
 node e2e/desync-local-stack.mjs
 ```
 
+Both local server fixtures default a validated loopback database URL to
+`sslmode=disable` only when `sslmode` is absent; an explicit SSL mode is
+preserved. They start Bun with `--no-env-file`, so the server checkout's `.env`
+cannot restore TURN credentials or override the isolated fixture environment.
+
 It joins through the Connect dialog and exchanges messages through the composer;
 kills and restarts its server on port 5841, requiring both pages to verify and
 rejoin without focus, clicks or reloads before exchanging another message;
@@ -479,6 +484,36 @@ the retry dialog.
 Only the child server is stopped. The report and server log are written to
 `logs/desync/<timestamp>/`. `DESYNC_SERVER_PORT` changes the server port.
 
+#### Pending transfer checks in 0.14.9
+
+`node e2e/pending-transfers.mjs` exercises the production React panel with
+controlled SDK promises: Cancel remains available during a retry; switching
+rooms clears completed operations; an active durable retry survives the same
+keyed remount used by the chat page; a recovered storage read clears its error;
+and interrupted preparation explains why the file must be chosen again.
+
+`e2e/pending-transfers-live.mjs` uses the built site, the actual SDK and an
+actual signaling server. It sends a real 1 MiB file, drops chunk frames after
+a durable partial exists, reloads the sender, and requires the pending panel
+to appear. It proves the exact identities reauthenticate and a fresh automatic
+attempt sends frames before awaiting its failure. A manual retry must emit
+more frames and remain in the SDK's sending phase, with "Retrying…" visible,
+when Cancel is clicked after switching away from and back to the room.
+Cancellation must remove the sender outbox and receiver partial.
+
+```bash
+APP_URL=http://127.0.0.1:5840 \
+DATABASE_URL='postgresql://p2party_e2e@127.0.0.1:6543/p2party_followups' \
+node e2e/pending-transfers-live.mjs
+```
+
+The same local-only SSL default and disabled `.env` loading apply here.
+
+Use `SIGNALING_URL=ws://127.0.0.1:5841/ws` instead of `DATABASE_URL` to reuse a
+running local server. Otherwise the runner starts and stops only its own
+server. Reports go to `logs/desync/pending-ui-<timestamp>.json`; assertions
+include self-hosted WASM and no browser page errors.
+
 #### `e2e/room-hydration.mjs`
 
 Run `APP_URL=http://127.0.0.1:5840 node e2e/room-hydration.mjs` against the built
@@ -487,10 +522,55 @@ on `/r` and `/rooms` without a hydration error or an unrequested connection.
 The first hydration render uses the prerendered defaults; the browser's saved
 values become visible at the same hydration boundary as the room invitation.
 
+#### Recorded acceptance for SDK 0.14.9 — 2026-09-09
+
+The current built site was checked with SDK 0.14.9, actual signaling server
+0.1.3 (protocol 4), and the isolated PostgreSQL database on port 6543. The
+vendored artifact has SHA-256
+`61a719a28652704d1e6d599c9eed0cf394e1805d1a344e0e71320eb2423a917e`.
+All 219 installed SDK library files matched the archive byte-for-byte, and
+`provenance:check` confirmed its lockfile integrity and matching public WASM.
+
+The strict pending-transfer browser run passed. Its report is
+`logs/desync/pending-ui-2026-09-09T06-03-40.989Z.json` (local, ignored), which
+records the artifact hash and the server's exact version. These are loopback
+Chromium results with deliberate chunk-frame loss.
+
+| Scenario                                 | Observed result                                                                                                                   |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Reload during a real 1 MiB file send     | Receiver had 222,884 of 1,048,576 bytes; the pending panel retained the original transfer and root                                |
+| Automatic retry after reload             | The same identities reauthenticated and a new sending attempt emitted chunk frames before settling as pending                     |
+| Manual retry and room navigation         | The retry emitted new frames, stayed in the SDK's `sending` phase, and showed “Retrying…” after leaving and returning to the room |
+| Cancel while the manual retry was active | Cancel remained enabled; the sender outbox and receiver partial were removed                                                      |
+| Browser errors and WASM                  | No page errors; both peers fetched the versioned self-hosted 0.14.9 WASM successfully                                             |
+
+The broader `desync-local-stack.mjs` run also passed on this same artifact and
+server version. Its report is
+`logs/desync/2026-09-09T06-30-31.903Z/result.json` (local, ignored), with the
+owned server log beside it. It recorded no browser page errors.
+
+| Scenario                                    | Observed result                                                                                    |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Connect and send through the UI             | Message delivered through the real RTC data channel                                                |
+| Reload with remembered consent              | The same identity rejoined and exchanged a message in 890 ms                                       |
+| Kill and restart the signaling process      | Both pages verified and rejoined in 3,547 ms without focus, clicks or reloads; UI delivery resumed |
+| Second tab replacing the identity responder | Authenticated in 683 ms; another 10 seconds showed no competing socket opens                       |
+| One-character-wrong PIN                     | Failure remained visible for 120,945 ms across 120 samples, with one peer transport per side       |
+| Correct the PIN through the retry dialog    | Authenticated and delivered a UI message                                                           |
+
+The Node 24 build (typecheck, client, SSR and prerender), lint, provenance and
+116 unit tests with 410 assertions passed against this artifact. The component
+browser check also passed all five cases, including active retry state across
+the chat page's keyed room remount. Build, lint and unit logs are in
+`logs/followups-site-{build,lint,tests}.log` (local, ignored).
+
 #### Recorded desync results — 2026-09-08
 
-The commands above passed against the built site with the vendored SDK 0.14.8
-artifact identified in the provenance section, actual signaling server 0.1.2
+The desync-local-stack and room-hydration checks passed against the built site
+with the vendored SDK 0.14.8
+artifact with SHA-256
+`631bdc04b1b3591b644d48a0d63d35d20bf60af7f1d6c817e869015e7bbbc076`,
+actual signaling server 0.1.2
 and an isolated PostgreSQL database on port 6543. The browser runner's report
 is `logs/desync/2026-09-08T15-47-27.597Z/result.json` (local, ignored), with its
 server log beside it. This is a loopback Chromium measurement.
@@ -539,7 +619,7 @@ and that they cover one preset and one payload size.
 
 ## What the app does today
 
-Grounded in the vendored `p2party` 0.14.8 and in this repository's code.
+Grounded in the vendored `p2party` 0.14.9 and in this repository's code.
 
 - **Handshake.** Every peer edge runs interactive 3DH together with one
   room-pinned ML-KEM suite — ML-KEM-512, ML-KEM-768 (default), or ML-KEM-1024.
@@ -580,7 +660,16 @@ Grounded in the vendored `p2party` 0.14.8 and in this repository's code.
   retransmission. Text and files up to the SDK's enforced 10 GiB limit; the
   receiver streams large files to OPFS where the browser provides it, and a
   reload fills the gaps rather than starting over. A transfer resumes across a
-  replaced peer connection.
+  replaced peer connection. Once preparation publishes its durable outbox,
+  sender reload also retains the payload for matching authenticated recipients.
+  The **Pending transfers** panel shows retained work, offers **Retry pending
+  transfers**, and keeps **Cancel** usable during a retry and after room
+  navigation. Failed attempts remain pending; completed recipients are not sent
+  the same logical transfer again. Staging is bound to the local identity,
+  room policy and recipient keys, expires after 24 hours, and is discarded on
+  explicit room leave or cancellation. Interrupted preparation has a one-hour
+  limit and must be selected again. Recovery never supplies a missing PIN or
+  invokes a passkey prompt automatically.
 - **Invitations and identity.** A room invitation carries the room's policy in
   the URL fragment, beside the capability and never in the query string
   (`/r#v1.<capability>&auth=pin`), so opening one sends the server nothing but
@@ -600,16 +689,13 @@ Grounded in the vendored `p2party` 0.14.8 and in this repository's code.
   wrote it down. Restoring on a new device replaces whatever identity is there,
   regenerates the X25519 identity and re-cross-signs it. See
   [What 0.14.6 added](#what-0146-added-and-how-it-was-checked-here).
-- **Waking up.** `src/components/custom/ChatLayout.tsx` re-dials the room on
-  window `focus`, `visibilitychange` to visible, `pageshow` (bfcache restore)
-  and `online`, deferred one macrotask so the SDK's liveness state lands first.
-  A phone that was backgrounded with its radio off wakes through
-  `visibilitychange` without necessarily focusing the window, which is why
-  `focus` alone was not enough. Underneath, the vendored SDK binds a peer edge
-  to the DTLS certificate it was authenticated against, so a transport the
-  other side has already replaced is dropped rather than reused; see
-  [What 0.14.5 added](#what-0145-added-and-how-it-was-checked-here) for what
-  that was and was not checked against here.
+- **Waking up.** `ChatLayout` owns the initial room admission. The SDK owns
+  heartbeat, reconnect backoff and wake events after admission, so focus or
+  connectivity changes cannot bypass a terminal signaling refusal or start a
+  second competing socket. A page reload can readmit a room with remembered
+  consent. Authentication failures remain visible until an explicit user retry.
+  SDK 0.14.9 also requests a fresh, correlated room roster to repair a missing
+  edge without rebuilding healthy peer connections.
 
 ### What 0.14.6 added, and how it was checked here
 

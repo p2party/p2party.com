@@ -13,6 +13,7 @@ import {
 import { useRoom } from "../hooks/useRoom";
 import { Badge } from "../components/badge";
 import HandshakeStatusBanner from "../components/custom/HandshakeStatusBanner";
+import PendingTransfers from "../components/custom/PendingTransfers";
 import { unresolvedHandshakeFailures } from "../protocol/handshakeFailures";
 import {
   isLayoutOnlyMessageScroll,
@@ -550,6 +551,18 @@ const ChatPage = () => {
           </div>
         )}
 
+        <PendingTransfers
+          key={roomId}
+          roomId={roomId}
+          channelLabel={selectedChannel}
+          liveTransferIds={transfers
+            .filter(
+              (transfer) =>
+                transfer.status === "preparing" ||
+                transfer.status === "cancelling",
+            )
+            .map((transfer) => transfer.handle.transferId)}
+        />
         <Suspense>
           <MessageInput handleFiles={handleFiles} onSend={startTransfer} />
         </Suspense>
