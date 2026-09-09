@@ -1,10 +1,35 @@
 # Recorded validation history
 
-These are measurements of the named artifacts, captured before the publication
-cleanup. They are retained as historical evidence; they do not certify a later
+These are measurements of the named artifacts. They do not certify a later
 SDK package, browser, native build, or production network. Raw browser reports
 under `logs/` are local and ignored because captures can contain sensitive data.
 The reproducible runners remain in `e2e/`; see [Browser testing](browser-testing.md).
+
+## Recorded acceptance for SDK 0.14.10 — 2026-09-09
+
+The built site passed both live Chromium runners with SDK 0.14.10, actual
+signaling server 0.1.4 (protocol 4), and isolated PostgreSQL. The exact vendored
+archive SHA-256 is
+`179188fa070445cc142bec08a0c5a192e33bad43c45684a755e6b67d70913d41`.
+All 61 installed SDK files match this archive, and the self-hosted WASM matches
+its packaged provenance. These are loopback measurements with synthetic data.
+
+- UI messages traversed real WebRTC data channels. Remembered consent rejoined
+  after reload in 907 ms; unattended signaling restart recovered in 3,060 ms.
+- A second tab with the same identity authenticated in 711 ms. A wrong PIN
+  stayed visibly failed for 120,812 ms over 120 samples, without creating more
+  peer transports; correcting it through explicit retry delivered a message.
+- A partially received 1 MiB file survived sender reload. Automatic and manual
+  retries emitted fresh chunk frames. Cancellation remained usable across room
+  navigation while retry was active, removing both the sender outbox and the
+  receiver partial. No browser page errors were recorded.
+
+The reports are `logs/desync/2026-09-09T09-21-14.784Z/result.json` and
+`logs/desync/pending-ui-2026-09-09T09-23-56.589Z.json` (local, ignored).
+Frontend validation also passed 134 unit tests / 458 assertions, lint,
+TypeScript, client/SSR builds and 14-route prerender. The final dependency audit
+reported zero known advisories. Offline upload tests verify gzip WASM bytes,
+MIME/encoding, unchanged decoded integrity, and preserved deployment ordering.
 
 ## Recorded acceptance for SDK 0.14.9 — 2026-09-09
 
