@@ -27,12 +27,13 @@ must instead vendor that immutable tarball inside this repository (or consume an
 immutable registry release), so a clean clone can run `npm ci` without
 undeclared sibling state.
 
-Before the first public push, export a fresh or squashed history whose author
-and committer email addresses all use `@p2party.com`. Do not rewrite this active
-protocol-development branch. Review the export's complete history and packaged
-artifacts for credentials and personal data; deleting a sensitive file from
-the latest tree does not remove it from older commits. Keep local logs, native
-archives, provisioning profiles, and signing keys out of the public export.
+`master` carries the public history. Publish from this repository root with
+`git push`; a separate export checkout is not needed. Start public changes
+from `master`, and keep any older private history out of public merges.
+Review history and packaged artifacts for credentials and personal data;
+deleting a sensitive file from the latest tree does not remove it from older
+commits. Keep local logs, native archives, provisioning profiles, and signing
+keys out of Git.
 
 Prefer browser or Node built-ins for small, well-defined operations. A new
 dependency should provide enough maintained functionality to justify its
