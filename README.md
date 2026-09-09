@@ -1,850 +1,172 @@
 # p2party.com
 
-The reference client for [p2party](https://p2party.com): a React 19 + Vite
-single-page app that is prerendered to static HTML, deployed to an
-S3-compatible bucket, and wrapped by Capacitor for Android and iOS.
+A browser client for encrypted peer-to-peer messaging and file sharing.
+Open a room, share its invitation, and communicate over a WebRTC mesh.
+Built with React, Vite, and TypeScript, with Capacitor projects for Android
+and iOS. Licensed under [AGPL-3.0-only](LICENSE.md).
 
-Peers who open the same room connect to each other over WebRTC and exchange
-messages and files directly. This repository contains **none** of that
-protocol. It integrates it:
+**Research-stage software.** The project has not completed an independent
+security audit. The signaling service sees room membership and timing;
+server-blind rendezvous and Sybil resistance are not shipped guarantees.
+Read the [security policy](SECURITY.md) before relying on it for sensitive use.
 
-| Repository                                                    | What lives there                                                                         |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **this one**                                                  | UI, routing, room/invite plumbing, prerender + deploy pipeline, native shells            |
-| [`p2party-js`](https://github.com/p2party/p2party-js)         | the protocol: handshake, ratchet, WebRTC mesh, chunking, storage — consumed as a tarball |
-| [`p2party-server`](https://github.com/p2party/p2party-server) | the signaling service that introduces peers (Bun + PostgreSQL)                           |
+## What works
 
-The retro two-column / hacker visual identity is deliberate. It is a reference
-integration, not a generic component library, and not a design system.
+- Text and file transfers with authenticated receipts and selective retry.
+- Durable pending transfers that survive sender reload, with Retry and Cancel
+  available after room navigation. Preparation must finish before a payload can
+  be recovered; retained prepared transfers expire after 24 hours.
+- Room invitations whose capability and policy stay in the URL fragment,
+  optional PIN authentication, and per-room cryptographic policy.
+- Automatic reconnection and targeted repair of missing peer connections;
+  authentication failures require an explicit retry.
+- Address-book identity verification and optional recovery phrases. Recovery
+  restores identities created from a phrase; it cannot recover an older random
+  identity or deleted messages.
+- Immediate delivery or scheduled timing cover. Scheduled cover has been
+  measured on loopback and is not a claim of resistance to traffic analysis.
 
-Licensed [AGPL-3.0-only](LICENSE.md).
+The client integrates the SDK; cryptographic and transport implementation lives
+in the separate library repository.
 
----
+| Repository                                                  | Responsibility                                                    |
+| ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| **p2party.com**                                             | UI, invitations, browser integration, static build, native shells |
+| [p2party-js](https://github.com/p2party/p2party-js)         | Handshake, ratchet, WebRTC mesh, transfers, and local storage     |
+| [p2party-server](https://github.com/p2party/p2party-server) | Signaling service, using Bun and PostgreSQL                       |
 
-## Quick start
+## Run locally
+
+Use Node **24.11.1** and npm **11.6.2** to match CI. Bun **1.3.14** runs tests;
+npm and `package-lock.json` are the dependency authority.
 
 ```bash
 npm ci
-npm run dev
-```
-
-`npm run dev` is `vite --host` on port 3000 (`vite.config.ts`, `server.port`).
-
-The app ships with `wss://signaling.p2party.com/ws` and
-`stun:stun.p2party.com:3478` as defaults (`src/hooks/useRoom.tsx`,
-`DEFAULT_SIGNALING_URL` / `DEFAULT_STUN_URLS`). Both are editable in room
-settings, so pointing at a local signaling service needs no source change.
-
-Toolchain: `engines` requires Node >= 22.22.0 and npm >= 11.6.2; CI
-(`.github/workflows/ci.yml`) pins Node 24.11.1, npm 11.6.2, and Bun 1.3.14.
-Bun is the test runtime only — npm and `package-lock.json` remain the
-authoritative resolver and lock.
-
----
-
-## How the SDK is vendored
-
-`package.json` depends on an immutable local tarball, not a registry range:
-
-```text
-"p2party": "file:vendor/p2party-0.14.9.tgz"      // package.json, dependencies
-```
-
-Four things to know: what that pins, how the WebAssembly module is served, the
-script that enforces both, and how to replace the artifact. None of it rests on
-convention — `npm run provenance:check` fails the build otherwise.
-
-### 1. The bytes are pinned
-
-`vendor/p2party-0.14.9.tgz` is committed. `package-lock.json` records its
-SHA-512, so `npm ci` from a clean clone installs exactly those bytes, with
-nothing about the SDK resolved over the network. (The other dependencies are
-ordinary registry packages and are still fetched.)
-
-A public branch must never point the dependency at a sibling checkout
-(`file:../p2party-js/...`). Paired local development may do it temporarily,
-but `provenance:check` then **always fails**, locally as well as in CI —
-`CI=true` only changes which message you get first. With the lockfile
-untouched it dies on `package-lock.json resolves a different p2party artifact`;
-after `npm install` refreshes the lockfile it dies on `p2party dependency must
-be the version-matched artifact file:vendor/p2party-<version>.tgz`. So run
-`provenance:check` _after_ re-vendoring, not while pointing at a sibling tree.
-
-### 2. The WASM is self-hosted, and still SRI-checked
-
-The SDK's cryptography is a WebAssembly module. Its default source is
-`https://cdn.p2party.com/@0.14.9/libcrypto.wasm`. `src/protocol/sdk.ts` — the
-only module that may `import "p2party"` directly — calls `setWasmSourceUrl()`
-to redirect it to `/vendor/p2party-0.14.9/libcrypto.wasm`
-(`src/protocol/wasm.ts`), a copy committed under `public/`.
-
-Redirecting the source does not weaken the integrity check. The SDK fetches
-that URL with `{ integrity: "sha384-K0QqktkF2/8IHMDEgDIcyDl/ywcUXUO8fF1ZzcwhVrUYfGn8jN8Foohn1+bw4HmZ" }`,
-a hash pinned when the SDK was built, so the browser rejects any bytes that do
-not match — from the CDN or from us. (Verified by reading the built bundle:
-`node_modules/p2party/lib/index.js` holds both the default URL and the
-`integrity` option passed to `fetch`.)
-
-The one exception is `/session-lab`. The store-free `p2party/session` entry
-does not share the root module's loader state, so `src/pages/session-lab.tsx`
-fetches the same file itself and hands the bytes over as `wasmBinary`. That
-path skips the browser's SRI check; what ties those bytes to the release is
-`provenance:check` below.
-
-Self-hosting exists because the app must work against an SDK version that has
-not been published to the CDN yet, and because a first-party origin is one
-fewer third party in the load path.
-
-### 3. `npm run provenance:check`
-
-`scripts/verifyLocalDependency.mjs` verifies the whole chain as one unit:
-
-- the dependency is a `file:` artifact **inside** this repository;
-- `package-lock.json` resolves that exact path, and the tarball's SHA-512
-  matches the lockfile's `integrity`;
-- the dependency filename, the lockfile version, and the version inside
-  `package/package.json` in the tarball all agree;
-- `package/lib/libcrypto.provenance.json` matches the packed WASM's size and
-  SHA-256;
-- `SELF_HOSTED_WASM_PATH` occurs exactly once in `src/protocol/wasm.ts` and
-  equals `/vendor/p2party-<version>/libcrypto.wasm`;
-- `public/vendor/p2party-<version>/libcrypto.wasm` is **byte-identical** to the
-  WASM inside the tarball.
-
-It prints the two hashes a release record needs. Run here:
-
-```text
-$ npm run provenance:check
-p2party artifact SHA-256: 61a719a28652704d1e6d599c9eed0cf394e1805d1a344e0e71320eb2423a917e
-p2party WASM SHA-256: 7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76
-```
-
-CI runs it **before** `npm ci`, so a broken vendoring fails the build before a
-single package is installed.
-
-### 4. Re-vendoring a new SDK build
-
-Everything below belongs in one commit. A release is incomplete until the
-tarball, the lockfile, the dependency string, the public WASM, and
-`wasm.ts` all name the same version.
-
-```bash
-# 1. In the SDK checkout: build the reproducible release tarball.
-#    It writes p2party-<version>.tgz at the SDK repo root and prints its
-#    SHA-256 / SHA-512 (scripts/buildRelease.mjs).
-cd ../p2party-js && npm run release:pack
-
-# 2. Back here: vendor the tarball.
-cd ../p2party.com
-cp ../p2party-js/p2party-<version>.tgz vendor/
-
-# 3. Point the dependency at it and refresh the lockfile.
-npm pkg set dependencies.p2party="file:vendor/p2party-<version>.tgz"
-npm install
-
-# 4. Self-host the exact WASM the tarball carries.
-mkdir -p public/vendor/p2party-<version>
-tar -xzOf vendor/p2party-<version>.tgz package/lib/libcrypto.wasm \
-  > public/vendor/p2party-<version>/libcrypto.wasm
-
-# 5. Update SELF_HOSTED_WASM_PATH in src/protocol/wasm.ts to
-#    /vendor/p2party-<version>/libcrypto.wasm
-
-# 6. Prove the chain, then rebuild from clean.
 npm run provenance:check
-npm ci && npm test && npm run build
-
-# 7. Retain earlier versioned artifacts while older deployed pages use them.
+npm run dev -- --host 127.0.0.1
 ```
 
-Step 4's `tar` invocation was run against the current release: the extracted
-bytes are byte-identical to the committed
-`public/vendor/p2party-0.14.9/libcrypto.wasm` and to the installed
-`node_modules/p2party/lib/libcrypto.wasm` (all three SHA-256
-`7fc91b61…a17c4d76`).
+Open `http://localhost:3000`. The SDK archive and cryptography module are
+vendored, so a sibling SDK checkout is unnecessary. Other npm dependencies
+still need to be downloaded. No deployment credentials are needed to develop
+or test the frontend.
 
-Never replace a published artifact while keeping its version number.
+The room settings expose the signaling and STUN servers. Change them to your
+local services before running network experiments. The default signaling
+service is the public p2party service; connecting to a room introduces its
+members to that service.
 
----
+## Security and privacy boundaries
 
-## Scripts
+Room capability and policy are carried in `/r#v1.<capability>...`, so they are
+absent from the HTTP request for the invitation page. Joining still sends the
+capability to the signaling service. Direct WebRTC connections also reveal
+network metadata to peers.
 
-Every entry is from `package.json`.
+PIN bytes are retained only in memory and cleared when forgotten. Identity
+keys, received content, and pending transfers use browser storage; a compromised
+browser, extension, or application origin can access them. Keep recovery phrases
+and room invitations out of issue reports, logs, screenshots, and analytics.
 
-| Command                    | What it does                                                   |
-| -------------------------- | -------------------------------------------------------------- |
-| `npm run dev`              | `vite --host`, port 3000                                       |
-| `npm run build`            | `typecheck` → `build:client` → `build:server` → `prerender`    |
-| `npm run typecheck`        | `tsc -b --pretty false`                                        |
-| `npm run lint:check`       | `eslint . --ext .ts,.tsx --max-warnings 0`                     |
-| `npm run format:check`     | Prettier over the tree (`android/`, `ios/` excluded)           |
-| `npm test`                 | `bun test` — the unit suite in `tests/`                        |
-| `npm run provenance:check` | the SDK vendoring chain (above)                                |
-| `npm run preview`          | `vite preview` over `dist/`                                    |
-| `npm run e2e`              | `node e2e/run.mjs` — the two-peer real-WebRTC harness          |
-| `npm run upload`           | build, then `scripts/uploadAllToS3.mjs` with `--env-file=.env` |
+Peer text is rendered as text. External message links accept only explicit HTTP
+or HTTPS URLs and open without an opener or referrer. Script-bearing attachments,
+including HTML and SVG, are downloaded instead of executed as documents on this
+origin. Downloaded files still require the recipient's judgment before opening
+in another application.
 
-Ran in this tree while writing this file: `provenance:check` (output above),
-`typecheck` (clean), `lint:check` (clean), `npm test` (**37 pass, 0 fail, 159
-`expect()` calls, 6 files, 842 ms**), and `npm run build` (output below).
-`npm run e2e` and the other `e2e/` harnesses were not run here — they need a
-protocol-v4 signaling service, and two of them need packet capture; their
-commands are quoted from the scripts themselves.
+Private rendezvous and anonymous admission remain research. Scheduled cover and
+loopback recovery tests do not prove anonymity, prevent Sybil attacks, or establish
+recovery bounds for mobile or wide-area networks.
 
----
+## SDK artifacts
 
-## Repository map
+The current dependency is `file:vendor/p2party-0.14.10.tgz`. Its self-hosted WASM
+is `public/vendor/p2party-0.14.10/libcrypto.wasm`; `src/protocol/wasm.ts` selects
+that path. The normal SDK loader verifies the WASM against its built-in SRI pin.
+The experimental `/session-lab` entry receives fetched WASM bytes directly;
+its release provenance is checked at build time rather than by browser SRI.
 
-```text
-src/
-  pages/            one file per route: home, chat, rooms, session-lab, blog,
-                    blog-post, privacy, tos (+ registry.ts, the lazy route table)
-  routes.tsx        the single route table, shared by StaticRouter (build) and
-                    BrowserRouter (client) — a divergence is a hydration mismatch
-  entry-server.tsx  renderToPipeableStream entry used by the prerenderer
-  main.tsx          hydrateRoot entry
-  protocol/         the integration boundary with the SDK:
-    sdk.ts            the only direct `import "p2party"`; configures the WASM source
-    wasm.ts           SELF_HOSTED_WASM_PATH + the session-lab WASM fetch
-    v4.ts             room policies, ML-KEM suites, scheduled-cover presets
-    roomAccess.ts     transient PIN/policy vault, keyed by normalized capability
-    delivery.ts       what a send's per-peer outcome means
-    safetyNumber.ts   identity fingerprint rendering
-    universalLink.ts  which https://p2party.com/r#... links the native app claims
-  hooks/            useRoom (SDK ↔ Redux), useRoomInvite, useUniversalLink
-  components/       Tailwind UI kit + custom/ (ChatLayout, CoverStatusPill,
-                    HandshakeStatusBanner, MessageBubble, HeroDemo, …)
-  content/blog/     the field-notes series (markdown + index.json manifest)
-tests/            bun unit tests
-e2e/              headless-Chromium harnesses over real WebRTC
-scripts/          verifyLocalDependency, prerender, uploadAllToS3, mime table
-public/           static assets, manifest, .well-known/, self-hosted WASM
-vendor/           the immutable SDK release tarball
-android/ ios/     Capacitor native projects
-docs/             deployment.md, assetlinks.json.example
-```
+`npm run provenance:check` verifies the archive version and lockfile SHA-512,
+its WASM provenance, and the byte-identical public WASM. It prints the artifact
+and WASM SHA-256 values. CI runs it before installing dependencies.
 
-PIN bytes live only in `src/protocol/roomAccess.ts`'s in-memory map, and are
-zeroed when replaced. Never put a PIN in a URL, in Redux, in IndexedDB, in
-logs, in screenshots, in analytics, or in an issue report.
+To adopt a new SDK, build an immutable release archive in `p2party-js`, copy it
+into `vendor/`, update the `file:` dependency through npm, copy its packed WASM
+into the matching `public/vendor/p2party-<version>/` directory, and update
+`SELF_HOSTED_WASM_PATH`. Review the tarball, lockfile, source path, and public
+WASM together. Never replace a published archive without changing its version;
+keep older deployed assets available while clients may still reference them.
 
----
-
-## Build and prerender
-
-`npm run build` runs four steps in order:
-
-1. **`typecheck`** — `tsc -b`.
-2. **`build:client`** — `vite build` → `dist/`, including a copy of `public/`.
-3. **`build:server`** — `vite build --ssr src/entry-server.tsx --outDir dist-ssr`.
-   `copyPublicDir` is off for this pass (`vite.config.ts`): the server bundle
-   renders HTML and is never served, so it has no use for the WASM or the logos.
-4. **`prerender`** — `node scripts/prerender.mjs`.
-
-The prerenderer imports `dist-ssr/entry-server.js` **in Node** (not in a
-browser) and renders each route with React, then splices the markup into the
-`<div id="root"></div>` of the built `dist/index.html`. The client hydrates
-that markup, so the first response carries the text and the SPA still takes
-over on load. Because the SDK reads `localStorage` and constructs its database
-Worker at module scope, the script installs inert `localStorage`, `Worker`,
-`WebSocket` and `indexedDB` globals first; none of them have to behave, since
-the SDK's real work happens in effects and server rendering never runs those.
-
-It also writes, per route, the `<title>`, description, canonical, Open Graph
-and Twitter tags from one route table, plus `BlogPosting` JSON-LD for posts —
-and emits `robots.txt` and `sitemap.xml` describing exactly the routes it
-rendered, so those two cannot drift from what exists.
-
-Two guards worth knowing before you add a route:
-
-- a route whose rendered text is under 200 characters **fails the build**;
-- `/r` and `/rooms` are rendered for their chrome but carry `noindex`, are
-  excluded from the sitemap, and are disallowed in `robots.txt`. A room is
-  addressed by a secret capability; there is nothing there to index.
-
-Current output:
-
-```text
-$ npm run build
-  /                                    6214 chars
-  /privacy-policy                     12673 chars
-  /terms-of-service                    9130 chars
-  /session-lab                         1483 chars
-  /blog                                1958 chars
-  /blog/the-64-kib-lie                 8341 chars
-  /blog/green-tests-are-not-a-security-proof   8661 chars
-  /blog/a-room-is-n-minus-one-sessions   8667 chars
-  /blog/protocol-v3-is-not-pqxdh      10481 chars
-  /blog/free-is-a-dangerous-word      16493 chars
-  /blog/borrowing-from-spqr           10803 chars
-  /r                                    408 chars
-  /rooms                                699 chars
-  robots.txt and sitemap.xml written (11 indexable of 13 rendered)
-```
-
----
-
-## Deployment
+## Validate changes
 
 ```bash
-npm run upload      # = npm run build && node --env-file=.env scripts/uploadAllToS3.mjs
-```
-
-Credentials come from `.env` (see `.env.example`). They are deployment-only and
-must never be given a `VITE_` prefix — anything Vite inlines is public.
-
-`scripts/uploadAllToS3.mjs` fails closed before it uploads anything:
-
-- `.well-known/apple-app-site-association` must have exactly one `applinks`
-  detail, `appID` `Y4UAPYWG26.com.p2party.app`, and `paths` exactly `["/r"]`;
-- `.well-known/assetlinks.json` must carry a `com.p2party.app` statement with
-  at least one uppercase colon-separated SHA-256 fingerprint. A missing file is
-  fatal unless `AWS_S3_REQUIRE_ANDROID_APP_LINKS=false`, which warns and
-  deliberately deploys without verified Android links;
-- `dist/index.html` must exist, no symlinks or non-regular files are deployed,
-  and nothing may escape `dist/`.
-
-Cache policy is set per key: every `.html` and everything under `.well-known/`
-is `no-cache, no-store, must-revalidate` (each prerendered page is an
-entrypoint referencing content-hashed assets); `assets/**` and
-`vendor/p2party-<x.y.z>/**` are `public, max-age=31536000, immutable` because
-both name exactly one build forever; everything else gets an hour.
-`index.html` is uploaded last.
-
-Pruning is opt-in (`AWS_S3_PRUNE=true`), runs only after every upload
-succeeded, and never deletes `assets/**` or the protected keys, so a client
-holding the previous entrypoint can still fetch its lazy chunks.
-
-The uploader cannot set response headers. CSP, HSTS, `Referrer-Policy`,
-`Permissions-Policy` and `X-Content-Type-Options` are configured at the CDN or
-reverse proxy — the exact header block is in
-[docs/deployment.md](docs/deployment.md), which also covers the association
-files and the requirement that the host serve `index.html` for a direct request
-to `/r`.
-
----
-
-## Android and iOS (Capacitor)
-
-`capacitor.config.ts`: `appId` `com.p2party.app`, `appName` `P2Party`,
-`webDir` `dist`. The native projects are committed under `android/` and `ios/`.
-
-```bash
-npm run build          # webDir must exist first
-npx cap sync android   # or: npx cap sync ios
-npx cap open android   # opens Android Studio; `ios` opens Xcode
-```
-
-What the app actually uses natively:
-
-- **`@capacitor/app`** — `appUrlOpen` plus `getLaunchUrl()` for universal
-  links (`src/hooks/useUniversalLink.tsx`). Only
-  `https://p2party.com/r#v1.<43 base64url chars>`, optionally followed by `&`
-  and the room's shape, is accepted, and only with no port, no credentials,
-  and that exact path (`src/protocol/universalLink.ts`); everything else is
-  ignored.
-- **`@capacitor/status-bar` + `@capacitor-community/safe-area`**
-  (`src/App.tsx`) — status-bar style and insets follow the dark-mode setting.
-- **`@capacitor/filesystem`** and
-  **`@capawesome-team/capacitor-file-opener`** — writing a received file to
-  disk and opening it (`src/components/MessageItem/MessageDropdown.tsx`), and
-  saving a room QR code (`src/components/alerts/QRCodeAlert.tsx`).
-
-`SystemBars.insetsHandling` is explicitly `"disable"` in `capacitor.config.ts`.
-The safe-area plugin already pads for the keyboard on the decor view; leaving
-Capacitor core's own listener on makes the two paddings nest instead of
-replace, and the WebView ends up shrunk by roughly twice the keyboard height.
-Exactly one layer may own the insets.
-
-Android verified links stay off until the production signing certificate
-exists: copy `docs/assetlinks.json.example` to
-`public/.well-known/assetlinks.json` and fill in the real fingerprint.
-
-**Do not treat `android/` and `ios/` as build output.** `cap sync` regenerates
-only the copied web assets (`android/app/src/main/assets/public`,
-`ios/App/App/public`), `capacitor.config.json` / `capacitor.plugins.json`, and
-the plugin Gradle and CocoaPods wiring. `AndroidManifest.xml`,
-`app/build.gradle`, `variables.gradle` and `project.pbxproj` are
-hand-maintained and are never restored by a sync — the app-link intent filter
-for `https://p2party.com/r` (`android:autoVerify="true"`) and the
-`androidx.core.content.FileProvider` declaration both live in the committed
-manifest. Edit those files deliberately and commit them like source.
-
-The `Podfile` is the mixed case: `cap sync` rewrites its
-`def capacitor_pods ... end` block in place from the installed plugins, so pod
-lines are generated, while everything around that block — the `platform :ios`
-line and any pod you added yourself — is yours to maintain. Review that file's
-diff after a sync rather than assuming either.
-
----
-
-## Tests
-
-### Unit — `npm test`
-
-`bun test` over `tests/`: room access and capability normalization
-(`roomAccess.test.ts`), safety-number rendering, universal-link acceptance,
-blog manifest/content consistency, and two chat-layout regressions
-(`chatScroll`, `composerViewport`). Last run here: 37 pass, 0 fail, 159
-`expect()` calls, 842 ms.
-
-### Browser — `e2e/`
-
-Six Playwright + headless-Chromium harnesses that drive the **real app**
-against **real WebRTC** (real `RTCPeerConnection`, DTLS/SCTP data channels).
-They are not wired into CI.
-
-`npm ci` installs the Playwright package but not its browser binaries, so run
-`npx playwright install chromium` once before the first harness run. The
-build's prerender step needs no browser; only these harnesses do.
-
-The four existing transfer/mesh/capture harnesses read two environment variables:
-
-- `APP_URL` — where the app is served, default `http://localhost:5190`;
-- `SIGNALING_URL` — a protocol-v4 signaling service. Left unset, the harness
-  uses whatever default the app is configured with; a v4 client fails closed
-  against a v3 server, so an explicit local URL is usually what you want. Run
-  [`p2party-server`](https://github.com/p2party/p2party-server) (Bun +
-  PostgreSQL) or the SDK repository's Bun relay,
-  `docs/e2e/appstack/relay.ts`, which needs no database and prints its own
-  `ws://localhost:<port>/ws`.
-
-Serve the built site first — verified working here:
-
-```bash
-npm run build
-npx vite preview --port 5820 --strictPort
-# GET /                                     → 200
-# GET /vendor/p2party-0.14.9/libcrypto.wasm → 200, 211350 bytes
-# GET /r                                    → 302 to /r/
-# GET /r/                                   → 200, the prerendered document
-```
-
-`vite preview` used to answer `/r` with `dist/index.html` rather than the
-prerendered `dist/r/index.html`, and a harness that wanted the document the
-deployment actually serves needed its own static server. It no longer does:
-`vite.config.ts` turns the SPA fallback off for preview and adds the
-directory redirect the bucket performs, so preview and the origin answer the
-same way. That is not a convenience. While preview served the landing page's
-markup for every route, React reported a hydration mismatch on `/blog`,
-`/privacy-policy` and `/rooms` that the deployed site does not have, and a
-local check could not be trusted to tell a real defect from an artefact of the
-server it ran against. `tests/previewParity.test.ts` pins both behaviours.
-
-Then, in another shell:
-
-#### `e2e/run.mjs` — `npm run e2e`
-
-Two contexts, one room, real WebRTC. It asserts that a text message and a file
-arrive byte-exact; that a 16 MiB transfer streams to OPFS and survives a page
-reload; that the traffic really went over the data channel and not the
-WebSocket relay (it instruments `RTCDataChannel.send` and requires the
-65,490-byte frames there); that a deliberately dropped load-bearing chunk is
-recovered by retransmission and the sender exposes the retransmit count; that
-every data channel is closed at `bufferedAmount === 0`, so no queued write is
-discarded; and that a mid-transfer disconnect still finishes the transfer after
-a reconnect over a **brand-new** `RTCPeerConnection` — with relay of data
-frames blocked, so only the peer-to-peer path can complete it.
-
-#### `e2e/mesh-and-pin.mjs`
-
-The two things `run.mjs` cannot show. At n=3: three contexts in one room, every
-pair authenticated, and one send delivered byte-exact to **both** other peers.
-Then a wrong-PIN joiner: the handshake must fail, the UI must say so rather
-than sit on "Waiting for peers", and repeated attempts must be throttled with a
-retry deadline.
-
-#### `e2e/desync-local-stack.mjs`
-
-This runner uses the built site and starts the actual `p2party-server` as an
-owned child process against an already migrated throwaway PostgreSQL database.
-It rejects a database on port 5432 and refuses to replace an existing server
-listener. Build the site, serve it on port 5840, then run:
-
-```bash
-APP_URL=http://127.0.0.1:5840 \
-DATABASE_URL='postgresql://p2party_desync@127.0.0.1:6543/p2party_desync?sslmode=disable' \
-node e2e/desync-local-stack.mjs
-```
-
-Both local server fixtures default a validated loopback database URL to
-`sslmode=disable` only when `sslmode` is absent; an explicit SSL mode is
-preserved. They start Bun with `--no-env-file`, so the server checkout's `.env`
-cannot restore TURN credentials or override the isolated fixture environment.
-
-It joins through the Connect dialog and exchanges messages through the composer;
-kills and restarts its server on port 5841, requiring both pages to verify and
-rejoin without focus, clicks or reloads before exchanging another message;
-opens a second tab with the same stored identity and requires authentication
-within 20 seconds, followed by 10 seconds without competing socket opens;
-and samples a one-character-wrong PIN for 120 seconds, requiring the failure
-banner to remain visible with no new peer transports. It also checks remembered
-consent after reload and successful delivery after correcting the PIN through
-the retry dialog.
-Only the child server is stopped. The report and server log are written to
-`logs/desync/<timestamp>/`. `DESYNC_SERVER_PORT` changes the server port.
-
-#### Pending transfer checks in 0.14.9
-
-`node e2e/pending-transfers.mjs` exercises the production React panel with
-controlled SDK promises: Cancel remains available during a retry; switching
-rooms clears completed operations; an active durable retry survives the same
-keyed remount used by the chat page; a recovered storage read clears its error;
-and interrupted preparation explains why the file must be chosen again.
-
-`e2e/pending-transfers-live.mjs` uses the built site, the actual SDK and an
-actual signaling server. It sends a real 1 MiB file, drops chunk frames after
-a durable partial exists, reloads the sender, and requires the pending panel
-to appear. It proves the exact identities reauthenticate and a fresh automatic
-attempt sends frames before awaiting its failure. A manual retry must emit
-more frames and remain in the SDK's sending phase, with "Retrying…" visible,
-when Cancel is clicked after switching away from and back to the room.
-Cancellation must remove the sender outbox and receiver partial.
-
-```bash
-APP_URL=http://127.0.0.1:5840 \
-DATABASE_URL='postgresql://p2party_e2e@127.0.0.1:6543/p2party_followups' \
-node e2e/pending-transfers-live.mjs
-```
-
-The same local-only SSL default and disabled `.env` loading apply here.
-
-Use `SIGNALING_URL=ws://127.0.0.1:5841/ws` instead of `DATABASE_URL` to reuse a
-running local server. Otherwise the runner starts and stops only its own
-server. Reports go to `logs/desync/pending-ui-<timestamp>.json`; assertions
-include self-hosted WASM and no browser page errors.
-
-#### `e2e/room-hydration.mjs`
-
-Run `APP_URL=http://127.0.0.1:5840 node e2e/room-hydration.mjs` against the built
-site. Saved signaling and STUN preferences must survive navigation and reload
-on `/r` and `/rooms` without a hydration error or an unrequested connection.
-The first hydration render uses the prerendered defaults; the browser's saved
-values become visible at the same hydration boundary as the room invitation.
-
-#### Recorded acceptance for SDK 0.14.9 — 2026-09-09
-
-The current built site was checked with SDK 0.14.9, actual signaling server
-0.1.3 (protocol 4), and the isolated PostgreSQL database on port 6543. The
-vendored artifact has SHA-256
-`61a719a28652704d1e6d599c9eed0cf394e1805d1a344e0e71320eb2423a917e`.
-All 219 installed SDK library files matched the archive byte-for-byte, and
-`provenance:check` confirmed its lockfile integrity and matching public WASM.
-
-The strict pending-transfer browser run passed. Its report is
-`logs/desync/pending-ui-2026-09-09T06-03-40.989Z.json` (local, ignored), which
-records the artifact hash and the server's exact version. These are loopback
-Chromium results with deliberate chunk-frame loss.
-
-| Scenario                                 | Observed result                                                                                                                   |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Reload during a real 1 MiB file send     | Receiver had 222,884 of 1,048,576 bytes; the pending panel retained the original transfer and root                                |
-| Automatic retry after reload             | The same identities reauthenticated and a new sending attempt emitted chunk frames before settling as pending                     |
-| Manual retry and room navigation         | The retry emitted new frames, stayed in the SDK's `sending` phase, and showed “Retrying…” after leaving and returning to the room |
-| Cancel while the manual retry was active | Cancel remained enabled; the sender outbox and receiver partial were removed                                                      |
-| Browser errors and WASM                  | No page errors; both peers fetched the versioned self-hosted 0.14.9 WASM successfully                                             |
-
-The broader `desync-local-stack.mjs` run also passed on this same artifact and
-server version. Its report is
-`logs/desync/2026-09-09T06-30-31.903Z/result.json` (local, ignored), with the
-owned server log beside it. It recorded no browser page errors.
-
-| Scenario                                    | Observed result                                                                                    |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Connect and send through the UI             | Message delivered through the real RTC data channel                                                |
-| Reload with remembered consent              | The same identity rejoined and exchanged a message in 890 ms                                       |
-| Kill and restart the signaling process      | Both pages verified and rejoined in 3,547 ms without focus, clicks or reloads; UI delivery resumed |
-| Second tab replacing the identity responder | Authenticated in 683 ms; another 10 seconds showed no competing socket opens                       |
-| One-character-wrong PIN                     | Failure remained visible for 120,945 ms across 120 samples, with one peer transport per side       |
-| Correct the PIN through the retry dialog    | Authenticated and delivered a UI message                                                           |
-
-The Node 24 build (typecheck, client, SSR and prerender), lint, provenance and
-116 unit tests with 410 assertions passed against this artifact. The component
-browser check also passed all five cases, including active retry state across
-the chat page's keyed room remount. Build, lint and unit logs are in
-`logs/followups-site-{build,lint,tests}.log` (local, ignored).
-
-#### Recorded desync results — 2026-09-08
-
-The desync-local-stack and room-hydration checks passed against the built site
-with the vendored SDK 0.14.8
-artifact with SHA-256
-`631bdc04b1b3591b644d48a0d63d35d20bf60af7f1d6c817e869015e7bbbc076`,
-actual signaling server 0.1.2
-and an isolated PostgreSQL database on port 6543. The browser runner's report
-is `logs/desync/2026-09-08T15-47-27.597Z/result.json` (local, ignored), with its
-server log beside it. This is a loopback Chromium measurement.
-
-| Scenario                                    | Result                                                                                             |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Connect and send through the UI             | Message delivered over a real RTC data channel                                                     |
-| Reload with remembered consent              | Same identity rejoined and exchanged a message in 882 ms                                           |
-| Kill and restart the signaling process      | Both pages verified and rejoined in 3,536 ms without focus, clicks or reloads; UI delivery resumed |
-| Second tab replacing the identity responder | Authenticated in 886 ms; another 10 s showed no competing socket opens                             |
-| One-character-wrong PIN                     | Failure stayed visible for 120.6 s across 120 samples, with exactly one peer transport per side    |
-| Correct the PIN through the retry dialog    | Authenticated and delivered a UI message                                                           |
-| Saved signaling and STUN preferences        | `/r` and `/rooms` hydrated and reloaded without errors or an unrequested signaling connection      |
-
-The complete run had no browser page errors. Every context fetched the
-self-hosted 0.14.8 WASM. Before the fixes, the old SDK/site pair failed the
-responder replacement and created hundreds of competing signaling sockets;
-wrong-PIN failure created replacement transports. The focused hydration check
-also failed before the preference snapshot fix, on all four navigation/reload
-cases. Clean offline `npm ci`, provenance, the site build, 116 unit tests with
-410 assertions, typecheck and lint passed.
-
-#### `e2e/packet-trace.mjs`
-
-Captures loopback UDP with `tcpdump -i lo0`, reads it back with `tshark`, and
-compares an idle phase against a sending phase of a scheduled-cover room on
-packet-size profile and rate.
-
-#### `e2e/correlation-check.mjs`
-
-The same capture, asking a sharper question: does any packet-size class occur
-preferentially near a transfer completion? It computes a lift per size class
-against that class's own base rate, with a Poisson tail bound so a handful of
-packets cannot raise a false alarm. Its header records why it exists: a rate
-comparison cannot catch one distinctive packet emitted at a telling moment,
-"which is exactly the bug that shipped (an off-schedule 65-byte receipt at
-transfer completion)".
-
-The last two need `tcpdump` and `tshark` and the privileges to capture on
-`lo0`. Read their header comments before quoting any number they print: both
-state up front that loopback is not a network path, that they measure the
-_shape_ of what the transport emits rather than proving indistinguishability,
-and that they cover one preset and one payload size.
-
----
-
-## What the app does today
-
-Grounded in the vendored `p2party` 0.14.9 and in this repository's code.
-
-- **Handshake.** Every peer edge runs interactive 3DH together with one
-  room-pinned ML-KEM suite — ML-KEM-512, ML-KEM-768 (default), or ML-KEM-1024.
-  The secrets are combined by **HKDF over their concatenation** in a fixed
-  order (`3DH ‖ ML-KEM`, or `CPace-ISK ‖ 3DH ‖ ML-KEM` in a PIN room), under a
-  suite-specific domain — not an XOR combiner, and deliberately not X-Wing
-  (`p2party-js/src/handlers/handshakeCore.ts`). There is no suite negotiation
-  and no classical fallback; peers whose room policy disagrees fail closed.
-- **Confirmation and authentication.** Three chained key-confirmation flights
-  complete the handshake; an `RTCDataChannel` reaching `open` is transport, not
-  authentication. The Ed25519 identity key cross-signs the X25519 identity key
-  over a static message (`IDENTITY_CROSS_SIGN_DOMAIN ‖ X25519_pub`) — a
-  certificate, which the SDK itself notes is replayable, so transcript
-  authentication comes from the interactive 3DH and those confirmations, not
-  from a signature over the transcript.
-- **Ratchet.** A per-peer Double Ratchet protects messages after the handshake;
-  each message is sealed with ChaCha20-Poly1305 under its own message key.
-- **Sparse post-quantum healing.** An OFFER/ADVANCE/ACK epoch exchange re-keys
-  an established session, persisting before dispatch and blocking application
-  traffic while an epoch is in flight.
-- **Scheduled timing cover.** A room policy may pin a cadence, lane count and
-  frames per cell; every edge then emits fixed-size cells on that schedule
-  whether or not there is data. The UI offers 10 s, 60 s and 5 min presets plus
-  a raw editor (`src/protocol/v4.ts`), and `CoverStatusPill` reports the worst
-  live per-edge cover status — idle, starting, active, degraded, or a suspended
-  "cover gap — not sending" — with the count of edges on the schedule in its
-  tooltip. **This is timing cover, measured over loopback only.** It is not a
-  traffic-analysis-resistance claim.
-- **PIN rooms.** CPace runs inside the handshake, in addition to (never instead
-  of) identity possession. The SDK records failed attempts per identity and
-  reports a throttled state carrying a retry deadline, which
-  `e2e/mesh-and-pin.mjs` asserts after six wrong PINs. The escalation curve
-  itself is one of the three properties the SDK's `ROADMAP.md` lists as
-  implemented but not yet demonstrated end to end, so do not claim it. This
-  client keeps the PIN in a transient in-memory map only.
-- **Transfers.** Each outbound message gets its own transfer identity and data
-  channel, a cancellable handle, authenticated receipts and selective
-  retransmission. Text and files up to the SDK's enforced 10 GiB limit; the
-  receiver streams large files to OPFS where the browser provides it, and a
-  reload fills the gaps rather than starting over. A transfer resumes across a
-  replaced peer connection. Once preparation publishes its durable outbox,
-  sender reload also retains the payload for matching authenticated recipients.
-  The **Pending transfers** panel shows retained work, offers **Retry pending
-  transfers**, and keeps **Cancel** usable during a retry and after room
-  navigation. Failed attempts remain pending; completed recipients are not sent
-  the same logical transfer again. Staging is bound to the local identity,
-  room policy and recipient keys, expires after 24 hours, and is discarded on
-  explicit room leave or cancellation. Interrupted preparation has a one-hour
-  limit and must be selected again. Recovery never supplies a missing PIN or
-  invokes a passkey prompt automatically.
-- **Invitations and identity.** A room invitation carries the room's policy in
-  the URL fragment, beside the capability and never in the query string
-  (`/r#v1.<capability>&auth=pin`), so opening one sends the server nothing but
-  `GET /r`; a link from an older build, which put that policy in the query, is
-  refused with a message asking the sender for a fresh one. The address book
-  pins a contact's Ed25519 identity and warns when it changes.
-  The two surfaces are the note in `MessageSenderDropdown` and the
-  `VerifyIdentityAlert` dialog — a warning you can find, not one that
-  interrupts you before you talk to them.
-- **Identity backup and restore.** The identity menu in the sidebar and the
-  navbar offers "Back up identity" and "Restore identity". Backing up does not
-  export the key in use: only an identity that was _created_ from a recovery
-  phrase can be reproduced, so a device holding a randomly generated one is
-  told so and offered a replacement, at the cost of a new identity key that
-  contacts will see change. The phrase is shown once, is stored by neither the
-  SDK nor this app, and the "Done" button stays disabled until you confirm you
-  wrote it down. Restoring on a new device replaces whatever identity is there,
-  regenerates the X25519 identity and re-cross-signs it. See
-  [What 0.14.6 added](#what-0146-added-and-how-it-was-checked-here).
-- **Waking up.** `ChatLayout` owns the initial room admission. The SDK owns
-  heartbeat, reconnect backoff and wake events after admission, so focus or
-  connectivity changes cannot bypass a terminal signaling refusal or start a
-  second competing socket. A page reload can readmit a room with remembered
-  consent. Authentication failures remain visible until an explicit user retry.
-  SDK 0.14.9 also requests a fresh, correlated room roster to repair a missing
-  edge without rebuilding healthy peer connections.
-
-### What 0.14.6 added, and how it was checked here
-
-`p2party-0.14.6.tgz` is the first vendored build that ships identity backup and
-restore: `createRecoverableIdentity`, `restoreIdentityFromMnemonic`,
-`getIdentityBackupStatus`, `validateMnemonicWords` and
-`InvalidRecoveryPhraseError` are exported from the package root and declared in
-`lib/index.d.ts`. `src/protocol/identityBackup.ts` is typed against those
-declarations rather than against a local copy of them, so a rename in the
-library is now a compile error here; the runtime check it wraps them in stays,
-because a build could ship the declarations without the code.
-
-The derivation is the SDK's existing one-way phrase derivation: the phrase,
-plus an optional password as the salt, stretched by argon2id into an Ed25519
-seed. It borrows the BIP-39 English wordlist and nothing else — different
-checksum, different KDF — so **no BIP-39 wallet can restore one of these
-identities**, which the vendored package's own README states at
-`node_modules/p2party/README.md`.
-
-**What was measured on the built site, and what was not.** One headless-Chromium
-run drove `dist/` through a static server on `:5190` and the SDK repository's
-Bun relay (`p2party-js/docs/e2e/desync/relay.ts`) on `:5811`, in three browser
-contexts, entirely through the rendered UI — the menu, the dialog buttons, the
-composer — and asserted, in order: the backup dialog reports this device's
-identity as generated at random and therefore not exportable; creating a
-recoverable identity yields 24 words and a new key that replaces the random one;
-"Done" is disabled until the written-it-down checkbox is ticked; a second
-context joins by invite link and the edge authenticates; a message goes
-byte-exact each way; that context saves the first as a contact, pinning the key
-just created; the first context is **closed entirely**; a fresh context, which
-had no identity of its own, types the 24 words and is shown the same key; it
-rejoins the room, exchanges a byte-exact message each way, and the peer's sender
-menu still shows the saved contact with **no** "identity key changed" warning.
-The restored device came back under the same peer id because this relay keys
-peers by public key, exactly as the real server's `peer.upsert` does.
-
-A separate network capture of a page minting an identity on the same build
-recorded three 200s for `/vendor/p2party-0.14.6/libcrypto.wasm` and zero
-requests to `cdn.p2party.com`, so the cryptography those steps ran on was the
-self-hosted copy, accepted by the browser under the SDK's pinned SRI.
-
-That is one run, on one machine, over loopback, with the same Chromium build on
-both sides and a relay that mirrors the real signaling server's message flow
-rather than being it. It is evidence that the flow works end to end. It is not
-a measurement of the derivation's strength, and it does not exercise the
-optional recovery password, whose wrong value silently restores a different
-identity.
-
-### What 0.14.5 added, and how it was checked here
-
-`p2party-0.14.5.tgz` is the first vendored build that binds a peer edge to the
-DTLS certificate it was authenticated against: when the remote certificate
-changes, an authenticated transport is **replaced** rather than
-re-authenticated in place. It also re-dials the room after a failure teardown
-(but not after a deliberate disconnect), fails a send to a peer that never
-authenticates inside a bounded wait instead of hanging, and adds a signaling
-heartbeat watchdog that marks a half-open socket disconnected.
-
-Checked, when 0.14.5 was the vendored build, by grepping the then-installed
-bundle (`node_modules/p2party/lib/index.js`) against the one inside
-`p2party-0.14.4.tgz`, since the build is minified and only literals survive:
-
-| Evidence in the bundle                                              | 0.14.4 | 0.14.5  |
-| ------------------------------------------------------------------- | ------ | ------- |
-| `"reset-in-place"` (the replace-vs-rebind decision)                 | absent | present |
-| `"Peer is not authenticated on this transport: ..."` (bounded send) | absent | present |
-| `45e3` (`RATCHET_GATE_WAIT_TIMEOUT_MS`)                             | absent | present |
-| `25e3` (`SIGNALING_HEARTBEAT_TIMEOUT_MS`)                           | absent | present |
-| `["visibilitychange", ...]` wake-event list in the watchdog         | absent | present |
-
-**What was measured on the built site, and what was not.** A two-browser
-harness froze one page's whole Chromium process tree for 20 s with its UDP
-host-candidate buffers flooded — a phone asleep with the radio off — and both
-pages showed the peer again and exchanged a typed message about 2 s after the
-wake. That run passes on the previously vendored 0.14.4 build too, because the
-app's own reconnect-on-resume (`ChatLayout.tsx`) already covers it: it is
-evidence that this build works end to end, **not** evidence for the transport
-binding specifically. The isolating evidence for that is the SDK's own recorded
-matrix in `p2party-js/docs/e2e/desync/`, not a run from this repository.
-
-**Known follow-up, recorded and not claimed fixed.** In the SDK's matrix, the
-one arm where a frozen identity responder carries an in-flight transfer
-converges in about 37 s rather than the usual few seconds, because the
-surviving transport's SCTP association accepts the new streams of one side but
-not the other and recovery waits out the 30 s handshake step timeout. The
-outcome is correct; the latency is not yet.
-
----
-
-## Honest boundaries
-
-- **The signaling operator sees membership and timing.** Joining sends the room
-  capability to the signaling service, which stores its SHA-512 rather than the
-  capability itself, together with a row per identity public key and the room's
-  membership. The operator can see who is in a room and when. Server-blind
-  rendezvous is **not** shipped: `connect()` rejects every `rendezvousMode`
-  other than `legacy-signaling`.
-- **Cover traffic is timing cover, verified on loopback.** See `e2e/` above.
-- **There has been no independent third-party security audit** of the protocol
-  or of this client.
-- **Long-term identities live only in browser storage.** An identity created
-  from a 24-word recovery phrase can be restored from those words, and the
-  password chosen for them if one was set. An identity created without a phrase
-  cannot: the derivation runs one way only, so no phrase can be produced after
-  the fact. Clearing site data loses any identity that has no phrase.
-- The room secret and the room's shape both live in the URL **fragment**,
-  which a browser never puts in an HTTP request — but they are still in the
-  link, and joining transmits the capability to the signaling service. A
-  request for `/r` is still made, so the server still learns that someone
-  opened an invitation, from which address and when.
-
-If you are about to add a sentence to the UI or to these docs, the project rule
-is in the SDK's `ROADMAP.md` non-goals: _if a guarantee is not tested, it does
-not go in the README._
-
----
-
-## Contributing and security
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and
-[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) first. Before opening a pull request:
-
-```bash
-npm ci
 npm run provenance:check
 npm run format:check
 npm run lint:check
-npm run typecheck
 npm test
 npm run build
-npm audit --audit-level=high   # matches CI; currently red, see below
+npm audit
 ```
 
-`npm audit` is **known red** in this tree: 7 advisories (2 high —
-`brace-expansion`, `nanoid`; 5 moderate — `postcss`/`vite`, `@humanfs/node`,
-`@xmldom/xmldom`, `plist`), all transitive through build and Capacitor
-tooling. Both `npm audit` and CI's `npm audit --audit-level=high` exit 1 today,
-pending an `npm audit fix` pass. If you see it fail, you did not break it —
-but check that your change did not _add_ an advisory.
+The build includes TypeScript checking, a browser bundle, server rendering, and
+static prerendering. It does not need PostgreSQL or a browser binary. Unit tests
+cover room access, identity entry points and outcomes, invitation validation,
+layout, and external-link safety.
 
-None of the commands above need PostgreSQL. For room or network changes, also
-run the browser harnesses against a disposable signaling database on dedicated
-ports — never against production infrastructure.
+For room or network changes, also run the [browser tests](docs/browser-testing.md)
+against disposable local signaling state. They exercise real WebRTC separately
+from the unit suite and are not currently part of CI. Exact earlier artifacts,
+measurements, and limitations are preserved in
+[Recorded validation history](docs/validation-history.md); a newer dependency
+version does not inherit a previous version's browser test result.
 
-Report security issues privately per [SECURITY.md](SECURITY.md), not in a
-public issue.
+## Deploy
 
----
+The web build is static HTML and assets under `dist/`. Deploy with an HTTPS
+origin that serves the prerendered routes. For the included S3-compatible
+uploader, fill in a local `.env` using the names in `.env.example`, then run:
 
-The corresponding source for the deployed site is
-[p2party/p2party.com](https://github.com/p2party/p2party.com). Copyright ©
-p2party contributors, [AGPL-3.0-only](LICENSE.md).
+```bash
+npm run upload
+```
+
+Deployment credentials are Node-only variables. Never prefix them with `VITE_`,
+commit them, or copy them into `public/`. The uploader checks the association
+files, rejects symlinks, uploads assets before the entrypoint, and keeps remote
+pruning disabled unless explicitly enabled.
+
+The uploader gzip-compresses WASM for transfer, retaining `application/wasm`
+and setting `Content-Encoding: gzip`. The local and public WASM files stay
+unchanged; browsers decode the response before checking the SDK's integrity pin.
+Use `curl --compressed` when downloading a deployed WASM file for hash checks.
+
+Android verified links require the production certificate fingerprint in
+`public/.well-known/assetlinks.json`. A web-only deployment can explicitly use
+`AWS_S3_REQUIRE_ANDROID_APP_LINKS=false` until that file is ready. Configure CSP,
+HSTS, and the other response headers at the CDN or reverse proxy as described in
+[Deployment](docs/deployment.md).
+
+## Android and iOS
+
+This release is validated for the web. The Capacitor 8 native migration is
+incomplete; the native configuration needs migration and platform validation
+before a mobile build or release.
+
+`android/` and `ios/` are maintained Capacitor projects. They require separate
+platform builds, signing, and device validation; a passing web build does not
+certify a mobile release. After building the web client, use `npx cap sync android`
+or `npx cap sync ios`, review the generated diff, and open the platform project.
+
+Keep native archives, signing keys, provisioning profiles, and copied web build
+outputs out of Git. The application ID is `com.p2party.app`; public association
+files contain identifiers and certificate fingerprints, never private keys.
+
+## Contribute
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md). Discuss protocol, privacy, persistence,
+and room-policy changes in an issue before implementation. Use synthetic data
+and explain what was tested and what remains uncertain.
+
+Report suspected vulnerabilities privately to **security@p2party.com** according
+to [SECURITY.md](SECURITY.md), rather than opening a public issue.

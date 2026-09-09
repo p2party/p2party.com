@@ -26,3 +26,13 @@ dist-ssr
 !.env.example
 *.tsbuildinfo
 *.xcarchive/
+
+# Native signing material stays local, including expired provisioning profiles.
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.pfx
+*.pem
+*.key
+*.jks
+*.keystore

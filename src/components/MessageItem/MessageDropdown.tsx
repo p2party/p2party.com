@@ -3,9 +3,12 @@ import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capawesome-team/capacitor-file-opener";
-import { isURL } from "class-validator";
 import { useSelector } from "react-redux";
 import p2party from "../../protocol/sdk";
+import {
+  openPeerMessageUrl,
+  peerMessageUrl,
+} from "../../protocol/peerMessageUrl";
 
 import { FileCard, MessageBubble } from "../custom/MessageBubble";
 
@@ -73,7 +76,7 @@ const MessageDropdown = ({
   // are stable module functions), so a dropdown row doesn't re-render on every
   // store change.
   const peerId = useSelector(p2party.keyPairSelector).peerId;
-  const url = isURL(msg) ? msg : "";
+  const url = peerMessageUrl(msg) ?? "";
 
   // Materialize the file only on user action (not on render). For a big file
   // this streams the IndexedDB chunks to a disk-backed OPFS File in the worker.
@@ -291,7 +294,7 @@ const MessageDropdown = ({
           {msgPercentage === 100 &&
             msgCategory === p2party.MessageCategory.Text &&
             url.length > 0 && (
-              <DropdownItem onClick={() => window.open(url, "_blank")}>
+              <DropdownItem onClick={() => openPeerMessageUrl(url)}>
                 <ArrowTopRightOnSquareIcon />
                 <DropdownLabel>Open URL in a new tab</DropdownLabel>
               </DropdownItem>

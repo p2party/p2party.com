@@ -23,7 +23,7 @@ reasonable remediation window before publication.
 ## Supported versions
 
 Security fixes target the current production branch and current protocol
-version. Protocol v3 does not negotiate a fallback to legacy crypto. Older
+version. Protocol v4 does not negotiate a fallback to legacy crypto. Older
 builds should be upgraded rather than treated as supported compatibility
 targets.
 
@@ -31,6 +31,17 @@ targets.
 
 p2party is research-stage software and has not completed an independent
 security audit. WebRTC peers can learn network metadata inherent to direct
-connectivity. The signaling service sees current legacy meeting-point traffic.
-Immediate delivery is the only shipped cover policy; scheduled cover and
-private rendezvous descriptors are not deployed guarantees.
+connectivity. The signaling service sees room membership and timing when peers
+join through legacy signaling; invitation fragments do not hide that admission
+from the signaling operator.
+
+Immediate delivery and policy-bound scheduled cover are implemented. Scheduled
+cover has been measured over loopback; it is not a proof of resistance to
+traffic analysis on real networks. Private rendezvous, anonymous admission, and
+Sybil resistance are not deployed guarantees.
+
+Identity keys and retained transfers live in browser storage. A compromised
+browser, extension, or application origin can access them. Recovery phrases
+are shown locally and must never appear in logs or reports. Peer messages are
+rendered as text, and executable attachments are downloaded instead of opened
+as documents on the application's origin.

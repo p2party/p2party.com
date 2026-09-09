@@ -90,15 +90,8 @@ export default defineConfig((configEnv) => {
       port: 3000,
     },
     optimizeDeps: {
+      // Pick up a newly vendored SDK without retaining its previous bundle.
       exclude: ["p2party"],
-      // p2party is excluded so a re-vendored SDK is picked up without clearing
-      // the dep cache -- but excluding it also means its imports are served as
-      // raw source. class-validator then reaches for validator's CommonJS
-      // submodules, which the browser cannot import ("doesn't provide an
-      // export named: 'default'" on validator/lib/isLatLong.js). Pre-bundling
-      // them converts CJS to ESM, which is what Vite advises for the CommonJS
-      // dependencies of an excluded package.
-      include: ["class-validator", "validator"],
     },
     build: {
       // The server build renders HTML and is never served, so it has no use

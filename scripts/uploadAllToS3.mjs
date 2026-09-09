@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { gzipSync } from "node:zlib";
 import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
@@ -97,6 +98,7 @@ const objectKey = (absolutePath) => {
 };
 
 const contentTypeForKey = (key) => {
+  if (key.endsWith(".wasm")) return "application/wasm";
   if (
     key === ".well-known/apple-app-site-association" ||
     key === ".well-known/assetlinks.json"
@@ -256,12 +258,18 @@ const main = async () => {
     `Uploading ${objects.length} files to ${bucket}${endpoint ? ` via ${endpoint}` : ""}`,
   );
   for (const { absolutePath, key } of objects) {
+    const source = await fs.readFile(absolutePath);
+    // Keep the checked public WASM bytes unchanged on disk. Content-Encoding
+    // makes the browser decode this transport representation before its SRI
+    // check and WebAssembly compilation.
+    const gzipWasm = key.endsWith(".wasm");
     await client.send(
       new PutObjectCommand({
         Bucket: bucket,
         Key: key,
-        Body: await fs.readFile(absolutePath),
+        Body: gzipWasm ? gzipSync(source, { level: 9 }) : source,
         ContentType: contentTypeForKey(key),
+        ...(gzipWasm ? { ContentEncoding: "gzip" } : {}),
         CacheControl: cacheControlForKey(key),
       }),
     );
