@@ -5,6 +5,27 @@ SDK package, browser, native build, or production network. Raw browser reports
 under `logs/` are local and ignored because captures can contain sensitive data.
 The reproducible runners remain in `e2e/`; see [Browser testing](browser-testing.md).
 
+## Room QR dialog regression — 2026-09-09
+
+A user report exposed a blank room-sharing QR code after the header rollout.
+The earlier route and room-delivery checks did not open the sharing dialog.
+The focused `e2e/room-qr.mjs` fixture reproduced eight blank canvases across
+Chromium and Firefox, covering initially open/closed dialogs and reopening.
+These failures occurred with zero CSP violations: generation read the canvas
+ref before the dialog portal mounted and returned without retrying.
+
+Generation now follows the mounted canvas. Downloads stay disabled until a QR
+has rendered, rendering/export failures offer the copy-link fallback, and stale
+async results are discarded when the invitation or dialog changes. The QR also
+has a four-module clear margin. Both browsers passed all 22 focused cases,
+including eight rendering observations and nonblank 1024×1024 PNG downloads
+matching the displayed canvas. Native completion tests use a mocked filesystem
+boundary and do not establish behavior on a device. PNG checks verify image
+content and dimensions; automatic QR payload decoding and physical camera
+scanning were not verified. The strict CSP remains unchanged. This isolates the
+application bug; it does not identify the source of inline-script
+warnings in a browser with an unknown extension configuration.
+
 ## Completed production Cloudflare rollout — 2026-09-09
 
 Frontend tag `deploy-2026-09-09.2` was deployed with SDK 0.14.10 and signaling

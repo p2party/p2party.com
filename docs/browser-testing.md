@@ -5,6 +5,11 @@ The `e2e/` runners use Playwright and Chromium. Install the browser once with
 serve it with `npm run preview -- --host 127.0.0.1 --port 5840 --strictPort`.
 Browser tests are separate from CI's unit tests and static build.
 
+The standalone room QR dialog runner also uses Firefox. Install it with
+`npx playwright install firefox`, then run `node e2e/room-qr.mjs`. The runner
+bundles the real component, serves its own local fixture with the production
+CSP, and makes no signaling connections.
+
 Use disposable signaling state on dedicated local ports. Explicitly set a local
 `SIGNALING_URL`; the older runners otherwise inherit the app's server default.
 Do not run against production or a developer's regular database.
@@ -18,6 +23,7 @@ Do not run against production or a developer's regular database.
 | `pending-transfers-live.mjs` | Real partial transfer, sender reload, automatic/manual retries, room navigation, and durable cancellation       |
 | `room-hydration.mjs`         | Saved signaling/STUN preferences, navigation, and hydration without an unrequested connection                   |
 | `csp-hydration.mjs`          | All prerendered pages hydrate with strict CSP, without inline scripts or production requests                    |
+| `room-qr.mjs`                | Chromium/Firefox QR dialog mounting, reopen, rendered PNG downloads, and rendering failures under strict CSP    |
 | `packet-trace.mjs`           | Scheduled-cover packet sizes and rates on loopback                                                              |
 | `correlation-check.mjs`      | Packet-size classes near transfer completion on loopback                                                        |
 

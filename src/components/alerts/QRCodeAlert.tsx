@@ -61,44 +61,57 @@ const QRCodeAlert = ({
   isOpen,
   setIsOpen,
 }: QRCodeAlertProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [qrResult, setQrResult] = useState<{
+    canvas: HTMLCanvasElement;
+    inviteUrl: string;
+    status: "ready" | "error";
+  } | null>(null);
+  const [downloadError, setDownloadError] = useState("");
+  const downloadGeneration = useRef(0);
   const [copyResult, setCopyResult] = useState({ inviteUrl: "", value: "" });
   const copyStatus = copyResult.inviteUrl === inviteUrl ? copyResult.value : "";
+  const qrStatus =
+    isOpen && qrResult?.canvas === canvas && qrResult?.inviteUrl === inviteUrl
+      ? qrResult.status
+      : "loading";
 
   useEffect(() => {
-    if (!isOpen || inviteUrl.length === 0) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    // The dialog mounts its portal after opening. A callback ref makes the
+    // effect follow the actual canvas instead of racing the portal mount.
+    if (!isOpen || !canvas || inviteUrl.length === 0) return;
     let cancelled = false;
-    const timeout = window.setTimeout(() => {
-      void (async () => {
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
+    let ctx: CanvasRenderingContext2D | null = null;
+    void (async () => {
+      try {
+        ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas is unavailable");
 
-        try {
-          const qrDataUrl = await QRCode.toDataURL(inviteUrl, {
-            margin: 0.4,
-            width: 1024,
-            errorCorrectionLevel: "H",
-            color: { dark: "#eb5e28", light: "#fff" },
-          });
-          const [qrImage, logoImage] = await Promise.all([
-            loadImage(qrDataUrl, "QR image"),
-            loadImage("/logo-cat.svg", "room logo"),
-          ]);
-          if (!cancelled) drawCanvas(canvas, ctx, qrImage, logoImage);
-        } catch (cause) {
-          if (!cancelled) console.error("QR code generation error:", cause);
+        const qrDataUrl = await QRCode.toDataURL(inviteUrl, {
+          margin: 4,
+          width: 1024,
+          errorCorrectionLevel: "H",
+          color: { dark: "#eb5e28", light: "#fff" },
+        });
+        const [qrImage, logoImage] = await Promise.all([
+          loadImage(qrDataUrl, "QR image"),
+          loadImage("/logo-cat.svg", "room logo"),
+        ]);
+        if (!cancelled) {
+          drawCanvas(canvas, ctx, qrImage, logoImage);
+          setQrResult({ canvas, inviteUrl, status: "ready" });
         }
-      })();
-    }, 100);
+      } catch {
+        if (!cancelled) setQrResult({ canvas, inviteUrl, status: "error" });
+      }
+    })();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timeout);
-      canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+      downloadGeneration.current++;
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
     };
-  }, [inviteUrl, isOpen]);
+  }, [canvas, inviteUrl, isOpen]);
 
   const copy = async (label: string, value: string) => {
     try {
@@ -113,32 +126,41 @@ const QRCodeAlert = ({
   };
 
   const handleDownload = async () => {
-    if (!canvasRef.current) return;
-    if (Capacitor.getPlatform() === "web") {
-      const link = document.createElement("a");
-      link.href = canvasRef.current.toDataURL("image/png");
-      link.download = "p2party-room-invite.png";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } else {
-      const data = canvasRef.current
-        .toDataURL("image/png")
-        .split(";base64,")[1];
-      await Filesystem.writeFile({
-        path: "p2party/room-invite.png",
-        data,
-        directory: Directory.Documents,
-        recursive: true,
-      });
+    if (!canvas || qrStatus !== "ready") return;
+    const generation = ++downloadGeneration.current;
+    setDownloadError("");
+    try {
+      const png = canvas.toDataURL("image/png");
+      if (Capacitor.getPlatform() === "web") {
+        const link = document.createElement("a");
+        link.href = png;
+        link.download = "p2party-room-invite.png";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } else {
+        await Filesystem.writeFile({
+          path: "p2party/room-invite.png",
+          data: png.split(";base64,")[1],
+          directory: Directory.Documents,
+          recursive: true,
+        });
+      }
+      if (generation === downloadGeneration.current) close();
+    } catch {
+      if (generation === downloadGeneration.current) {
+        setDownloadError(
+          "Could not download the QR code. You can still copy the link.",
+        );
+      }
     }
-    close();
   };
 
   const close = () => {
+    downloadGeneration.current++;
     setCopyResult({ inviteUrl: "", value: "" });
-    const canvas = canvasRef.current;
-    canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+    setQrResult(null);
+    setDownloadError("");
     setIsOpen(false);
   };
 
@@ -153,13 +175,23 @@ const QRCodeAlert = ({
       <AlertBody>
         <div className='flex justify-center'>
           <canvas
-            ref={canvasRef}
+            ref={setCanvas}
+            role='img'
+            aria-label='Room invitation QR code'
             className='w-64 border-0 select-none'
             width={1024}
             height={1024}
             style={{ width: "16rem", height: "16rem" }}
           />
         </div>
+        {qrStatus === "loading" && <p role='status'>Creating QR code…</p>}
+        {(qrStatus === "error" || downloadError) && (
+          <p role='alert'>
+            {qrStatus === "error"
+              ? "Could not create the QR code. You can still copy the link."
+              : downloadError}
+          </p>
+        )}
         <p className='mt-4 font-mono text-xs text-zinc-600 dark:text-zinc-300'>
           ML-KEM-{roomPqModeParameterSet(roomPolicy.pqMode)} ·{" "}
           {roomPolicy.authMode === "pin" ? "PIN required" : "no room PIN"} ·{" "}
@@ -177,7 +209,7 @@ const QRCodeAlert = ({
         <Button plain onClick={close}>
           Close
         </Button>
-        <Button plain onClick={handleDownload}>
+        <Button plain onClick={handleDownload} disabled={qrStatus !== "ready"}>
           Download QR
         </Button>
         <Button color='orange' onClick={() => copy("Link", inviteUrl)}>
