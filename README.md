@@ -10,6 +10,14 @@ security audit. The signaling service sees room membership and timing;
 server-blind rendezvous and Sybil resistance are not shipped guarantees.
 Read the [security policy](SECURITY.md) before relying on it for sensitive use.
 
+The September 2026 web release uses SDK **0.14.10** and signaling server
+**0.1.4** (protocol v4). It includes the desynchronization fixes, durable transfer
+retry/cancel flows, bounded server admission, dependency cleanup, and smaller
+SDK artifacts. Read the [release and research update](src/content/blog/08-after-the-desync-fixes.md)
+for what was validated and the work toward one-server blind rendezvous,
+private invitation retrieval, and proof of work with optional passkeys. Those
+research experiments are separate from the deployed room flow.
+
 ## What works
 
 - Text and file transfers with authenticated receipts and selective retry.

@@ -22,6 +22,12 @@ tags:
   - "reconnect"
 ---
 
+> **September 9, 2026:** SDK 0.14.10 and server 0.1.4 include the subsequent fixes
+> for reload, signaling restart, same-identity tabs, persistent wrong-PIN failure,
+> and pending-transfer retry/cancel. See the [current release and research update](/blog/after-the-desync-fixes)
+> for validation and the separate blind-rendezvous work. This article retains the
+> earlier investigation's scope.
+
 The [protocol-v4 security boundary](https://github.com/p2party/p2party-js/blob/master/docs/protocol-v4-security.md) opens with a list of three things that are easy to mistake for each other: a data channel becoming `open`, the handshake completing, and a receipt arriving. Only the second one means there is a peer on the other end who has proven anything.
 
 That distinction was written down a while ago. This release is what it cost to actually honour it.

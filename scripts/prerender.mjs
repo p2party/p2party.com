@@ -14,9 +14,8 @@
 // boots and takes over on load; the difference is that the first response now
 // contains the text.
 //
-// Room routes are deliberately excluded. A room is addressed by a secret
-// capability, so there is nothing to prerender and nothing that should be
-// discoverable.
+// Room routes render their pre-connection chrome, with no private data. They
+// carry noindex and stay out of the sitemap; the capability is a URL fragment.
 // ============================================================================
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";

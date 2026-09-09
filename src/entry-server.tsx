@@ -1,22 +1,17 @@
-import { Writable } from "node:stream";
-
-import { renderToPipeableStream } from "react-dom/server";
+import { prerenderToNodeStream } from "react-dom/static";
 import { StaticRouter } from "react-router";
 
 import { AppRoutes } from "./routes";
-import { lazyPages } from "./pages/registry";
+import { pagesForPath, resolvePages } from "./pages/registry";
 
 /**
  * Render one route to complete, hydratable HTML.
  *
- * renderToString was the obvious choice and is the wrong one: it does not
- * support Suspense, and every page here is lazy behind a boundary, so it gave
- * up on the first one and emitted "Switched to client rendering because the
- * server rendering aborted" in place of a page. renderToPipeableStream's
- * onAllReady waits for every boundary to resolve and then hands over the whole
- * document at once -- exactly the semantics a build step wants, and it lets the
- * pages stay lazy here as well as on the client instead of needing a second,
- * eagerly-imported copy of the route table.
+ * The static API waits for lazy components and Suspense before emitting HTML.
+ * The streaming API produced inline boundary-repair scripts on the room pages,
+ * even when piping from onAllReady. The site's CSP blocks those scripts, leaving
+ * hydration to fail and recover by rendering again in the browser. Complete
+ * static output hydrates without allowing inline JavaScript or a fixed nonce.
  *
  * The tree deliberately omits what App wraps around the routes: BrowserRouter
  * (replaced here), UniversalLinkProvider and useDarkMode. None of them render
@@ -24,49 +19,36 @@ import { lazyPages } from "./pages/registry";
  * which never run during server rendering -- so the markup matches the client's
  * first render while nothing in it requires a browser.
  */
-export const render = (url: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    let html = "";
-    // The room routes mount the SDK's store, whose module-level singleton keeps
-    // dispatching after the tree is complete. That drove React to call
-    // onAllReady a second time, and the second pipe threw "React currently only
-    // supports piping to one writable stream" -- which then failed every
-    // subsequent room render in the same process, so /rooms passed and /r did
-    // not purely by being second. Everything here is once-only for that reason.
-    let piped = false;
-    let settled = false;
-
-    const sink = new Writable({
-      write(chunk, _encoding, callback) {
-        html += String(chunk);
-        callback();
+export const render = async (url: string): Promise<string> => {
+  const pages = await resolvePages(pagesForPath(url));
+  const errors: unknown[] = [];
+  const { prelude, postponed } = await prerenderToNodeStream(
+    <StaticRouter location={url}>
+      <AppRoutes pages={pages} />
+    </StaticRouter>,
+    {
+      // Large completed boundaries otherwise become hidden fragments followed
+      // by inline reveal scripts. This build already buffers the whole page;
+      // keep its completed boundaries in place instead of streaming fragments.
+      progressiveChunkSize: Number.MAX_SAFE_INTEGER,
+      onError: (error) => {
+        errors.push(error);
       },
-    });
-    sink.on("finish", () => {
-      if (settled) return;
-      settled = true;
-      resolve(html);
-    });
-
-    const stream = renderToPipeableStream(
-      <StaticRouter location={url}>
-        <AppRoutes pages={lazyPages} />
-      </StaticRouter>,
-      {
-        onAllReady() {
-          if (piped) return;
-          piped = true;
-          stream.pipe(sink);
-        },
-        // A page that cannot render is a build failure, not something to paper
-        // over by writing a half-rendered file. Errors arriving after the tree
-        // is already written are the store still talking to itself, and must
-        // not turn a finished page into a rejection.
-        onError(error) {
-          if (settled) return;
-          settled = true;
-          reject(error instanceof Error ? error : new Error(String(error)));
-        },
-      },
-    );
-  });
+    },
+  );
+  const chunks: Buffer[] = [];
+  for await (const chunk of prelude)
+    chunks.push(Buffer.from(chunk as Uint8Array));
+  if (errors.length > 0) {
+    const error = errors[0];
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+  if (postponed !== null)
+    throw new Error(`Incomplete static render for ${url}`);
+  const html = Buffer.concat(chunks).toString("utf8");
+  // Route markup has no executable scripts; Vite supplies the external entry
+  // in the document shell. Fail the build if React needs script-assisted repair.
+  if (/<script\b/iu.test(html))
+    throw new Error(`Static render requires a script for ${url}`);
+  return html;
+};

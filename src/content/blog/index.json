@@ -117,6 +117,16 @@
         "d2e52e3",
         "e6ecddd"
       ]
+    },
+    {
+      "order": 8,
+      "slug": "after-the-desync-fixes",
+      "href": "/blog/after-the-desync-fixes",
+      "file": "08-after-the-desync-fixes.md",
+      "title": "After the desync fixes: the path to blind rendezvous",
+      "description": "What SDK 0.14.10 and server 0.1.4 ship, what the one-server experiments show, and the privacy and efficiency work still ahead.",
+      "date": "2026-09-09",
+      "commitAnchors": []
     }
   ]
 }

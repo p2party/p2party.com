@@ -17,6 +17,7 @@ Do not run against production or a developer's regular database.
 | `pending-transfers.mjs`      | React pending-transfer panel with controlled SDK promises, including cancellation during retry and room remount |
 | `pending-transfers-live.mjs` | Real partial transfer, sender reload, automatic/manual retries, room navigation, and durable cancellation       |
 | `room-hydration.mjs`         | Saved signaling/STUN preferences, navigation, and hydration without an unrequested connection                   |
+| `csp-hydration.mjs`          | All prerendered pages hydrate with strict CSP, without inline scripts or production requests                    |
 | `packet-trace.mjs`           | Scheduled-cover packet sizes and rates on loopback                                                              |
 | `correlation-check.mjs`      | Packet-size classes near transfer completion on loopback                                                        |
 
@@ -52,6 +53,13 @@ The packet runners need `tcpdump`, `tshark`, and capture permission for `lo0`.
 Read each runner's configuration and limits before using its results. Loopback
 measurements cover one preset and payload size; they do not prove traffic
 indistinguishability or bound recovery time on real networks.
+
+After changes to rendering or response headers, run `node e2e/csp-hydration.mjs`
+against the local preview. It applies the documented CSP to test-browser
+responses, blocks external requests, checks every prerendered route for
+hydration errors and policy violations, and opens the invitation consent dialog
+without connecting. The renderer also rejects script-assisted route markup
+during the build. These checks do not configure headers on the deployed CDN.
 
 The preview server serves each prerendered route and redirects `/r` to `/r/`,
 matching the bucket's directory behavior. Do not replace it with a generic SPA

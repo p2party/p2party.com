@@ -40,6 +40,13 @@ cover has been measured over loopback; it is not a proof of resistance to
 traffic analysis on real networks. Private rendezvous, anonymous admission, and
 Sybil resistance are not deployed guarantees.
 
+Server 0.1.4 limits connections, proved identities, room membership and message
+rates, and creates durable identity records only after a valid signature. These
+controls limit specific resources; they do not establish unique people.
+Proof of work, optional passkey recovery and private invitation retrieval are
+separate local experiments, described in the
+[release and research update](src/content/blog/08-after-the-desync-fixes.md).
+
 Identity keys and retained transfers live in browser storage. A compromised
 browser, extension, or application origin can access them. Recovery phrases
 are shown locally and must never appear in logs or reports. Peer messages are

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 type BlogManifest = {
@@ -23,17 +23,23 @@ describe("protocol-v3 blog series", () => {
   test("has one ordered, unique route for every source file", () => {
     expect(manifest.series.id).toBe("road-to-protocol-v3");
     expect(manifest.series.status).toBe("published");
-    expect(manifest.posts).toHaveLength(7);
-    expect(manifest.posts.map(({ order }) => order)).toEqual([
-      1, 2, 3, 4, 5, 6, 7,
-    ]);
+    const sourceFiles = readdirSync(contentRoot).filter((file) =>
+      file.endsWith(".md"),
+    );
+    expect(manifest.posts.map(({ file }) => file).sort()).toEqual(
+      sourceFiles.sort(),
+    );
+    expect(manifest.posts.map(({ order }) => order)).toEqual(
+      manifest.posts.map((_, index) => index + 1),
+    );
     expect(new Set(manifest.posts.map(({ slug }) => slug)).size).toBe(
       manifest.posts.length,
     );
 
     for (const post of manifest.posts) {
       expect(post.href).toBe(`/blog/${post.slug}`);
-      expect(post.commitAnchors.length).toBeGreaterThan(0);
+      for (const commit of post.commitAnchors)
+        expect(commit).toMatch(/^[0-9a-f]{7,40}$/u);
       expect(post.title.length).toBeGreaterThan(10);
     }
   });

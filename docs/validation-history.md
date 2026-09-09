@@ -5,6 +5,47 @@ SDK package, browser, native build, or production network. Raw browser reports
 under `logs/` are local and ignored because captures can contain sensitive data.
 The reproducible runners remain in `e2e/`; see [Browser testing](browser-testing.md).
 
+## Production smoke and CSP follow-up — 2026-09-09
+
+After the operator deployed SDK 0.14.10 and server 0.1.4, bounded public checks
+confirmed the server's health/version/protocol, signature challenge, correlated
+room snapshots, heartbeat, same-identity socket replacement and acknowledged
+membership cleanup. TURN credentials were issued with the expected URLs and
+expiry; relay connectivity and database TLS configuration were not established
+by these public checks.
+
+The deployed homepage matched the local release build. The six main non-home
+routes returned their prerendered HTML, and the self-hosted WASM matched
+`7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76`, with
+`application/wasm`, gzip encoding and immutable caching. Two isolated Chromium
+profiles exchanged text and a byte-exact 40,000-byte file through the actual UI
+over WebRTC. Receiver reload retained the file and restored message delivery in
+1,248 ms in this run. A same-identity second tab took over and remained stable
+for a five-second observation. No uncaught page errors occurred. Four transport
+console errors were observed around replacement/reload; guarded handling and
+successful recovery were confirmed, without attributing every event to an exact
+cause. This short smoke does not establish long-term or mobile reliability.
+
+The frontend was missing the five response headers documented in
+[Deployment](deployment.md); the signaling origin had its expected headers.
+Applying the proposed CSP only in test-browser responses exposed inline React
+boundary-repair scripts in the deployed room HTML: the browser blocked them and
+reported hydration errors before recovering through client rendering. The
+live CDN configuration was not changed by that compatibility test.
+
+The follow-up frontend build uses React's static prerender API and keeps large
+completed Suspense boundaries in place. It rejects script-bearing route markup
+during the build. All 15 rebuilt pages passed `e2e/csp-hydration.mjs` under the
+strict policy, with no inline executable scripts, uncaught errors, CSP violations
+or external requests. This includes the new release/research article, client
+navigation, and opening invitation consent without connecting. Deploy this
+frontend build before enabling the Terraform-managed edge policy.
+
+Raw reports are under `logs/deployment-check-2026-09-09/` and
+`logs/csp-hydration/result.json` (local, ignored). These observations apply to
+the versions, browser and paths named above; research protocols remain outside
+the deployed room flow.
+
 ## Recorded acceptance for SDK 0.14.10 — 2026-09-09
 
 The built site passed both live Chromium runners with SDK 0.14.10, actual

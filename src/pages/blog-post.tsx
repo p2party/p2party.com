@@ -74,8 +74,14 @@ const BlogPostPage = () => {
             <dd>
               <time dateTime={post.date}>{post.date}</time>
             </dd>
-            <dt className='mt-2 text-zinc-900 dark:text-zinc-100'>receipts</dt>
-            <dd>{post.commitAnchors.length} commits</dd>
+            <dt className='mt-2 text-zinc-900 dark:text-zinc-100'>
+              references
+            </dt>
+            <dd>
+              {post.commitAnchors.length > 0
+                ? `${post.commitAnchors.length} historical development IDs`
+                : "Release sources and recorded measurements"}
+            </dd>
           </dl>
         </header>
 
@@ -85,6 +91,15 @@ const BlogPostPage = () => {
               remarkPlugins={[remarkGfm]}
               components={{
                 a: ({ href = "", children, ...props }) => {
+                  // These IDs describe the original development history, which
+                  // is retained privately and is not a public GitHub reference.
+                  if (
+                    post.date < "2026-09-09" &&
+                    /^https:\/\/github\.com\/p2party\/p2party-js\/commit\/[0-9a-f]{7,40}$/u.test(
+                      href,
+                    )
+                  )
+                    return <span>{children}</span>;
                   const external = /^https?:\/\//u.test(href);
                   return (
                     <a
@@ -119,21 +134,45 @@ const BlogPostPage = () => {
           <aside className='order-first lg:order-last'>
             <div className='sticky top-6 border border-zinc-900/20 bg-white/70 p-5 font-mono text-xs leading-6 backdrop-blur dark:border-white/20 dark:bg-black/40'>
               <p className='font-bold text-zinc-900 dark:text-zinc-100'>
-                commit anchors
+                {post.commitAnchors.length > 0
+                  ? "historical development IDs"
+                  : "release references"}
               </p>
-              <ul className='mt-3 grid grid-cols-2 gap-x-4 lg:grid-cols-1'>
-                {post.commitAnchors.map((commit) => (
-                  <li key={commit}>
-                    <a
-                      href={`https://github.com/p2party/p2party-js/commit/${commit}`}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='rounded text-orange-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-orange-400'
-                    >
-                      {commit} ↗
-                    </a>
-                  </li>
-                ))}
+              {post.commitAnchors.length > 0 && (
+                <>
+                  <ul className='mt-3 grid grid-cols-2 gap-x-4 lg:grid-cols-1'>
+                    {post.commitAnchors.map((commit) => (
+                      <li key={commit}>
+                        <code>{commit}</code>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className='mt-3 text-zinc-500 dark:text-zinc-400'>
+                    These identify the original development history. The public
+                    release sources are linked below; they are not substitutes
+                    for the historical commits.
+                  </p>
+                </>
+              )}
+              <ul className='mt-3'>
+                <li>
+                  <a
+                    href='https://github.com/p2party/p2party-js/tree/v0.14.10'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='rounded text-orange-700 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-orange-400'
+                  >
+                    SDK 0.14.10 source ↗
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href='/privacy-policy'
+                    className='rounded text-orange-700 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-orange-400'
+                  >
+                    Service privacy policy
+                  </a>
+                </li>
               </ul>
               <p className='mt-5 border-t border-zinc-900/15 pt-4 text-zinc-500 dark:border-white/15 dark:text-zinc-400'>
                 Shipped, gated, and research claims stay separate throughout

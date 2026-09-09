@@ -25,6 +25,11 @@ requires:
   - "mermaid"
 ---
 
+> **September 9, 2026:** This article records the earlier protocol work. The
+> [current release and research update](/blog/after-the-desync-fixes) covers the
+> completed desync work, runnable blind-rendezvous experiments, and the remaining
+> privacy and efficiency questions.
+
 An ML-KEM ciphertext can fit inside one p2party cell. That does not make post-quantum healing free.
 
 The defensible claim is narrower: if a cover-enabled room was going to transmit a fixed cell at that time anyway, a ratchet advance can replace padding without adding another observer-visible application cell. The marginal scheduled frame count can be zero. CPU, battery, TURN egress, useful capacity, mesh scaling, and the schedule itself still cost real resources.

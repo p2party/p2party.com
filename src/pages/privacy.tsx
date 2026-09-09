@@ -26,7 +26,7 @@ const PrivacyPage = () => {
           Privacy Policy
         </h1>
         <p className='mb-8 text-sm text-zinc-400 dark:text-zinc-500'>
-          Effective date: 17 October 2024 &middot; Last updated: 2 September
+          Effective date: 17 October 2024 &middot; Last updated: 9 September
           2026
         </p>
 
@@ -82,9 +82,10 @@ const PrivacyPage = () => {
           routing rows described below.
         </Para>
         <Para>
-          The server does keep a small PostgreSQL database, on the same EU
-          infrastructure, so that a peer can still be reached when the service
-          runs as more than one process. It holds:
+          The server keeps a PostgreSQL database on the same EU infrastructure
+          for stable identity and room membership. The supported deployment uses
+          one signaling process; an experimental cross-process routing path uses
+          the same database. It holds:
         </Para>
         <Ul>
           <li>
@@ -92,14 +93,18 @@ const PrivacyPage = () => {
             public key, the time it was first seen and last seen, and which
             server process currently holds its socket. That last field is
             cleared when you disconnect; the row itself remains, and
-            reconnecting with the same key reuses it.
+            reconnecting with the same key reuses it. New identity rows are
+            created only after the client proves possession of the key.
           </li>
           <li>
             <strong>One row per room:</strong> the SHA-512 hash of the room
             capability &mdash; not the capability itself &mdash; and which
-            identities are members of it. Membership is removed when you leave
-            the room from inside the app; closing the tab or losing the network
-            does not remove it.
+            identities are members of it. The server receives the capability
+            when you join, although it stores only its hash. Membership is
+            removed when you leave the room from inside the app; closing the tab
+            or losing the network does not remove it. Empty rooms not updated
+            for 24 hours become eligible for bounded cleanup; occupied rooms,
+            including offline membership, remain.
           </li>
           <li>
             <strong>Short-lived routing rows:</strong> a signal addressed to a
@@ -118,7 +123,9 @@ const PrivacyPage = () => {
           see which identity keys are in which room, and when they connect and
           disconnect. It cannot see the content of anything you send. Room
           membership and timing are not hidden from it, and we do not claim
-          otherwise.
+          otherwise. Blind rendezvous, private invitation retrieval, proof of
+          work and optional passkeys remain separate local research experiments;
+          they are not modes in the deployed room flow.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
@@ -181,20 +188,20 @@ const PrivacyPage = () => {
           received files &mdash; to hold your long-term identity keys, your
           saved rooms and their invite links, your address book and blacklist,
           the ratchet state for each peer you have talked to, and your message
-          history and received file data. This data stays on your device. It is
-          never uploaded, and you can clear it at any time through your browser
-          settings.
+          history, received file data and prepared pending sends. This data
+          stays on your device. It is never uploaded, and you can clear it at
+          any time through your browser settings.
         </Para>
         <Para>
           An identity created from a recovery phrase can be restored in another
           browser from those 24 words, together with the password you chose for
           them if you set one. That phrase is derived one way into the key and
-          is shown once, at creation; it is never stored, so we could not
-          produce it for you, and it cannot be taken from this device later. An
-          identity created without a phrase has no such route: if you clear site
-          data, use a different browser profile, or lose the device, that
-          identity and everything stored under it is gone, and nobody &mdash;
-          including us &mdash; can recover it.
+          is shown at creation and is not retained by the app. The identity key
+          remains in browser storage; a compromised browser, extension or
+          application origin can access it. An identity created without a phrase
+          has no such route: if you clear site data, use a different browser
+          profile, or lose the device, that identity and everything stored under
+          it is gone, and nobody &mdash; including us &mdash; can recover it.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>
@@ -275,6 +282,9 @@ const PrivacyPage = () => {
             <strong>Signaling database rows:</strong> the identity row and the
             room-hash membership described in section 3.1 outlive a disconnect.
             Membership is removed when you leave a room from inside the app.
+            Empty rooms not updated for 24 hours are removed in batches of at
+            most 1,000 per minute. Identity rows and occupied rooms are
+            retained.
           </li>
           <li>
             <strong>STUN data:</strong> not stored at all (stateless protocol).
@@ -284,11 +294,18 @@ const PrivacyPage = () => {
             destroyed when the relay allocation expires.
           </li>
           <li>
-            <strong>Communication content:</strong> never reaches our servers.
+            <strong>Communication content:</strong> the signaling server never
+            receives messages or files. A TURN relay can carry their encrypted
+            bytes when direct connectivity fails; it cannot decrypt them.
           </li>
           <li>
-            <strong>Browser-local data (IndexedDB):</strong> persists on your
-            device until you clear it.
+            <strong>Browser-local data:</strong> identities, saved rooms,
+            received content and contacts persist until you delete them or clear
+            site data. Prepared pending sends expire after 24 hours and are no
+            longer retryable. Expired records are cleaned when the app runs its
+            cleanup; this is not a promise of disk deletion while the site is
+            closed. Cancellation and completion also remove pending sends.
+            Browser storage can be evicted by the browser or operating system.
           </li>
         </Ul>
 
@@ -326,9 +343,9 @@ const PrivacyPage = () => {
           </li>
         </Ul>
         <Para>
-          Because we do not store personally identifiable information beyond
-          ephemeral session data, most of these rights are satisfied by design.
-          If you wish to exercise any right, please contact us at{" "}
+          Identity public keys and room membership persist as described above;
+          they are not merely ephemeral session data. If you wish to exercise
+          any right, please contact us at{" "}
           <Link
             href='mailto:privacy@p2party.com'
             className='text-orange-600 underline dark:text-orange-400'

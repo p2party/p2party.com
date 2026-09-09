@@ -49,7 +49,7 @@ const features = [
       </svg>
     ),
     title: "Peer-to-Peer Mesh",
-    desc: "No middlemen. Peers discover each other through a lightweight signaling server, then connect directly via WebRTC.",
+    desc: "Peers discover each other through a lightweight signaling server, then use WebRTC. Connections are direct when possible; a TURN relay carries encrypted traffic when needed.",
   },
   {
     icon: (
@@ -136,11 +136,15 @@ const shipped = [
   },
   {
     title: "Sleep, move, come back",
-    body: "A phone that was asleep with its radio off used to come back holding a connection the other side had already thrown away. Now an edge is bound to the certificate it was authenticated against, so a stale transport is replaced and re-authenticated rather than reused — and the app re-dials when the tab becomes visible again, when you navigate back to it, when the window regains focus, and when the network returns.",
+    body: "Stale transports are replaced and authenticated again. Rooms reconnect after reload or a signaling restart, and a second tab using the same identity can take over without opening competing sockets. A wrong PIN stays visibly failed until you explicitly retry. These flows were checked with real WebRTC in local Chromium runs; recovery time depends on the browser and network.",
+  },
+  {
+    title: "Transfers you can recover or cancel",
+    body: "Once preparation finishes, a pending send survives sender reload for up to 24 hours. Retry sends missing chunks, and Cancel remains available after leaving and returning to the room, including while a retry is active.",
   },
   {
     title: "An identity you can carry to another browser",
-    body: "Create one from a 24-word recovery phrase and it can be rebuilt anywhere from those words, and the password you chose for them if you set one. The phrase is shown once, at creation: it is run one way into the key, so the app keeps nothing it could show you later and nothing an attacker could take from it. An identity made without a phrase stays in the browser that made it.",
+    body: "Create one from a 24-word recovery phrase and it can be rebuilt from those words, and the password you chose for them if you set one. The app shows the phrase at creation and does not retain it. Identity keys still live in browser storage, so a compromised browser can access them. An identity made without a phrase stays in the browser that made it.",
   },
   {
     title: "A send that fails, says so",
@@ -151,7 +155,11 @@ const shipped = [
 const boundaries = [
   {
     title: "The signaling operator sees who is in the room",
-    body: "It stores a hash of the room, the identity keys in it, and when they connect. Hiding that needs a server-blind rendezvous, which is designed and not built.",
+    body: "It receives the room capability when you join and stores its hash, the identity keys in the room, and connection times. Separate one-store and two-store blind-rendezvous prototypes run locally, but this site's room flow still uses ordinary signaling. The experiments have not established relationship privacy.",
+  },
+  {
+    title: "Abuse limits do not count people",
+    body: "The server limits connections, messages and room membership, and requires proof of an identity key before saving it. Proof of work with optional passkeys is a separate research prototype. Neither rate limits nor passkeys establish that different keys belong to different people.",
   },
   {
     title: "Cover traffic is timing cover",
@@ -393,6 +401,17 @@ const HomePage = () => {
           What It Does&nbsp;
           <span className='text-orange-600 dark:text-orange-500'>Today</span>
         </h2>
+        <p className='mx-auto mb-8 max-w-2xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
+          SDK 0.14.10 and signaling server 0.1.4 include the latest recovery and
+          resource-limit fixes. Read the{" "}
+          <Link
+            href='/blog/after-the-desync-fixes'
+            className='text-orange-700 underline underline-offset-4 dark:text-orange-400'
+          >
+            release update and blind-rendezvous research plan
+          </Link>
+          .
+        </p>
         <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
           Everything on the left is in the code you can read. Everything on the
           right is a thing p2party does not do, said out loud, because a
@@ -452,9 +471,9 @@ const HomePage = () => {
           </span>
         </h2>
         <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          p2party runs on a handful of lightweight servers — just enough to
-          bootstrap direct connections. Once peers find each other the servers
-          are out of the loop.
+          The signaling service introduces peers and helps them reconnect.
+          Messages and files travel over WebRTC, directly when possible or
+          through a TURN relay that carries encrypted traffic.
         </p>
 
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
