@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
-import { chromium, firefox, expect } from "@playwright/test";
+import { chromium, firefox, webkit, expect } from "@playwright/test";
 
 // Real production React, HeadlessUI portal and QRCodeAlert. The unused SDK and
 // native filesystem boundary are controlled; no identity or room is created.
@@ -18,15 +18,15 @@ import { createRoot } from "react-dom/client";
 import QRCode from "qrcode";
 import QRCodeAlert from "./src/components/alerts/QRCodeAlert";
 const roomPolicy = {version:1,revision:0,wireVersion:4,authMode:"none",pqMode:"hybrid-mlkem768",rendezvousMode:"legacy-signaling",coverMode:"immediate",coverCadenceMs:0,coverLanes:0,coverFramesPerCell:0,coverDurationEpochs:0};
-const originalQrDataUrl = QRCode.toDataURL.bind(QRCode);
+const originalQrCanvas = QRCode.toCanvas.bind(QRCode);
 window.pendingQr = [];
 window.deferQr = false;
 window.rejectQr = false;
 window.throwQr = false;
-QRCode.toDataURL = (...args) => {
+QRCode.toCanvas = (...args) => {
   if (window.throwQr) throw new Error("Controlled synchronous QR failure");
   if (window.rejectQr) return Promise.reject(new Error("Controlled QR generation failure"));
-  const generated = originalQrDataUrl(...args);
+  const generated = originalQrCanvas(...args);
   if (!window.deferQr) return generated;
   return new Promise((resolve, reject) => window.pendingQr.push(() => generated.then(resolve, reject)));
 };
@@ -267,7 +267,6 @@ async function controlledCase(
 async function exerciseFailures(browser, browserName) {
   for (const failure of [
     "null-context",
-    "canvas-export-throw",
     "qr-promise-rejection",
     "qr-sync-throw",
   ]) {
@@ -285,17 +284,6 @@ async function exerciseFailures(browser, browserName) {
             window.restoreCanvas = () => {
               HTMLCanvasElement.prototype.getContext = original;
             };
-          } else if (mode === "canvas-export-throw") {
-            const original = HTMLCanvasElement.prototype.toDataURL;
-            HTMLCanvasElement.prototype.toDataURL = () => {
-              throw new DOMException(
-                "Controlled canvas restriction",
-                "SecurityError",
-              );
-            };
-            window.restoreCanvas = () => {
-              HTMLCanvasElement.prototype.toDataURL = original;
-            };
           } else if (mode === "qr-promise-rejection") window.rejectQr = true;
           else window.throwQr = true;
         }, failure);
@@ -312,6 +300,99 @@ async function exerciseFailures(browser, browserName) {
       },
     );
   }
+  await controlledCase(
+    browser,
+    browserName,
+    "canvas-readback-blocked-display-and-live-unblock",
+    async (page, _context, result) => {
+      await page.evaluate(() => {
+        const originalExport = HTMLCanvasElement.prototype.toDataURL;
+        const originalRead = CanvasRenderingContext2D.prototype.getImageData;
+        window.blockedCanvasCalls = { exports: 0, reads: 0 };
+        HTMLCanvasElement.prototype.toDataURL = () => {
+          window.blockedCanvasCalls.exports++;
+          throw new DOMException(
+            "Controlled canvas export restriction",
+            "SecurityError",
+          );
+        };
+        CanvasRenderingContext2D.prototype.getImageData = () => {
+          window.blockedCanvasCalls.reads++;
+          throw new DOMException(
+            "Controlled canvas readback restriction",
+            "SecurityError",
+          );
+        };
+        window.restoreCanvas = () => {
+          HTMLCanvasElement.prototype.toDataURL = originalExport;
+          CanvasRenderingContext2D.prototype.getImageData = originalRead;
+        };
+      });
+      await openDialog(page);
+      await expect(button(page, "Download QR")).toBeEnabled();
+      await expect(page.getByRole("status")).toHaveCount(0);
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      assert.deepEqual(
+        await page.evaluate(() => window.blockedCanvasCalls),
+        {
+          exports: 0,
+          reads: 0,
+        },
+        "display performs no canvas extraction",
+      );
+      const canvas = page.locator("canvas");
+      const displayedBeforePermission = await canvas.screenshot();
+      await writeFile(
+        new URL(`${browserName}-readback-blocked-displayed.png`, out),
+        displayedBeforePermission,
+      );
+      const sameCanvas = await canvas.elementHandle();
+      const timeOrigin = await page.evaluate(() => performance.timeOrigin);
+      await button(page, "Download QR").click();
+      await expect(page.getByRole("alert")).toHaveText(
+        "Could not download the QR code. You can still copy the link.",
+      );
+      await expect(button(page, "Copy link")).toBeEnabled();
+      assert.deepEqual(await page.evaluate(() => window.blockedCanvasCalls), {
+        exports: 1,
+        reads: 0,
+      });
+      // Simulate granting extraction permission while this same dialog is open.
+      await page.evaluate(() => window.restoreCanvas());
+      assert.equal(
+        await page.evaluate(() => performance.timeOrigin),
+        timeOrigin,
+      );
+      assert(
+        await canvas.evaluate(
+          (node, original) => node === original,
+          sameCanvas,
+        ),
+      );
+      const rendered = await canvas.evaluate(pixels);
+      assert.equal(rendered.opaque, 1024 * 1024);
+      assert(rendered.colored > 1000);
+      assert.deepEqual(
+        await canvas.screenshot(),
+        displayedBeforePermission,
+        "permission changes do not need to redraw the visible QR",
+      );
+      const expectedPng = Buffer.from(
+        (await canvasPng(page)).split(",")[1],
+        "base64",
+      );
+      const pendingDownload = page.waitForEvent("download");
+      await button(page, "Download QR").click();
+      const download = await pendingDownload;
+      assert.equal(download.suggestedFilename(), "p2party-room-invite.png");
+      assert.deepEqual(await readFile(await download.path()), expectedPng);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      result.rendered = rendered;
+      result.scope =
+        "Canvas-extraction API restrictions simulated in the actual browser; no native Firefox permission prompt was automated.";
+      result.noReload = true;
+    },
+  );
   await controlledCase(
     browser,
     browserName,
@@ -480,6 +561,7 @@ try {
   for (const [browserName, browserType] of [
     ["chromium", chromium],
     ["firefox", firefox],
+    ["webkit", webkit],
   ]) {
     const browser = await browserType.launch({ headless: true });
     try {

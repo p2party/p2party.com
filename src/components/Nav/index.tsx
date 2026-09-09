@@ -55,7 +55,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
   const [showIdentityRestore, setShowIdentityRestore] = useState(false);
 
   return (
-    <Navbar>
+    <Navbar className='min-w-0 overflow-x-auto'>
       {/* <NavbarItem>
         <CatAvatar src='/logo-cat-tight.svg' />
         <NavbarLabel>p2party</NavbarLabel>
@@ -64,7 +64,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
 
       {/* <ConnectButtonNavigation roomUrl={roomUrl ?? ""} /> */}
 
-      <NavbarSection className='gap-1'>
+      <NavbarSection className='[--navbar-section-gap:0.25rem]'>
         {roomUrl.length === 0 && (
           <NavbarItem
             aria-label='new room'

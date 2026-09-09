@@ -26,20 +26,39 @@ export function Dialog({
   children: React.ReactNode;
 } & Omit<Headless.DialogProps, "as" | "className">) {
   return (
-    <Headless.Dialog {...props}>
+    <Headless.Dialog {...props} className='relative z-100'>
       <Headless.DialogBackdrop
         transition
-        className='fixed inset-0 flex w-screen justify-center overflow-y-auto bg-zinc-950/25 px-2 py-2 transition duration-100 focus:outline-0 data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:px-6 sm:py-8 lg:px-8 lg:py-16 dark:bg-zinc-950/50'
+        className='fixed inset-0 bg-zinc-950/25 transition duration-100 data-closed:opacity-0 data-enter:ease-out data-leave:ease-in dark:bg-zinc-950/50'
       />
 
-      <div className='fixed inset-0 w-screen overflow-y-auto pt-6 sm:pt-0'>
-        <div className='grid min-h-full grid-rows-[1fr_auto] justify-items-center sm:grid-rows-[1fr_auto_3fr] sm:p-4'>
+      <div
+        className='fixed overflow-y-auto overscroll-contain'
+        style={{
+          top: "var(--app-viewport-top, 0px)",
+          left: "var(--app-viewport-left, 0px)",
+          width: "var(--app-viewport-width, 100%)",
+          height: "var(--app-viewport-height, 100dvh)",
+        }}
+      >
+        <div
+          className='flex min-h-full flex-col items-center p-3 sm:p-4'
+          style={{
+            paddingTop: "max(0.75rem, var(--safe-area-inset-top, 0px))",
+            paddingRight: "max(0.75rem, var(--safe-area-inset-right, 0px))",
+            paddingBottom: "max(0.75rem, var(--safe-area-inset-bottom, 0px))",
+            paddingLeft: "max(0.75rem, var(--safe-area-inset-left, 0px))",
+          }}
+        >
           <Headless.DialogPanel
             transition
             className={clsx(
               className,
               sizes[size],
-              "shadow-brutal row-start-2 w-full min-w-0 border-2 border-zinc-950 bg-white p-(--gutter) [--gutter:--spacing(8)] sm:mb-auto dark:border-zinc-200 dark:bg-zinc-950 forced-colors:outline",
+              "pointer-coarse:[&_input]:text-base pointer-coarse:[&_select]:text-base pointer-coarse:[&_textarea]:text-base",
+              // A tall panel starts at the scroll area's top; a short panel
+              // uses the remaining space without hiding either end.
+              "shadow-brutal my-auto w-full max-w-full min-w-0 shrink-0 border-2 border-zinc-950 bg-white p-(--gutter) [overflow-wrap:anywhere] [--gutter:--spacing(3)] sm:[--gutter:--spacing(8)] dark:border-zinc-200 dark:bg-zinc-950 forced-colors:outline",
               "transition duration-100 will-change-transform data-closed:translate-y-12 data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:data-closed:translate-y-0 sm:data-closed:data-enter:scale-95",
             )}
           >
@@ -101,7 +120,7 @@ export function DialogActions({
       {...props}
       className={clsx(
         className,
-        "mt-8 flex flex-col-reverse items-center justify-end gap-3 *:w-full sm:flex-row sm:*:w-auto",
+        "mt-8 flex flex-col-reverse items-center justify-end gap-3 *:w-full *:max-w-full *:min-w-0 sm:flex-row sm:flex-wrap sm:*:w-auto",
       )}
     />
   );

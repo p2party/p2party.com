@@ -39,7 +39,11 @@ const Share: FC<ShareProps> = ({ inviteUrl, setShowQRCode }) => {
   if (navigator.share) {
     return (
       <Dropdown>
-        <DropdownButton as={NavbarItem}>
+        <DropdownButton
+          as={NavbarItem}
+          aria-label='Share room'
+          title='Share room'
+        >
           <ShareIcon />
         </DropdownButton>
 

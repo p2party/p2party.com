@@ -48,7 +48,11 @@ const PeerDropdown: FC<PeerDropdownProps> = ({
 
   return (
     <Dropdown>
-      <DropdownButton as={NavbarItem}>
+      <DropdownButton
+        as={NavbarItem}
+        aria-label='Peers and contacts'
+        title='Peers and contacts'
+      >
         <UserGroupIcon className='size-6 text-zinc-500 dark:text-zinc-400' />
         {peers.length > 0 && (
           <span className='bg-darkOrange absolute -top-1 -right-1 flex min-w-[1.25rem] items-center justify-center rounded-full text-xs text-white'>

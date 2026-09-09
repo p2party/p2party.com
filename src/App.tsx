@@ -10,11 +10,13 @@ import { useDarkMode } from "usehooks-ts";
 import { UniversalLinkProvider } from "./hooks/useUniversalLink";
 import { AppRoutes } from "./routes";
 import { lazyPages } from "./pages/registry";
+import { useVisualViewport } from "./hooks/useVisualViewport";
 
 import type { RoutePages } from "./pages/registry";
 
 const App = ({ pages = lazyPages }: { pages?: RoutePages }) => {
   const { isDarkMode } = useDarkMode();
+  useVisualViewport();
 
   // useEffect(() => {
   //   const controller = new AbortController();

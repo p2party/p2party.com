@@ -21,7 +21,7 @@ export interface QRCodeAlertProps {
 const drawCanvas = (
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
-  qrImage: HTMLImageElement,
+  qrCanvas: HTMLCanvasElement,
   logoImage: HTMLImageElement,
 ) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -34,7 +34,7 @@ const drawCanvas = (
   const qrSize = canvas.width * 0.96;
   const qrX = (canvas.width - qrSize) / 2;
   const qrY = (canvas.height - qrSize) / 2;
-  ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+  ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
   const center = canvas.width / 2;
   const logoSize = canvas.width * 0.5;
@@ -80,6 +80,7 @@ const QRCodeAlert = ({
     // The dialog mounts its portal after opening. A callback ref makes the
     // effect follow the actual canvas instead of racing the portal mount.
     if (!isOpen || !canvas || inviteUrl.length === 0) return;
+    const downloads = downloadGeneration;
     let cancelled = false;
     let ctx: CanvasRenderingContext2D | null = null;
     void (async () => {
@@ -87,18 +88,21 @@ const QRCodeAlert = ({
         ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("Canvas is unavailable");
 
-        const qrDataUrl = await QRCode.toDataURL(inviteUrl, {
-          margin: 4,
-          width: 1024,
-          errorCorrectionLevel: "H",
-          color: { dark: "#eb5e28", light: "#fff" },
-        });
-        const [qrImage, logoImage] = await Promise.all([
-          loadImage(qrDataUrl, "QR image"),
+        // Display needs drawing only. Exporting an intermediate PNG would
+        // unnecessarily require Firefox's canvas-extraction permission before
+        // the invitation can be shown; readback belongs to Download QR.
+        const qrCanvas = document.createElement("canvas");
+        const [, logoImage] = await Promise.all([
+          QRCode.toCanvas(qrCanvas, inviteUrl, {
+            margin: 4,
+            width: 1024,
+            errorCorrectionLevel: "H",
+            color: { dark: "#eb5e28", light: "#fff" },
+          }),
           loadImage("/logo-cat.svg", "room logo"),
         ]);
         if (!cancelled) {
-          drawCanvas(canvas, ctx, qrImage, logoImage);
+          drawCanvas(canvas, ctx, qrCanvas, logoImage);
           setQrResult({ canvas, inviteUrl, status: "ready" });
         }
       } catch {
@@ -108,7 +112,7 @@ const QRCodeAlert = ({
 
     return () => {
       cancelled = true;
-      downloadGeneration.current++;
+      downloads.current++;
       ctx?.clearRect(0, 0, canvas.width, canvas.height);
     };
   }, [canvas, inviteUrl, isOpen]);

@@ -8,6 +8,8 @@ interface PendingTransfersProps {
   channelLabel: string;
   /** Transfers whose original live handle is already shown on a message. */
   liveTransferIds: readonly string[];
+  /** The chat status region owns scrolling when this panel is embedded. */
+  embedded?: boolean;
 }
 
 const messageOf = (error: unknown): string =>
@@ -19,6 +21,7 @@ export default function PendingTransfers({
   roomId,
   channelLabel,
   liveTransferIds,
+  embedded = false,
 }: PendingTransfersProps) {
   const [pending, setPending] = useState<PendingMessage[]>([]);
   const [readError, setReadError] = useState<RoomError>(null);
@@ -119,7 +122,7 @@ export default function PendingTransfers({
   return (
     <section
       aria-label='Pending transfers'
-      className='max-h-48 shrink-0 overflow-y-auto border-t-2 border-zinc-950 bg-amber-50 px-3 py-2 text-sm dark:border-zinc-200 dark:bg-zinc-900'
+      className={`shrink-0 border-t-2 border-zinc-950 bg-amber-50 px-3 py-2 text-sm dark:border-zinc-200 dark:bg-zinc-900 ${embedded ? "" : "max-h-[min(12rem,calc(var(--app-viewport-height,100dvh)/4))] overflow-y-auto"}`}
     >
       {rows.length > 0 && (
         <div className='mb-2 flex items-center justify-between gap-3'>

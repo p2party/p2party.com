@@ -40,7 +40,13 @@ export function NavbarSection({
 
   return (
     <LayoutGroup id={id}>
-      <div {...props} className={clsx(className, "flex items-center gap-3")} />
+      <div
+        {...props}
+        className={clsx(
+          className,
+          "flex items-center gap-[var(--navbar-section-gap,0.75rem)]",
+        )}
+      />
     </LayoutGroup>
   );
 }

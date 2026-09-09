@@ -63,7 +63,16 @@ describe("message viewport resize ownership", () => {
     ).toBe(true);
   });
 
-  test("reader movement wins even in the same frame as a resize", () => {
+  test("native anchoring during an async bubble read preserves the live edge", () => {
+    expect(
+      isLayoutOnlyMessageScroll(
+        { scrollHeight: 6200, clientHeight: 700, scrollTop: 5500 },
+        { scrollHeight: 7500, clientHeight: 700, scrollTop: 6627 },
+      ),
+    ).toBe(true);
+  });
+
+  test("explicit reader movement wins even in the same frame as a resize", () => {
     expect(
       isLayoutOnlyMessageScroll(
         {
@@ -76,6 +85,7 @@ describe("message viewport resize ownership", () => {
           clientHeight: 384,
           scrollTop: 240,
         },
+        true,
       ),
     ).toBe(false);
     expect(

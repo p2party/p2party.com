@@ -3,6 +3,7 @@
 import {
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
   useCallback,
   useMemo,
@@ -16,8 +17,11 @@ import HandshakeStatusBanner from "../components/custom/HandshakeStatusBanner";
 import PendingTransfers from "../components/custom/PendingTransfers";
 import { unresolvedHandshakeFailures } from "../protocol/handshakeFailures";
 import {
+  captureMessageReadingAnchor,
+  restoreMessageReadingAnchor,
   isLayoutOnlyMessageScroll,
   isNearMessageBottom,
+  type MessageReadingAnchor,
   type MessageScrollGeometry,
 } from "./chatScroll";
 
@@ -82,6 +86,9 @@ const ChatPage = () => {
   const stickToBottomRef = useRef(true);
   const observedMessageGeometryRef = useRef<MessageScrollGeometry | null>(null);
   const resizeObserverOwnsGeometryRef = useRef(false);
+  const readerScrollIntentUntilRef = useRef(0);
+  const layoutCorrectionUntilRef = useRef(0);
+  const readingAnchorRef = useRef<MessageReadingAnchor | null>(null);
   const cancelledTransfersRef = useRef(new Set<string>());
 
   // const handleUnload = () => {
@@ -121,6 +128,7 @@ const ChatPage = () => {
     if (!messageList) return;
     messageList.scrollTop = messageList.scrollHeight;
     stickToBottomRef.current = true;
+    readingAnchorRef.current = null;
     observedMessageGeometryRef.current = {
       scrollHeight: messageList.scrollHeight,
       clientHeight: messageList.clientHeight,
@@ -131,22 +139,21 @@ const ChatPage = () => {
   // New messages follow the live edge only while the reader is already there.
   // Unlike scrollIntoView, this cannot scroll the page or jump a reader who is
   // looking at older history.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (stickToBottomRef.current) scrollToMessageBottom();
   }, [messages.length, scrollToMessageBottom]);
 
-  // A channel switch is explicit navigation, so enter the selected thread at
+  // A room or channel switch is explicit navigation, so enter the thread at
   // its live edge. Per-channel scroll restoration does not exist here; carrying
   // an unrelated numeric scrollTop across threads would be accidental state.
-  useEffect(() => {
+  useLayoutEffect(() => {
     stickToBottomRef.current = true;
+    readerScrollIntentUntilRef.current = 0;
     scrollToMessageBottom();
-  }, [selectedChannel, scrollToMessageBottom]);
+  }, [roomId, selectedChannel, scrollToMessageBottom]);
 
-  // The composer, keyboard spacer, and auto-growing textarea are normal flex
-  // rows, so any of them can resize the message viewport. Preserve the live
-  // edge across those geometry changes, but leave a reader who scrolled up at
-  // the position they chose.
+  // The shared viewport, status region and growing composer can all resize
+  // history. Preserve its live edge or the visible row the reader chose.
   useEffect(() => {
     const messageList = messageListRef.current;
     if (!messageList || typeof ResizeObserver === "undefined") return;
@@ -158,7 +165,9 @@ const ChatPage = () => {
       scrollTop: messageList.scrollTop,
     };
     const observer = new ResizeObserver(() => {
+      layoutCorrectionUntilRef.current = performance.now() + 250;
       if (stickToBottomRef.current) scrollToMessageBottom();
+      else restoreMessageReadingAnchor(messageList, readingAnchorRef.current);
       observedMessageGeometryRef.current = {
         scrollHeight: messageList.scrollHeight,
         clientHeight: messageList.clientHeight,
@@ -183,22 +192,64 @@ const ChatPage = () => {
         clientHeight: messageList.clientHeight,
         scrollTop: messageList.scrollTop,
       };
+      const hasReaderScrollIntent =
+        performance.now() < readerScrollIntentUntilRef.current;
 
-      // Chrome and Safari can emit scroll before ResizeObserver when the
-      // keyboard or an auto-growing composer shrinks this element. Preserve the
-      // pre-resize pin in that case; the observer will restore the live edge.
+      // WebKit may restore the pre-resize scrollTop after ResizeObserver has
+      // pinned a growing composer. That later event has unchanged extents.
+      // Following latest ends on reader input, not a browser layout correction.
+      if (
+        stickToBottomRef.current &&
+        !hasReaderScrollIntent &&
+        performance.now() < layoutCorrectionUntilRef.current &&
+        !isNearMessageBottom(currentGeometry, 1)
+      ) {
+        scrollToMessageBottom();
+        return;
+      }
+
+      // Scroll anchoring changes scrollTop while async bubbles grow. This can
+      // arrive before ResizeObserver and is not evidence the reader scrolled
+      // away. Explicit input still wins when layout and reader movement overlap.
       if (
         resizeObserverOwnsGeometryRef.current &&
         previousGeometry &&
-        isLayoutOnlyMessageScroll(previousGeometry, currentGeometry)
+        isLayoutOnlyMessageScroll(
+          previousGeometry,
+          currentGeometry,
+          hasReaderScrollIntent,
+        )
       )
         return;
 
       stickToBottomRef.current = isNearMessageBottom(messageList);
+      readingAnchorRef.current =
+        !stickToBottomRef.current && messageContentRef.current
+          ? captureMessageReadingAnchor(messageList, messageContentRef.current)
+          : null;
       observedMessageGeometryRef.current = currentGeometry;
     },
-    [],
+    [scrollToMessageBottom],
   );
+
+  const markReaderScrollIntent = useCallback(() => {
+    readerScrollIntentUntilRef.current = performance.now() + 250;
+  }, []);
+
+  useEffect(() => {
+    const markSelectionIntent = () => {
+      const selection = window.getSelection();
+      if (
+        selection &&
+        !selection.isCollapsed &&
+        messageListRef.current?.contains(selection.anchorNode)
+      )
+        markReaderScrollIntent();
+    };
+    document.addEventListener("selectionchange", markSelectionIntent);
+    return () =>
+      document.removeEventListener("selectionchange", markSelectionIntent);
+  }, [markReaderScrollIntent]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -267,6 +318,12 @@ const ChatPage = () => {
         return false;
       }
 
+      // Sending is explicit navigation back to the live conversation. Pin
+      // before the SDK's async message record/bubble appears so the new send
+      // and subsequent composer shrink cannot remain hidden below history.
+      readerScrollIntentUntilRef.current = 0;
+      scrollToMessageBottom();
+
       const label =
         typeof payload === "string"
           ? payload.length > 36
@@ -319,7 +376,7 @@ const ChatPage = () => {
 
       return true;
     },
-    [sendMessage],
+    [sendMessage, scrollToMessageBottom],
   );
 
   const handleFiles = useCallback(
@@ -390,9 +447,9 @@ const ChatPage = () => {
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className='relative flex min-h-0 flex-1 flex-col overflow-hidden pt-14 lg:my-2 lg:pt-0'
+      className='relative flex min-h-0 flex-1 flex-col overflow-hidden lg:my-2'
     >
-      <div className='pointer-events-none fixed inset-0 z-0 flex items-center justify-center lg:right-2 lg:left-64'>
+      <div className='pointer-events-none absolute inset-0 z-0 flex items-center justify-center'>
         <Suspense>
           <CatAvatar
             className={`w-full max-w-3xl transition-opacity duration-500 md:w-4/5 lg:w-3/4 ${
@@ -405,7 +462,7 @@ const ChatPage = () => {
       </div>
 
       {isDragging && (
-        <div className='pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-white/85 lg:left-64 dark:bg-black/85'>
+        <div className='pointer-events-none absolute inset-0 z-[60] flex items-center justify-center bg-white/85 dark:bg-black/85'>
           <div className='border-2 border-dashed border-orange-500 px-8 py-6 text-center'>
             <p className='font-mono text-sm font-bold tracking-[0.15em] text-orange-700 uppercase dark:text-orange-400'>
               Drop to send
@@ -418,98 +475,129 @@ const ChatPage = () => {
       )}
 
       <div className='relative z-10 flex min-h-0 flex-1 flex-col'>
-        <HandshakeStatusBanner />
+        {/* Status, errors and queued transfers share one height budget, so
+            several simultaneous problems cannot crowd history offscreen. */}
+        <div
+          role='region'
+          aria-label='Room status'
+          className='max-h-[25%] shrink-0 overflow-y-auto overscroll-contain empty:hidden'
+        >
+          <HandshakeStatusBanner />
 
-        {/* The socket is open but the server has not accepted our signed
+          {/* The socket is open but the server has not accepted our signed
             identity challenge yet. The library will not request the room's
             peer list until it does, so without this the user sits on
             "Waiting for peers" forever and blames the other person for a
             fault that is entirely on this side. */}
-        {signalingServerConnectionState.isConnected &&
-          !signalingServerConnectionState.isVerified && (
-            <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
-              <Badge
-                color='yellow'
-                className='shadow-brutal-sm min-h-11 w-full items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase dark:border-zinc-200'
-              >
-                Verifying identity{dots}
-              </Badge>
-            </div>
-          )}
+          {signalingServerConnectionState.isConnected &&
+            !signalingServerConnectionState.isVerified && (
+              <div className='mx-auto flex w-full max-w-xs items-center justify-center py-2'>
+                <Badge
+                  color='yellow'
+                  className='shadow-brutal-sm min-h-11 w-full items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase dark:border-zinc-200'
+                >
+                  Verifying identity{dots}
+                </Badge>
+              </div>
+            )}
 
-        {peers.length === 0 &&
-          signalingServerConnectionState.isConnected &&
-          signalingServerConnectionState.isVerified &&
-          !hasHandshakeFailure && (
-            <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
+          {peers.length === 0 &&
+            signalingServerConnectionState.isConnected &&
+            signalingServerConnectionState.isVerified &&
+            !hasHandshakeFailure && (
+              <div className='mx-auto flex w-full max-w-xs items-center justify-center py-2'>
+                <Badge
+                  color='orange'
+                  className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-zinc-200'
+                  role='button'
+                  tabIndex={0}
+                  onClick={disconnectFromSignalingServer}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      disconnectFromSignalingServer();
+                    }
+                  }}
+                >
+                  Waiting for peers{dots}
+                </Badge>
+              </div>
+            )}
+
+          {!signalingServerConnectionState.isConnected && (
+            <div className='mx-auto flex w-full max-w-xs items-center justify-center py-2'>
               <Badge
-                color='orange'
-                className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:border-zinc-200'
+                color='red'
+                className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-zinc-200'
                 role='button'
                 tabIndex={0}
-                onClick={disconnectFromSignalingServer}
+                onClick={() => connectToSignalingServer(roomUrl ?? "")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    disconnectFromSignalingServer();
+                    connectToSignalingServer(roomUrl ?? "");
                   }
                 }}
               >
-                Waiting for peers{dots}
+                Press to connect to the signaling server and discover new peers
               </Badge>
             </div>
           )}
 
-        {!signalingServerConnectionState.isConnected && (
-          <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
-            <Badge
-              color='red'
-              className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-zinc-200'
-              role='button'
-              tabIndex={0}
-              onClick={() => connectToSignalingServer(roomUrl ?? "")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  connectToSignalingServer(roomUrl ?? "");
-                }
-              }}
-            >
-              Press to connect to the signaling server and discover new peers
-            </Badge>
-          </div>
-        )}
-
-        {messages.length === 0 && peers.length > 0 && (
-          <div className='fixed top-[calc(var(--safe-area-inset-top)+4rem)] right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 mx-auto flex w-auto max-w-xs items-center justify-center pb-4 lg:left-[calc(var(--safe-area-inset-left)+16rem)]'>
-            <Badge
-              color='green'
-              className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500 dark:border-zinc-200'
-              role='button'
-              tabIndex={0}
-              onClick={() => {
-                if (signalingServerConnectionState.isConnected) {
-                  disconnectFromSignalingServer();
-                } else {
-                  connectToSignalingServer(roomUrl ?? "");
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+          {messages.length === 0 && peers.length > 0 && (
+            <div className='mx-auto flex w-full max-w-xs items-center justify-center py-2'>
+              <Badge
+                color='green'
+                className='shadow-brutal-sm min-h-11 w-full cursor-pointer items-center justify-center rounded-none border-2 border-zinc-950 px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.1em] uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500 dark:border-zinc-200'
+                role='button'
+                tabIndex={0}
+                onClick={() => {
                   if (signalingServerConnectionState.isConnected) {
                     disconnectFromSignalingServer();
                   } else {
                     connectToSignalingServer(roomUrl ?? "");
                   }
-                }
-              }}
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    if (signalingServerConnectionState.isConnected) {
+                      disconnectFromSignalingServer();
+                    } else {
+                      connectToSignalingServer(roomUrl ?? "");
+                    }
+                  }
+                }}
+              >
+                Connected with user {peers[peers.length - 1].peerId.slice(0, 8)}{" "}
+                and waiting for messages {dots}
+              </Badge>
+            </div>
+          )}
+
+          {sendError && (
+            <div
+              role='alert'
+              className='shadow-brutal-sm relative z-50 mx-3 mb-2 max-w-sm shrink-0 self-end border-2 border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800 lg:mx-5 dark:bg-red-950 dark:text-red-200'
             >
-              Connected with user {peers[peers.length - 1].peerId.slice(0, 8)}{" "}
-              and waiting for messages {dots}
-            </Badge>
-          </div>
-        )}
+              {sendError}
+            </div>
+          )}
+
+          <PendingTransfers
+            embedded
+            key={roomId}
+            roomId={roomId}
+            channelLabel={selectedChannel}
+            liveTransferIds={transfers
+              .filter(
+                (transfer) =>
+                  transfer.status === "preparing" ||
+                  transfer.status === "cancelling",
+              )
+              .map((transfer) => transfer.handle.transferId)}
+          />
+        </div>
 
         {/* One scroll owner followed by one measured composer row. Keeping the
             empty list mounted preserves the same geometry before the first
@@ -517,6 +605,29 @@ const ChatPage = () => {
         <div
           ref={messageListRef}
           onScroll={handleMessageListScroll}
+          onWheel={markReaderScrollIntent}
+          onTouchMove={markReaderScrollIntent}
+          onFocusCapture={(event) => {
+            if (event.target !== event.currentTarget) markReaderScrollIntent();
+          }}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) markReaderScrollIntent();
+          }}
+          onKeyDown={(event) => {
+            if (
+              [
+                "ArrowUp",
+                "ArrowDown",
+                "PageUp",
+                "PageDown",
+                "Home",
+                "End",
+                " ",
+                "Tab",
+              ].includes(event.key)
+            )
+              markReaderScrollIntent();
+          }}
           role='log'
           aria-label={`Messages in ${selectedChannel}`}
           aria-live='polite'
@@ -542,27 +653,6 @@ const ChatPage = () => {
           </div>
         </div>
 
-        {sendError && (
-          <div
-            role='alert'
-            className='shadow-brutal-sm relative z-50 mx-3 mb-2 max-w-sm shrink-0 self-end border-2 border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800 lg:mx-5 dark:bg-red-950 dark:text-red-200'
-          >
-            {sendError}
-          </div>
-        )}
-
-        <PendingTransfers
-          key={roomId}
-          roomId={roomId}
-          channelLabel={selectedChannel}
-          liveTransferIds={transfers
-            .filter(
-              (transfer) =>
-                transfer.status === "preparing" ||
-                transfer.status === "cancelling",
-            )
-            .map((transfer) => transfer.handle.transferId)}
-        />
         <Suspense>
           <MessageInput handleFiles={handleFiles} onSend={startTransfer} />
         </Suspense>

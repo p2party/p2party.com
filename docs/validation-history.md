@@ -5,6 +5,102 @@ SDK package, browser, native build, or production network. Raw browser reports
 under `logs/` are local and ignored because captures can contain sensitive data.
 The reproducible runners remain in `e2e/`; see [Browser testing](browser-testing.md).
 
+## Mobile viewport and chat scroll regression — 2026-09-09
+
+The pre-change chat fixture failed 40 of 104 Chromium checks. Async message
+layout and browser scroll anchoring could leave the latest message outside the
+visible list without removing its SDK record or DOM text. Switching rooms with
+the same channel name also carried an unrelated reading position. A separate
+WebKit case combined a PIN failure, pending transfers, a send error and a long
+draft above a simulated keyboard; the message area collapsed to zero height.
+
+The room shell and dialogs now share visual-viewport measurements, including
+keyboard panning. The composer no longer adds a second keyboard margin; mobile
+vertical padding is four pixels and the shell removes the home-indicator padding
+when the keyboard covers that area. Draft growth is bounded by available height.
+The toolbar occupies normal document flow within the shell, and status/error/
+transfer content shares a bounded scrolling area instead of covering messages.
+
+Chat keeps the live edge across async bubble growth and keyboard changes, while
+preserving the visible message row when reading history through a width change.
+Anchor lookup uses logarithmic row measurements. Room changes and sending move
+to the current conversation; explicit scrolling, keyboard focus and text
+selection can leave it. Correction of WebKit's post-layout scroll adjustment is
+limited to a short window after resizing, rather than permanently forcing the
+reader to the bottom.
+
+The final `e2e/chat-scroll.mjs` matrix passed 540 checks: 180 each in Chromium,
+Firefox and WebKit at widths 320, 360, 390, 430, 768, 1024 and 1440, plus 740×320
+landscape. It includes 47/34-pixel simulated iPhone safe areas, intermediate
+frames during keyboard shrink/pan/expansion with long drafts, visible message
+geometry, exact history anchors, room/channel navigation, reload, sending,
+focus and selected-text reveal, combined error/queue states, and reachable PIN
+retry and transfer cancellation. There were zero uncaught page errors. Browser
+Find coverage uses a matched range plus explicit reveal where the engine does
+not scroll automatically; it does not automate browser chrome or VoiceOver.
+Reports are `logs/chat-scroll/final-{chromium,firefox,webkit}.json`.
+
+The production build, lint, formatting, SDK provenance, and 134 unit tests with
+507 assertions passed. All 15 prerendered routes hydrated under the production
+CSP without violations, page errors or external requests. A separate built-app
+WebKit audit passed nine viewport configurations, and Chromium pinch scaling
+returned to the original layout at portrait and landscape sizes. Native iOS
+keyboard/IME behavior still requires physical-device validation; these local
+measurements do not establish a universal absence of animation or flicker.
+
+## Responsive dialogs and QR canvas permissions — 2026-09-09
+
+These are local regression results for the responsive changes, not a deployment
+record. `e2e/dialog-layout.mjs` uses production React, the real dialog components
+and compiled site CSS. Its pre-change Chromium/Firefox baseline failed all 32
+cases under controlled keyboard-overlay or viewport-pan geometry: final fields
+and actions remained outside the visible area despite scrolling. At 320 pixels,
+the Alert layout also produced a 356-pixel scroll width.
+
+The shared dialog wrappers now use the application's visual-viewport geometry
+for one scrolling area, keep tall panels from shrinking, reduce mobile padding,
+wrap long text and action rows, and keep touch input text at least 16 pixels.
+The final matrix passed all 48 cases in Chromium, Firefox and WebKit at widths
+320, 360, 390, 430, 768, 1024 and 1440, plus an 844×390 landscape viewport.
+It recorded 1,368 element geometry and hit-test checks with no clipped controls,
+uncaught page errors or CSP violations. The matrix included 72 openings of the
+actual Settings, PIN-join and QR dialogs, long unbroken signaling URLs, field
+editing and primary-action clicks after keyboard geometry changes, scrolling
+back to the title, dropdown selection, nested confirmations and focus return.
+SDK and room-hook boundaries use synthetic local state; no room connection is
+created by this fixture. The baseline and final reports are
+`logs/dialog-layout/baseline.json` and `logs/dialog-layout/result.json`.
+
+A follow-up matrix exercised nine actual dialog screens across the same three
+engines and eight viewport sizes: 24 passing cases, 216 dialog openings and
+1,080 additional geometry/hit-test checks. Alongside Settings, PIN-join and QR,
+it covered advanced room setup with PIN and scheduled-cover controls, identity
+backup options, identity restore with an invalid synthetic phrase, Address Book
+and Blacklist tables containing 20 entries, and diagnostics containing 20 peers
+and messages. Long contact names, signaling URLs and existing content stayed
+within the dialog or their intended table scroll area; final actions remained
+reachable after simulated keyboard movement. There were no clipped checks,
+uncaught page errors or CSP violations. Identity creation/restoration and room
+generation were not invoked. The report is
+`logs/dialog-layout/actual-dialogs.json`.
+
+The companion `e2e/room-qr.mjs` run passed 33 cases across the same three browser
+engines. QR display now draws between canvases without extracting their pixels.
+With canvas readback/export APIs deliberately blocked, the QR remains displayed;
+an explicit download reports a copy-link fallback, and allowing export while
+the dialog remains open permits retry. The suite also checks downloaded PNGs,
+generation failure recovery and stale invitation/native-save completions.
+Its report is `logs/room-qr/result.json`. This extends the earlier 22-case QR
+regression recorded below; it does not weaken the site's CSP.
+
+WebKit automation exercises that engine, not a physical Safari device. Keyboard
+overlay and pan are controlled visual-viewport simulations; these results do
+not establish behavior with a real iOS/Android keyboard, IME composition and
+candidate windows, native browser chrome or physical pinch gestures. Canvas
+permission restrictions and native filesystem completions are simulated API
+boundaries, not automated operating-system/browser permission prompts or native
+device writes. The reports remain local and ignored.
+
 ## Room QR dialog regression — 2026-09-09
 
 A user report exposed a blank room-sharing QR code after the header rollout.

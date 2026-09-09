@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, memo } from "react";
+import { useState, useRef, useLayoutEffect, useCallback, memo } from "react";
 
 import { Textarea } from "../textarea";
 // import { Input } from "../input";
@@ -8,11 +8,7 @@ import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 
 import FileButton from "./FileButton";
 import MicrophoneButton from "./MicrophoneButton";
-import {
-  boundedComposerHeight,
-  composerBottomOffset,
-  MESSAGE_COMPOSER_MAX_HEIGHT_PX,
-} from "./viewportGeometry";
+import { boundedComposerHeight, composerHeightLimit } from "./viewportGeometry";
 
 import { useRoom } from "../../hooks/useRoom";
 
@@ -29,72 +25,32 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
   });
 
   const [newMessage, setNewMessage] = useState("");
-  const [bottomOffset, setBottomOffset] = useState(0);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard avoidance.
-  //
-  // The composer is a normal flex row below the message scroller. Where the
-  // engine shrinks the LAYOUT viewport for the keyboard -- Chrome Android
-  // honouring interactive-widget=resizes-content, or Capacitor with a single
-  // inset owner -- the row follows it and this spacer computes to zero. The
-  // correction exists for engines that shrink only the VISUAL viewport, iOS
-  // Safari above all.
-  //
-  // iOS can also pan the visual viewport after focus without resizing it.
-  // VisualViewport.scroll therefore re-measures offsetTop, but this listener
-  // never scrolls the document. The spacer participates in flex layout, so the
-  // message row shrinks with it instead of being covered by an overlay.
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const updateOffset = () => {
-      const inputBar = inputBarRef.current;
-      if (!inputBar) {
-        setBottomOffset(0);
-        return;
-      }
-
-      // marginBottom moves the row up; add the rendered margin back to recover
-      // the bottom assigned by the shell. Reading both values from the same
-      // layout frame also keeps consecutive viewport events idempotent.
-      const renderedMargin =
-        Number.parseFloat(inputBar.style.marginBottom) || 0;
-      const layoutBottom =
-        inputBar.getBoundingClientRect().bottom + renderedMargin;
-      const offset = composerBottomOffset(
-        layoutBottom,
-        vv.height,
-        vv.offsetTop,
-      );
-      setBottomOffset((current) => (current === offset ? current : offset));
-    };
-
-    updateOffset();
-    window.addEventListener("resize", updateOffset);
-    vv.addEventListener("resize", updateOffset);
-    vv.addEventListener("scroll", updateOffset);
-    return () => {
-      window.removeEventListener("resize", updateOffset);
-      vv.removeEventListener("resize", updateOffset);
-      vv.removeEventListener("scroll", updateOffset);
-    };
-  }, [channels.length]);
-
-  // Auto-resize textarea
-  useEffect(() => {
+  // The shell owns keyboard avoidance. Only the draft scrolls once it uses
+  // a quarter of the available height; never reserve a second keyboard inset.
+  useLayoutEffect(() => {
     const textarea = textareaRef.current;
+    const shell = inputBarRef.current?.closest("main");
     if (!textarea) return;
-
-    textarea.style.height = "auto"; // reset first so shrinking works
-    const contentHeight = textarea.scrollHeight;
-    const height = boundedComposerHeight(contentHeight);
-    textarea.style.height = `${height}px`;
-    textarea.style.overflowY = contentHeight > height ? "auto" : "hidden";
-  }, [newMessage]);
+    const resize = () => {
+      textarea.style.height = "auto";
+      const contentHeight = textarea.scrollHeight + 2;
+      const availableHeight = shell?.clientHeight ?? window.innerHeight;
+      const height = boundedComposerHeight(
+        contentHeight,
+        composerHeightLimit(availableHeight),
+      );
+      textarea.style.height = `${height}px`;
+      textarea.style.overflowY = contentHeight > height ? "auto" : "hidden";
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    if (shell) observer.observe(shell);
+    return () => observer.disconnect();
+  }, [newMessage, channels.length]);
 
   const handleSend = useCallback(async () => {
     if (newMessage.length === 0) return;
@@ -126,8 +82,7 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
       {channels.length > 0 && (
         <div
           ref={inputBarRef}
-          style={{ marginBottom: bottomOffset }}
-          className='relative z-50 w-full shrink-0 border-t-2 border-zinc-950 bg-white px-2 py-2 sm:px-4 sm:py-3 lg:px-14 dark:border-zinc-200 dark:bg-black'
+          className='relative z-50 w-full shrink-0 border-t-2 border-zinc-950 bg-white px-2 py-1 sm:px-4 sm:py-2 lg:px-14 dark:border-zinc-200 dark:bg-black'
         >
           <div className='flex max-w-full items-end gap-1.5'>
             <FileButton handleFiles={handleFiles} />
@@ -144,8 +99,8 @@ const MessageInput = ({ handleFiles, onSend }: MessageInputProps) => {
               aria-label='Message'
               aria-describedby='message-input-hint'
               resizable={false}
-              style={{ maxHeight: MESSAGE_COMPOSER_MAX_HEIGHT_PX }}
-              className='shadow-brutal-sm flex-1 overflow-hidden rounded-none border-2 border-zinc-950 font-medium dark:border-zinc-200'
+              style={{ fontSize: "max(16px, 1em)" }}
+              className='shadow-brutal-sm min-w-0 flex-1 overflow-hidden rounded-none border-2 border-zinc-950 font-medium dark:border-zinc-200'
               rows={1}
             />
             <Button

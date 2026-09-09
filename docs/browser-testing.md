@@ -5,27 +5,29 @@ The `e2e/` runners use Playwright and Chromium. Install the browser once with
 serve it with `npm run preview -- --host 127.0.0.1 --port 5840 --strictPort`.
 Browser tests are separate from CI's unit tests and static build.
 
-The standalone room QR dialog runner also uses Firefox. Install it with
-`npx playwright install firefox`, then run `node e2e/room-qr.mjs`. The runner
-bundles the real component, serves its own local fixture with the production
+The standalone room QR, dialog-layout and chat-scroll runners also use Firefox
+and WebKit. Install them with `npx playwright install firefox webkit`, then run
+`node e2e/room-qr.mjs`. The QR runner bundles the real component, serves its own local fixture with the production
 CSP, and makes no signaling connections.
 
 Use disposable signaling state on dedicated local ports. Explicitly set a local
 `SIGNALING_URL`; the older runners otherwise inherit the app's server default.
 Do not run against production or a developer's regular database.
 
-| Runner                       | Coverage                                                                                                        |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `run.mjs`                    | Two-peer text/files, OPFS reload, retransmission, cancellation, reconnection, and data-channel transport        |
-| `mesh-and-pin.mjs`           | Three-peer delivery, wrong-PIN failure, and retry throttling                                                    |
-| `desync-local-stack.mjs`     | Built UI, signaling restart, responder replacement, remembered consent, and wrong-PIN recovery                  |
-| `pending-transfers.mjs`      | React pending-transfer panel with controlled SDK promises, including cancellation during retry and room remount |
-| `pending-transfers-live.mjs` | Real partial transfer, sender reload, automatic/manual retries, room navigation, and durable cancellation       |
-| `room-hydration.mjs`         | Saved signaling/STUN preferences, navigation, and hydration without an unrequested connection                   |
-| `csp-hydration.mjs`          | All prerendered pages hydrate with strict CSP, without inline scripts or production requests                    |
-| `room-qr.mjs`                | Chromium/Firefox QR dialog mounting, reopen, rendered PNG downloads, and rendering failures under strict CSP    |
-| `packet-trace.mjs`           | Scheduled-cover packet sizes and rates on loopback                                                              |
-| `correlation-check.mjs`      | Packet-size classes near transfer completion on loopback                                                        |
+| Runner                       | Coverage                                                                                                                                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run.mjs`                    | Two-peer text/files, OPFS reload, retransmission, cancellation, reconnection, and data-channel transport                                                  |
+| `mesh-and-pin.mjs`           | Three-peer delivery, wrong-PIN failure, and retry throttling                                                                                              |
+| `desync-local-stack.mjs`     | Built UI, signaling restart, responder replacement, remembered consent, and wrong-PIN recovery                                                            |
+| `pending-transfers.mjs`      | React pending-transfer panel with controlled SDK promises, including cancellation during retry and room remount                                           |
+| `pending-transfers-live.mjs` | Real partial transfer, sender reload, automatic/manual retries, room navigation, and durable cancellation                                                 |
+| `room-hydration.mjs`         | Saved signaling/STUN preferences, navigation, and hydration without an unrequested connection                                                             |
+| `csp-hydration.mjs`          | All prerendered pages hydrate with strict CSP, without inline scripts or production requests                                                              |
+| `room-qr.mjs`                | Three-engine QR rendering, blocked canvas extraction, permission recovery without reload, PNG downloads and async cancellation                            |
+| `dialog-layout.mjs`          | Seven widths plus landscape: scrollable dialogs, keyboard overlays/panning, reachable actions, nine room/identity/contact dialogs, nested menus and focus |
+| `chat-scroll.mjs`            | Seven widths plus landscape: visible messages, reader anchors, async bubble growth, room/channel changes, drafts, keyboard geometry and pending transfers |
+| `packet-trace.mjs`           | Scheduled-cover packet sizes and rates on loopback                                                                                                        |
+| `correlation-check.mjs`      | Packet-size classes near transfer completion on loopback                                                                                                  |
 
 For a running local signaling server:
 
@@ -34,6 +36,28 @@ APP_URL=http://127.0.0.1:5840 \
 SIGNALING_URL=ws://127.0.0.1:5841/ws \
 node e2e/run.mjs
 ```
+
+The three standalone UI runners build the actual React components with controlled
+SDK boundaries and serve their own loopback fixtures. They need no database or
+signaling server. Run `node e2e/dialog-layout.mjs` and `node e2e/chat-scroll.mjs`
+directly; the layout fixtures compile the current site CSS. Reports and screenshots
+are written under ignored `logs/dialog-layout/`, `logs/chat-scroll/` and
+`logs/room-qr/`.
+
+The responsive matrix includes widths 320, 360, 390, 430, 768, 1024 and 1440px,
+plus short landscape views. Keyboard checks shrink and pan `visualViewport`
+without changing the layout viewport, then dismiss it and verify recovery.
+Assertions check visible message geometry and whether controls can be reached
+and clicked after scrolling, rather than relying on DOM presence alone.
+
+Desktop WebKit and injected viewport events do not reproduce the native iOS
+keyboard or Safari permission UI. On an iPhone, also exercise keyboard open/close,
+predictive-text changes, rotation, pinch zoom, long drafts, history scrolling,
+incoming messages, and scrolling to each dialog's final action. Check that the
+home-indicator inset returns after keyboard dismissal and that text selection or
+VoiceOver scrolling can leave the live edge. Firefox canvas extraction is blocked
+at the API boundary in the QR fixture; the browser's permission chrome is not
+automated. These limits remain explicit in release validation.
 
 The two live stack runners can start and stop their own sibling
 `p2party-server` process against an already migrated, disposable PostgreSQL

@@ -43,7 +43,11 @@ const DeleteDropdown = () => {
   return (
     <>
       <Dropdown>
-        <DropdownButton as={NavbarItem}>
+        <DropdownButton
+          as={NavbarItem}
+          aria-label='Delete messages or rooms'
+          title='Delete messages or rooms'
+        >
           <TrashIcon />
         </DropdownButton>
         <DropdownMenu className='min-w-64' anchor='bottom start'>

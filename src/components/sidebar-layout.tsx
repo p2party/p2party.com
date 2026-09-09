@@ -26,16 +26,20 @@ function MobileSidebar({
   children,
 }: React.PropsWithChildren<{ open: boolean; close: () => void }>) {
   return (
-    <Headless.Dialog open={open} onClose={close} className='lg:hidden'>
+    <Headless.Dialog
+      open={open}
+      onClose={close}
+      className='relative z-[80] lg:hidden'
+    >
       <Headless.DialogBackdrop
         transition
         className='fixed inset-0 bg-zinc-950/60 transition data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in'
       />
       <Headless.DialogPanel
         transition
-        className='fixed inset-y-0 left-(--safe-area-inset-left) w-full max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full'
+        className='fixed top-[var(--app-viewport-top,0px)] left-[var(--app-viewport-left,0px)] h-[var(--app-viewport-height,100dvh)] w-[var(--app-viewport-width,100%)] max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full'
       >
-        <div className='flex h-full flex-col pt-(--safe-area-inset-top) pb-(--safe-area-inset-bottom)'>
+        <div className='flex h-full min-h-0 flex-col overflow-y-auto pt-(--safe-area-inset-top) pr-(--safe-area-inset-right) pb-[max(0px,calc(var(--safe-area-inset-bottom)-var(--app-viewport-bottom-occlusion,0px)))] pl-(--safe-area-inset-left)'>
           <div className='-mb-3 px-4 pt-3'>
             <Headless.CloseButton as={NavbarItem} aria-label='Close navigation'>
               <CloseMenuIcon />
@@ -59,9 +63,9 @@ export function SidebarLayout({
   const [showSidebar, setShowSidebar] = useState(false);
 
   return (
-    <div className='relative isolate flex h-dvh w-full overflow-hidden bg-white pt-(--safe-area-inset-top) pr-(--safe-area-inset-right) pb-(--safe-area-inset-bottom) pl-(--safe-area-inset-left) max-lg:flex-col lg:bg-zinc-50 dark:bg-black dark:lg:bg-zinc-950'>
+    <div className='fixed top-[var(--app-viewport-top,0px)] left-[var(--app-viewport-left,0px)] isolate flex h-[var(--app-viewport-height,100dvh)] w-[var(--app-viewport-width,100%)] overflow-hidden bg-white pt-(--safe-area-inset-top) pr-(--safe-area-inset-right) pb-[max(0px,calc(var(--safe-area-inset-bottom)-var(--app-viewport-bottom-occlusion,0px)))] pl-(--safe-area-inset-left) max-lg:flex-col lg:bg-zinc-50 dark:bg-black dark:lg:bg-zinc-950'>
       {/* Sidebar on desktop */}
-      <div className='fixed inset-y-0 left-(--safe-area-inset-left) w-64 max-lg:hidden'>
+      <div className='absolute inset-y-0 left-(--safe-area-inset-left) w-64 max-lg:hidden'>
         {sidebar}
       </div>
 
@@ -71,7 +75,7 @@ export function SidebarLayout({
       </MobileSidebar>
 
       {/* Navbar on mobile */}
-      <header className='fixed top-(--safe-area-inset-top) right-(--safe-area-inset-right) left-(--safe-area-inset-left) z-50 flex items-center border-b-2 border-zinc-950 bg-white px-2 sm:px-4 lg:hidden dark:border-zinc-200 dark:bg-black'>
+      <header className='relative z-50 flex shrink-0 items-center border-b-2 border-zinc-950 bg-white px-1 sm:px-4 lg:hidden dark:border-zinc-200 dark:bg-black'>
         <div className='py-2'>
           <NavbarItem
             onClick={() => setShowSidebar(true)}
@@ -84,8 +88,8 @@ export function SidebarLayout({
       </header>
 
       {/* Content */}
-      <main className='flex min-h-0 flex-1 flex-col overflow-hidden pb-2 lg:min-w-0 lg:pt-2 lg:pr-2 lg:pl-64'>
-        <div className='flex min-h-0 grow flex-col bg-white px-1 py-2 lg:border-2 lg:border-zinc-950 lg:px-10 dark:bg-black dark:lg:border-zinc-200'>
+      <main className='flex min-h-0 flex-1 flex-col overflow-hidden lg:min-w-0 lg:py-2 lg:pr-2 lg:pl-64'>
+        <div className='flex min-h-0 grow flex-col bg-white lg:border-2 lg:border-zinc-950 lg:px-10 lg:py-2 dark:bg-black dark:lg:border-zinc-200'>
           <div className='mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col'>
             {children}
           </div>
