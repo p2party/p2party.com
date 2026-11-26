@@ -1,6 +1,9 @@
 import { useCallback, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem } from "@capacitor/filesystem";
 
 import p2party from "../protocol/sdk";
+import { removeNativeFileCopies } from "../protocol/attachmentOpen";
 import { purgeFailed, purgeSucceeded } from "../protocol/purgeOutcome";
 import { forgetRoomUiState } from "../protocol/roomUiKeys";
 import { forgetAllRoomUiState } from "../protocol/roomUiStorage";
@@ -32,12 +35,17 @@ export interface PurgeSteps {
  *
  * `uiStorage` is a function because reading `window.localStorage` itself
  * throws where the browser refuses storage to the page.
+ *
+ * `removeFileCopies` deletes the decrypted copies Android and iOS keep of
+ * opened attachments and saved room QR codes. They are not tracked per room,
+ * so every purge removes all of them; a later open writes a new copy.
  */
 export const settlePurge = async (
   target: PurgeTarget,
   roomUrl: string | undefined,
   steps: PurgeSteps,
   uiStorage: () => Storage,
+  removeFileCopies: () => Promise<void> = () => Promise.resolve(),
 ): Promise<PurgeOutcome> => {
   const failures: unknown[] = [];
 
@@ -58,6 +66,12 @@ export const settlePurge = async (
     if (target === "everything") forgetAllRoomUiState(uiStorage());
     else if (target === "room" && roomUrl !== undefined)
       forgetRoomUiState(uiStorage(), roomUrl);
+  } catch (cause) {
+    failures.push(cause);
+  }
+
+  try {
+    await removeFileCopies();
   } catch (cause) {
     failures.push(cause);
   }
@@ -120,6 +134,7 @@ export const usePurge = (roomUrl: string | undefined): PurgeAction => {
               roomUrl,
               p2party,
               () => window.localStorage,
+              () => removeNativeFileCopies(Capacitor.getPlatform(), Filesystem),
             ),
           );
         } catch (cause) {

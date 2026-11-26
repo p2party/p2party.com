@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Filesystem } from "@capacitor/filesystem";
+import { FileOpener } from "@capawesome-team/capacitor-file-opener";
 
 import QRCode from "qrcode";
 
 import { Alert, AlertActions, AlertTitle, AlertBody } from "../alert";
 import { Button } from "../button";
 import { coverModeSummary, roomPqModeParameterSet } from "../../protocol/v4";
+import { openFileNatively } from "../../protocol/attachmentOpen";
 
 import type { Dispatch, SetStateAction } from "react";
 import type { RoomPolicyV1 } from "p2party";
@@ -143,12 +145,21 @@ const QRCodeAlert = ({
         link.click();
         link.remove();
       } else {
-        await Filesystem.writeFile({
-          path: "p2party/room-invite.png",
-          data: png.split(";base64,")[1],
-          directory: Directory.Documents,
-          recursive: true,
-        });
+        // iOS no longer lists the app's Documents in the Files app, and the
+        // invitation is a room capability that should not outlive its use. A
+        // copy in the cache folder is shown in the system preview, whose share
+        // button saves it wherever the user chooses; startup and purges remove
+        // the copy. Decoded here rather than fetched: the CSP has no data: in
+        // connect-src.
+        const bytes = Uint8Array.from(
+          atob(png.slice(png.indexOf(",") + 1)),
+          (character) => character.charCodeAt(0),
+        );
+        await openFileNatively(
+          new Blob([bytes], { type: "image/png" }),
+          "p2party-room-invite.png",
+          { filesystem: Filesystem, opener: FileOpener },
+        );
       }
       if (generation === downloadGeneration.current) close();
     } catch {

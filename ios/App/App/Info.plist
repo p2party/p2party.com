@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>P2Party records audio only while you hold the record button, so you can send a voice message to the room you are in.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>P2Party adds an image to your photo library only when you choose Save Image in the preview of a received image or a room QR code.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

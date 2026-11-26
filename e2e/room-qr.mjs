@@ -63,10 +63,26 @@ const bundled = await build({
           loader: "js",
         }));
         plugin.onResolve(
-          { filter: /^@capacitor\/(core|filesystem)$/ },
+          {
+            filter:
+              /^@capacitor\/(core|filesystem)$|^@capawesome-team\/capacitor-file-opener$/,
+          },
           (args) => ({
             path: args.path,
             namespace: "fixture",
+          }),
+        );
+        plugin.onLoad(
+          {
+            filter: /^@capawesome-team\/capacitor-file-opener$/,
+            namespace: "fixture",
+          },
+          () => ({
+            contents: `window.nativeOpens = [];
+            export const FileOpener = {openFile: options => {
+              window.nativeOpens.push(options); return Promise.resolve();
+            }};`,
+            loader: "js",
           }),
         );
         plugin.onLoad(
@@ -81,9 +97,10 @@ const bundled = await build({
           { filter: /^@capacitor\/filesystem$/, namespace: "fixture" },
           () => ({
             contents: `window.nativeWrites = [];
-            export const Directory = {Documents:"DOCUMENTS"};
+            export const Directory = {Cache:"CACHE"};
             export const Filesystem = {writeFile: options => new Promise((resolve,reject) =>
-              window.nativeWrites.push({options,resolve,reject}))};`,
+              window.nativeWrites.push({options,resolve,reject})),
+              getUri: options => Promise.resolve({uri: "file:///" + options.directory + "/" + options.path})};`,
             loader: "js",
           }),
         );
@@ -528,7 +545,11 @@ async function exerciseFailures(browser, browserName) {
         const options = await page.evaluate(
           () => window.nativeWrites[0].options,
         );
-        assert.equal(options.path, "p2party/room-invite.png");
+        assert.equal(options.directory, "CACHE");
+        assert.match(
+          options.path,
+          /^p2party-attachments\/[0-9a-f]{16}-p2party-room-invite\.png$/,
+        );
         assert.equal(options.data, png.split(",")[1]);
         if (completion === "success") await closeDialog(page);
         await page.evaluate(() =>
@@ -551,8 +572,20 @@ async function exerciseFailures(browser, browserName) {
         await settle(page);
         await expect(page.getByRole("dialog")).toBeVisible();
         await expectReady(page);
+        // A completed write is handed to the system preview as a PNG.
+        assert.deepEqual(
+          await page.evaluate(() => window.nativeOpens),
+          completion === "success"
+            ? [
+                {
+                  path: `file:///CACHE/${options.path}`,
+                  mimeType: "image/png",
+                },
+              ]
+            : [],
+        );
         result.scope =
-          "Mocked Capacitor filesystem boundary; no native device or disk write.";
+          "Mocked Capacitor filesystem and file-opener boundary; no native device or disk write.";
       },
     );
   }

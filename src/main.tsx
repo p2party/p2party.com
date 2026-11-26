@@ -1,16 +1,28 @@
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem } from "@capacitor/filesystem";
 
 import "./index.css";
 import App from "./App";
 import { pagesForPath, resolvePages } from "./pages/registry";
 import { scrubLegacyRoomUiKeysAtStartup } from "./protocol/roomUiStorage";
+import { removeNativeFileCopies } from "./protocol/attachmentOpen";
 
 // Earlier builds named per-room UI flags in localStorage by the room
 // capability. Move them to the room's tag now, on every route and before
 // anything renders, so a visit that never opens a room still removes them.
 // The scrub module does not import the SDK, which stays on the room routes.
 scrubLegacyRoomUiKeysAtStartup(() => window.localStorage);
+
+// On Android and iOS, opened attachments and saved room QR codes are copies in
+// the cache folder. No platform says when a viewer is done with one, so the
+// copies a previous run left behind go now, before anything can open another.
+removeNativeFileCopies(Capacitor.getPlatform(), Filesystem).catch(
+  (error: unknown) => {
+    console.error("Could not remove earlier attachment copies", error);
+  },
+);
 
 const container = document.getElementById("root")!;
 

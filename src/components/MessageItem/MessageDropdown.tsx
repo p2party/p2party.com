@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Capacitor } from "@capacitor/core";
-import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Filesystem } from "@capacitor/filesystem";
 import { FileOpener } from "@capawesome-team/capacitor-file-opener";
 import { useSelector } from "react-redux";
 import p2party from "../../protocol/sdk";
@@ -10,7 +10,7 @@ import {
   peerMessageUrl,
 } from "../../protocol/peerMessageUrl";
 import {
-  openAttachmentNatively,
+  openFileNatively,
   openableMimeType,
 } from "../../protocol/attachmentOpen";
 
@@ -37,15 +37,6 @@ import {
 
 import type { ReactNode } from "react";
 import type { Message, FileExtension } from "p2party";
-
-const readAsDataURL = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-};
 
 export interface MessageDropdownProps {
   message: Message;
@@ -192,21 +183,9 @@ const MessageDropdown = ({
         document.body.removeChild(link);
         setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
       } else {
-        const name = `${String(new Date().getTime())}-${msgFilename.replace("." + msgExtension, "")}.${msgExtension}`;
-        await openAttachmentNatively(blob, name, {
-          save: async (path, file) => {
-            await Filesystem.appendFile({
-              path,
-              data: await readAsDataURL(file),
-              directory: Directory.Data,
-            });
-            const { uri } = await Filesystem.getUri({
-              path,
-              directory: Directory.Data,
-            });
-            return uri;
-          },
-          open: (path, mimeType) => FileOpener.openFile({ path, mimeType }),
+        await openFileNatively(blob, msgFilename, {
+          filesystem: Filesystem,
+          opener: FileOpener,
         });
       }
     } catch (error) {
