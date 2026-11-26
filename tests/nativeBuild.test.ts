@@ -104,4 +104,17 @@ describe("native build hygiene", () => {
     expect(check).toBeGreaterThan(-1);
     expect(check).toBeLessThan(phases.indexOf("/* Resources */"));
   });
+
+  // The policy admits the cryptography WASM only through 'wasm-unsafe-eval'.
+  // An iOS whose WebKit lacks that keyword would install the app and then
+  // refuse every cryptographic operation, so it must not be able to install it.
+  test("the iOS app requires iOS 16 in the Podfile and every configuration", () => {
+    expect(read("../ios/App/Podfile")).toMatch(/^platform :ios, '16\.0'$/m);
+    const targets = [
+      ...read("../ios/App/App.xcodeproj/project.pbxproj").matchAll(
+        /IPHONEOS_DEPLOYMENT_TARGET = ([^;]+);/g,
+      ),
+    ].map((match) => match[1]);
+    expect(targets).toEqual(["16.0", "16.0", "16.0", "16.0"]);
+  });
 });
