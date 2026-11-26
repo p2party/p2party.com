@@ -2,10 +2,8 @@ import { useCallback, useRef, useState } from "react";
 
 import p2party from "../protocol/sdk";
 import { purgeFailed, purgeSucceeded } from "../protocol/purgeOutcome";
-import {
-  forgetAllRoomUiState,
-  forgetRoomUiState,
-} from "../protocol/roomUiKeys";
+import { forgetRoomUiState } from "../protocol/roomUiKeys";
+import { forgetAllRoomUiState } from "../protocol/roomUiStorage";
 
 import type { PurgeOutcome, PurgeTarget } from "../protocol/purgeOutcome";
 

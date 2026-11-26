@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 
 interface MemoryStorage extends Storage {
   rows: Map<string, string>;
@@ -46,10 +46,12 @@ if (!("localStorage" in globalThis))
 const { default: p2party } = await import("p2party");
 const {
   ROOM_UI_TAG_DOMAIN,
-  connectDialogDismissedKey,
-  connectDialogOpenKey,
   migrateLegacyRoomUiKeys,
-} = await import("../src/protocol/roomUiKeys");
+  roomUiTagFromCapability,
+  scrubLegacyRoomUiKeysAtStartup,
+} = await import("../src/protocol/roomUiStorage");
+const { connectDialogDismissedKey, connectDialogOpenKey, roomUiTag } =
+  await import("../src/protocol/roomUiKeys");
 const { settlePurge } = await import("../src/hooks/usePurge");
 
 /**
@@ -188,14 +190,17 @@ describe("per-room join dialog keys", () => {
     expect(storage.rows).toEqual(after);
   });
 
-  test("legacy keys in any spelling are migrated, and a current answer wins", () => {
+  test("a legacy key in any other spelling is dropped, and a current answer wins", () => {
     const compactB = spellings(roomB)[2];
     const storage = memoryStorage({
       // Written by a tab still running the older build after this one had
       // already answered for the room under its tag.
       [`alertIsOpenInRoom${roomA}`]: "true",
       [connectDialogOpenKey(roomA)]: "false",
-      // A spelling this app never wrote, but which still names a room.
+      // Upper-case hex decodes to the same room and is carried over.
+      [`pressedCancelButtonInRoom${roomA.toUpperCase()}`]: "false",
+      // A spelling no build wrote. It still names a room, so it goes, but the
+      // scrub decodes only hex and does not carry it over.
       [`pressedCancelButtonInRoom${compactB}`]: "true",
       // Not a capability in any spelling: dropped, not carried over.
       alertIsOpenInRoomnotaroom: "true",
@@ -206,8 +211,66 @@ describe("per-room join dialog keys", () => {
 
     expect(Object.fromEntries(storage.rows)).toEqual({
       [connectDialogOpenKey(roomA)]: "false",
-      [connectDialogDismissedKey(roomB)]: "true",
+      [connectDialogDismissedKey(roomA)]: "false",
     });
+  });
+
+  test("legacy keys are migrated on a non-room route", () => {
+    // The scrub decodes the legacy hex itself, and the room pages decode
+    // through the SDK. Both must name the same keys for the same room, or a
+    // migrated answer would sit where the room page never looks.
+    for (const roomUrl of [roomA, roomB]) {
+      const bytes = Uint8Array.from(Buffer.from(roomUrl, "hex"));
+      expect(roomUiTagFromCapability(bytes)).toBe(roomUiTag(roomUrl));
+      expect(roomUiTag(roomUrl)).toBe(referenceTag(roomUrl));
+    }
+
+    // The entry's own call, on the BASE fixture.
+    const storage = memoryStorage({ ...legacy.rows, ...UNRELATED });
+    scrubLegacyRoomUiKeysAtStartup(() => storage);
+
+    expect(keysNaming(storage, roomA)).toEqual([]);
+    expect(keysNaming(storage, roomB)).toEqual([]);
+    expect(storage.getItem(connectDialogOpenKey(roomA))).toBe("false");
+    expect(storage.getItem(connectDialogDismissedKey(roomA))).toBe("true");
+    expect(storage.getItem(connectDialogOpenKey(roomB))).toBe("true");
+    expect(storage.getItem(connectDialogDismissedKey(roomB))).toBe("false");
+    for (const [key, value] of Object.entries(UNRELATED))
+      expect(storage.getItem(key)).toBe(value);
+
+    // The entry runs it at the top level of main.tsx: on every route, once per
+    // load, before the first render.
+    const entry = readFileSync(
+      join(import.meta.dir, "..", "src", "main.tsx"),
+      "utf8",
+    );
+    const call = entry.indexOf(
+      "\nscrubLegacyRoomUiKeysAtStartup(() => window.localStorage);\n",
+    );
+    expect(call).toBeGreaterThan(-1);
+    expect(call).toBeLessThan(entry.indexOf("const boot"));
+    expect(call).toBeLessThan(entry.indexOf("void boot()"));
+  });
+
+  test("the startup scrub is safe when storage is unavailable or throws", () => {
+    const insecure = () =>
+      new DOMException("The operation is insecure.", "SecurityError");
+
+    expect(() => {
+      scrubLegacyRoomUiKeysAtStartup(() => {
+        throw insecure();
+      });
+    }).not.toThrow();
+
+    for (const method of ["key", "getItem", "removeItem"] as const) {
+      const storage = memoryStorage(legacy.rows);
+      storage[method] = () => {
+        throw insecure();
+      };
+      expect(() => {
+        scrubLegacyRoomUiKeysAtStartup(() => storage);
+      }).not.toThrow();
+    }
   });
 
   test("legacy keys are removed even when storage is full", () => {
@@ -373,6 +436,76 @@ describe("per-room key spellings", () => {
       )
       .map((file) => relative(srcRoot, file));
 
-    expect(spelledIn).toEqual(["protocol/roomUiKeys.ts"]);
+    expect(spelledIn).toEqual(["protocol/roomUiStorage.ts"]);
+  });
+});
+
+describe("the startup scrub's imports", () => {
+  const srcRoot = join(import.meta.dir, "..", "src");
+  const SDK_MODULE = join(srcRoot, "protocol", "sdk.ts");
+
+  /**
+   * Everything a module pulls in before it can run: static `import ... from`,
+   * `export ... from` and bare `import "..."`, followed through relative
+   * paths. `import type` is erased at build time and a dynamic `import()` is a
+   * separate chunk, so neither counts.
+   */
+  const staticGraph = (
+    entry: string,
+  ): { files: Set<string>; packages: Set<string> } => {
+    const files = new Set<string>();
+    const packages = new Set<string>();
+    const statement =
+      /(?:^|[\n;])\s*(?:import|export)\s+(?!type\s)(?:[^'"()]*?\s+from\s+)?["']([^"']+)["']/gu;
+    const visit = (file: string) => {
+      if (files.has(file)) return;
+      files.add(file);
+      const source = readFileSync(file, "utf8");
+      for (const [, specifier] of source.matchAll(statement)) {
+        if (!specifier.startsWith(".")) {
+          packages.add(specifier);
+          continue;
+        }
+        const base = resolve(dirname(file), specifier);
+        const target = [
+          base,
+          `${base}.ts`,
+          `${base}.tsx`,
+          join(base, "index.ts"),
+          join(base, "index.tsx"),
+        ].find(
+          (candidate) => /\.tsx?$/u.test(candidate) && existsSync(candidate),
+        );
+        if (target !== undefined) visit(target);
+      }
+    };
+    visit(entry);
+    return { files, packages };
+  };
+
+  test("scrub module does not import the SDK", () => {
+    // The app entry runs the scrub on every route. If its module reached the
+    // SDK, every page -- the landing page, every blog post -- would load the
+    // whole WebRTC and cryptography bundle to move two localStorage keys.
+    const scrub = staticGraph(join(srcRoot, "protocol", "roomUiStorage.ts"));
+    expect([...scrub.files].map((file) => relative(srcRoot, file))).toEqual([
+      "protocol/roomUiStorage.ts",
+      "lib/sha256.ts",
+    ]);
+    expect([...scrub.packages]).toEqual([]);
+
+    // Nor does the entry that calls it, statically.
+    const entry = staticGraph(join(srcRoot, "main.tsx"));
+    expect(entry.files.has(join(srcRoot, "protocol", "roomUiStorage.ts"))).toBe(
+      true,
+    );
+    expect(entry.files.has(SDK_MODULE)).toBe(false);
+    expect(entry.packages.has("p2party")).toBe(false);
+
+    // The walk does see the SDK where it is imported, so the checks above are
+    // not passing for want of looking.
+    const roomPages = staticGraph(join(srcRoot, "protocol", "roomUiKeys.ts"));
+    expect(roomPages.files.has(SDK_MODULE)).toBe(true);
+    expect(roomPages.packages.has("p2party")).toBe(true);
   });
 });

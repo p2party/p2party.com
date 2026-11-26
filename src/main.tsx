@@ -4,6 +4,13 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import { pagesForPath, resolvePages } from "./pages/registry";
+import { scrubLegacyRoomUiKeysAtStartup } from "./protocol/roomUiStorage";
+
+// Earlier builds named per-room UI flags in localStorage by the room
+// capability. Move them to the room's tag now, on every route and before
+// anything renders, so a visit that never opens a room still removes them.
+// The scrub module does not import the SDK, which stays on the room routes.
+scrubLegacyRoomUiKeysAtStartup(() => window.localStorage);
 
 const container = document.getElementById("root")!;
 
