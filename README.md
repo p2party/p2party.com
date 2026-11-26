@@ -159,9 +159,9 @@ HSTS, and the other response headers at the CDN or reverse proxy as described in
 The client is built for the current major of each browser, for Safari the
 major's first release, because the iOS deployment target follows it. As
 MDN's browser-compat-data listed them on 2026-11-26 that is Chrome and Edge
-158, Firefox 161 and Safari 27 (`BROWSER_TARGET` in `vite.config.ts`). The
-web build and the Android and iOS apps use the same target. The apps run it in
-the platform WebView, so they require:
+158, Firefox 161, and Safari 27 and Safari on iOS 27 (`BROWSER_TARGET` in
+`vite.config.ts`). The web build and the Android and iOS apps use the same
+target. The apps run it in the platform WebView, so they require:
 
 - **iOS and iPadOS 27.0 or later**, the release that ships Safari 27. Per
   Apple, iOS 27 runs on iPhone 11 and later and iPhone SE (2nd generation and

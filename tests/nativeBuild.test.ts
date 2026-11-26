@@ -265,16 +265,20 @@ describe("native build hygiene", () => {
     ].map((match) => match[1]);
     expect(configurations).toEqual([podfile, podfile, podfile, podfile]);
     const safari = targetVersion("safari");
+    const ios = targetVersion("ios");
     expect(safari).toMatch(/^\d+$/);
-    expect(atLeast(podfile ?? "0", safari)).toBe(true);
-    expect(podfile).toBe(`${safari}.0`);
+    expect(ios).toBe(safari);
+    expect(atLeast(podfile ?? "0", ios)).toBe(true);
+    expect(podfile).toBe(`${ios}.0`);
   });
 
   test("the Android minimum SDK runs the targeted Chrome's WebView", () => {
+    // A row for exactly the targeted Chrome, so raising the target fails here
+    // until someone reads that release's config.gni and adds its row.
     const chrome = Number(targetVersion("chrome"));
-    const known = webViewMinSdk.filter(([release]) => release <= chrome);
-    expect(known.length).toBeGreaterThan(0);
-    const required = Math.max(...known.map(([, minSdk]) => minSdk));
+    const row = webViewMinSdk.find(([release]) => release === chrome);
+    expect(row).toBeDefined();
+    const required = row?.[1] ?? Infinity;
     const minSdk = Number(
       /^\s*minSdkVersion = (\d+)$/m.exec(
         read("../android/variables.gradle"),

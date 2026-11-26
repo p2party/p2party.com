@@ -27,9 +27,12 @@ set up in the repository.
     built-in Kotlin; with `android.builtInKotlin=false` and
     `android.newDsl=false` it stops at
     `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 no longer
-    supports. That plugin is the only part of the build AGP 9 refuses: the
-    app's own build files already use `proguard-android-optimize.txt` and
-    `layout.buildDirectory`.
+    supports. With AGP 9.5.3 on Gradle 9.9.2, `./gradlew help`, which only
+    configures the projects, failed in that plugin's project and in no other;
+    no build task ran, so whether later phases succeed under AGP 9 is not
+    known. The app's own build files no longer contain the two things AGP 9
+    and Gradle 9 rejected or deprecated in them: they use
+    `proguard-android-optimize.txt` and `layout.buildDirectory`.
   - AGP 8.13 does not run on Gradle 9.6 or later, so the wrapper stays at
     9.5.1 (9.9.2 is the latest).
   - `androidx.core` stays at 1.18.0: 1.19 requires AGP 9.1.0 and compile SDK 37.
@@ -107,10 +110,12 @@ npx cap sync android   # or: npx cap sync ios
 Content-Security-Policy (below). Both builds use one browser target,
 `BROWSER_TARGET` in `vite.config.ts`: the current major of each browser, for
 Safari the major's first release because the iOS deployment target follows it
-(Chrome and Edge 158, Firefox 161, Safari 27), with nothing lowered, prefixed
-or given a fallback for older engines. The apps' minimums follow from it (see
-Toolchain). `tests/nativeBuild.test.ts` fails if the `Podfile` or any Xcode
-configuration is not the iOS that ships the targeted Safari major, or if
+(Chrome and Edge 158, Firefox 161, Safari 27, and iOS 27 listed beside
+Safari as Vite's own default does), with nothing lowered, prefixed or given a
+fallback for older engines. The apps' minimums follow from it (see Toolchain).
+`tests/nativeBuild.test.ts` fails if the iOS entry is not the Safari major, if
+the `Podfile` or any Xcode configuration is not that iOS major's .0 release,
+if the targeted Chrome has no row in its WebView minimum-SDK table, or if
 `minSdkVersion` falls below what the targeted Chrome's WebView needs.
 `cap sync` also rewrites
 `android/capacitor.settings.gradle`, `android/app/capacitor.build.gradle`, the
