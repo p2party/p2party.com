@@ -45,7 +45,7 @@ export const settlePurge = async (
   roomUrl: string | undefined,
   steps: PurgeSteps,
   uiStorage: () => Storage,
-  removeFileCopies: () => Promise<void> = () => Promise.resolve(),
+  removeFileCopies: () => Promise<void>,
 ): Promise<PurgeOutcome> => {
   const failures: unknown[] = [];
 

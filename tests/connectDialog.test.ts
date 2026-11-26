@@ -304,6 +304,9 @@ describe("purging the join dialog keys", () => {
       ...UNRELATED,
     });
 
+  // The native attachment copies are not the subject here.
+  const noFileCopies = () => Promise.resolve();
+
   test("purge removes per-room keys", async () => {
     // One room: that room's keys, in every spelling, and nothing else.
     const room = seeded();
@@ -313,6 +316,7 @@ describe("purging the join dialog keys", () => {
       roomA,
       roomRun.steps,
       () => room,
+      noFileCopies,
     );
     expect(roomRun.calls).toEqual([`purgeRoom ${roomA}`]);
     expect(roomOutcome.tone).toBe("good");
@@ -333,6 +337,7 @@ describe("purging the join dialog keys", () => {
       roomA,
       everythingRun.steps,
       () => everything,
+      noFileCopies,
     );
     expect(everythingRun.calls).toEqual(["purge"]);
     expect(everythingOutcome.tone).toBe("good");
@@ -342,7 +347,13 @@ describe("purging the join dialog keys", () => {
     const identity = seeded();
     const before = new Map(identity.rows);
     const identityRun = resolvingSteps();
-    await settlePurge("identity", roomA, identityRun.steps, () => identity);
+    await settlePurge(
+      "identity",
+      roomA,
+      identityRun.steps,
+      () => identity,
+      noFileCopies,
+    );
     expect(identityRun.calls).toEqual(["purgeIdentity"]);
     expect(identity.rows).toEqual(before);
   });
@@ -357,6 +368,7 @@ describe("purging the join dialog keys", () => {
         purge: () => Promise.reject(new Error("database worker refused")),
       },
       () => storage,
+      noFileCopies,
     );
 
     expect(Object.fromEntries(storage.rows)).toEqual(UNRELATED);
@@ -375,6 +387,7 @@ describe("purging the join dialog keys", () => {
       roomA,
       resolvingSteps().steps,
       blocked,
+      noFileCopies,
     );
     expect(room.tone).toBe("bad");
     expect(room.causes).toEqual(["The operation is insecure."]);
@@ -393,6 +406,7 @@ describe("purging the join dialog keys", () => {
         purgeRoom: () => Promise.reject(unconfirmed),
       },
       blocked,
+      noFileCopies,
     );
     expect(both.tone).toBe("bad");
     expect(both.causes).toEqual([
@@ -409,6 +423,7 @@ describe("purging the join dialog keys", () => {
         purgeRoom: () => Promise.reject(unconfirmed),
       },
       () => seeded(),
+      noFileCopies,
     );
     expect(narrow.tone).toBe("warn");
   });
