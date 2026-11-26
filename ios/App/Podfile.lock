@@ -1,21 +1,21 @@
 PODS:
-  - Capacitor (8.4.2):
+  - Capacitor (8.6.3):
     - CapacitorCordova
-  - CapacitorApp (8.1.1):
+  - CapacitorApp (8.1.2):
     - Capacitor
   - CapacitorCommunitySafeArea (8.0.1):
     - Capacitor
-  - CapacitorCordova (8.4.2)
-  - CapacitorFilesystem (8.1.2):
+  - CapacitorCordova (8.6.3)
+  - CapacitorFilesystem (8.1.5):
     - Capacitor
-    - IONFilesystemLib (~> 1.1.1)
-  - CapacitorScreenOrientation (8.0.1):
+    - IONFilesystemLib (= 2.0.1)
+  - CapacitorScreenOrientation (8.0.2):
     - Capacitor
-  - CapacitorStatusBar (8.0.3):
+  - CapacitorStatusBar (8.0.4):
     - Capacitor
-  - CapawesomeTeamCapacitorFileOpener (8.0.1):
+  - CapawesomeTeamCapacitorFileOpener (8.1.1):
     - Capacitor
-  - IONFilesystemLib (1.1.2)
+  - IONFilesystemLib (2.0.1)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -50,15 +50,15 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capawesome-team/capacitor-file-opener"
 
 SPEC CHECKSUMS:
-  Capacitor: 52f999235b8bd6a7d01694753f4f4d54d182e3a3
-  CapacitorApp: 305bd13c44f6f9d164e2ee66a4faa956ed8c0e06
+  Capacitor: 25815a259c80262559f9948d4e0f9513e242cea2
+  CapacitorApp: 7b7e43debe505bc61beedb83796aa1368c86078b
   CapacitorCommunitySafeArea: 91738f4ae7f47d2d94e06e429e16fb73cd8fdc48
-  CapacitorCordova: 345eacdc4c8282415446aea4acd8c77d82480bd4
-  CapacitorFilesystem: 2db285a1ac6e475cc27cae2e1bea999000f9e2be
-  CapacitorScreenOrientation: 6c3c84223ea1dd44aaa7184e2b416dd1192270d0
-  CapacitorStatusBar: eca7bc2b58d9f886f1ef9edb66e57a9b29c121af
-  CapawesomeTeamCapacitorFileOpener: 308c522f66aa62e881acf637d5557cf6cf235e7e
-  IONFilesystemLib: 21a63377696b2d8fab5632ecfb7d2ac67bddb68a
+  CapacitorCordova: f626648e769cb79faff38be441cc1b658665985a
+  CapacitorFilesystem: e3bc7123acb1554df1b7b099fa5847064b9e1bd4
+  CapacitorScreenOrientation: 0ccb98cbbfbb1dce509da837a3e35848128417ce
+  CapacitorStatusBar: ff844df1f126da6c4fbc4028272425fa3a91e7e3
+  CapawesomeTeamCapacitorFileOpener: 6d2f6d5d5bd5dd879436f0acf335726a12c75217
+  IONFilesystemLib: 306469e4c563f61de82d7bca2bbfed9e64d1b2d2
 
 PODFILE CHECKSUM: 7e5908523545faf1fb7f5d00a887f365940ed45e
 

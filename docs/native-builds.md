@@ -7,7 +7,7 @@ here, and release signing is not set up in the repository.
 
 ## Toolchain
 
-- **Capacitor:** 8.4.2 for the CLI, core, Android and iOS packages.
+- **Capacitor:** 8.6.3 for the CLI, core, Android and iOS packages.
 - **Android:** Gradle wrapper 8.14.3, Android Gradle Plugin 8.13.0, compile
   and target SDK 36, minimum SDK 24. The plugins compile with a Java 21
   toolchain. Gradle does not find Homebrew's keg-only `openjdk@21` by itself,
