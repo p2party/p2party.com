@@ -21,8 +21,10 @@ here, and release signing is not set up in the repository.
     ./gradlew assembleDebug
   ```
 
-- **iOS:** deployment target 15.0, dependencies through CocoaPods
-  (`Podfile.lock` was written by 1.17.0). Build the workspace, not the project:
+- **iOS:** deployment target 16.0 (`ios/App/Podfile` and every configuration
+  in `App.xcodeproj`; see the policy section for why), dependencies through
+  CocoaPods (`Podfile.lock` was written by 1.17.0). Build the workspace, not
+  the project:
 
   ```sh
   cd ios/App
@@ -87,9 +89,43 @@ Capacitor's own bridge needs no source: Android injects it with
 inline script inserted directly after `<head>`, ahead of the meta element and
 therefore outside the policy; iOS injects it as a `WKUserScript`.
 
-WebKit added `'wasm-unsafe-eval'` after iOS 15 (Safari 16, according to MDN's
-compatibility data; not tested here). On an iOS 15 device the policy would
-block the cryptography module, as it does for Safari 15 on the web.
+The cryptography module is WebAssembly, which the policy allows through
+`'wasm-unsafe-eval'` only. A WebKit without that keyword refuses to compile it,
+so the app would install and then fail to run any cryptography. The iOS
+deployment target is therefore 16.0: devices that cannot run iOS 16 cannot
+install the app; the web app is unaffected. That `'wasm-unsafe-eval'` first
+shipped in Safari and iOS 16 is unverified here: no compatibility data or
+WebKit release notes are available offline, and no iOS 15 runtime is
+installed.
+
+### Checking the policy
+
+Run `npm run e2e:native-csp` after any change to the policy in
+`docs/deployment.md`, to `vite.config.ts`, or to the vendored SDK version. It
+builds with `build:native`, serves `dist/` the way Capacitor does (the file if
+it exists, otherwise `index.html`) on `127.0.0.1:5847`, and drives headless
+Chromium with a `securitypolicyviolation` listener. It loads the home page,
+opens the "New room" dialog, loads an invitation without connecting, and runs
+the session lab's local crypto proof, which fetches and compiles the WASM. It
+fails on any violation, page error, or request that leaves loopback. The report
+goes to `logs/native-csp/result.json`.
+
+`e2e/native-csp-webkit.swift` is the same check in WebKit under the
+`capacitor://` scheme, run by hand on macOS with Xcode's command-line tools
+after `npx cap sync ios`:
+
+```sh
+swift e2e/native-csp-webkit.swift ios/App/App/public
+```
+
+On 2026-11-26 it fails at the room dialog, and not because of the policy: the
+rooms page throws `TypeError: WASM source must use http: or https:`.
+`src/protocol/sdk.ts` points the SDK at `/vendor/.../libcrypto.wasm` relative
+to the page, which on iOS is a `capacitor:` URL, and p2party 0.14.10's
+`setWasmSourceUrl` accepts only `http:` and `https:`. The same error appears
+with the policy removed. It is thrown when `sdk.ts` loads, so every route that
+imports it is affected on iOS. The home page and the local crypto proof (which
+passes its WASM bytes directly) work, with no violations.
 
 ## Received attachments and the room QR code
 
@@ -138,18 +174,16 @@ and the generated file has no `<access>` element.
   `build:client` copy, the build failed in `checkBundledWebClient`; after
   `build:native` and `cap sync android` it passed. Not installed on a device or
   emulator.
-- **iOS:** `pod install --deployment` succeeded, which confirms that
-  `Podfile.lock` matches the `Podfile`. The unsigned simulator build succeeded
-  with Xcode 27.2 on a `build:native` copy and failed in "Check bundled web
-  client" for a `build:client` copy and for a copy loading 0.14.4. Not run on a
-  simulator or device.
-- **Policy:** the `build:native` output, served like Capacitor serves it (a
-  file, otherwise `index.html`) on loopback port 5847, loaded in headless
-  Chromium with a `securitypolicyviolation` listener and every non-local
-  request blocked: the home page rendered, the "New room" dialog opened, an
-  invitation page reached its Connect button, and the session lab's local
-  crypto proof fetched and compiled the WASM. Zero violations, zero page
-  errors, zero blocked requests. The same copy in macOS WebKit (macOS 27.2)
-  under a `capacitor://` scheme handler rendered and completed the crypto
-  proof with no violation. With `'wasm-unsafe-eval'` removed both engines
-  refused the WASM, so the policy was enforced.
+- **iOS:** with the deployment target at 16.0, `pod install --deployment`
+  succeeded, which confirms that `Podfile.lock` matches the `Podfile`. The
+  unsigned simulator build succeeded with Xcode 27.2 on a `build:native` copy
+  and failed in "Check bundled web client" for a `build:client` copy and for a
+  copy loading 0.14.4. Not run on a simulator or device.
+- **Policy:** `npm run e2e:native-csp` passed: zero violations, zero page
+  errors, zero requests leaving loopback, WASM fetched and compiled. With
+  `blob:` removed from `worker-src` it failed with a recorded `worker-src`
+  violation on `/rooms`. `e2e/native-csp-webkit.swift` on macOS 27.2 WebKit:
+  the home page rendered and the local crypto proof finished with no
+  violation. It failed at the room dialog because of the SDK's WASM-source
+  check described above. With `'wasm-unsafe-eval'` removed, both engines
+  refused the WASM.

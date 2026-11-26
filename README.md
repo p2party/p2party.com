@@ -166,8 +166,15 @@ Build the app's web client with `npm run build:native`, which adds the app's
 Content-Security-Policy, then copy it into the projects with
 `npx cap sync android` or `npx cap sync ios` and review the generated diff.
 Both native builds stop when the copied client loads a different SDK version
-than `package.json` vendors or lacks that policy. See
+than `package.json` vendors or lacks that policy. Run `npm run e2e:native-csp`
+after any change to that policy or to the SDK version. See
 [Native builds](docs/native-builds.md).
+
+The iOS app requires iOS 16. The policy loads the cryptography module through
+`'wasm-unsafe-eval'`, and an older WebKit would refuse it, so the app would
+install and then fail. Devices that cannot run iOS 16 are no longer supported
+by the native app; the web app is unaffected. That the keyword first shipped in
+iOS 16 is unverified here.
 
 Keep native archives, signing keys, provisioning profiles, and copied web build
 outputs out of Git. The application ID is `com.p2party.app`; public association
