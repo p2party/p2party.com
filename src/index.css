@@ -242,6 +242,18 @@
       color: #fdba74;
     }
   }
+
+  /* One row of chat history. The browser skips layout and paint for rows
+   * outside the viewport. React still renders every row; this only spares the
+   * browser the off-screen ones' layout and paint.
+   * A skipped row holds a box of the size below until it has rendered once,
+   * then its last rendered size (`auto`), so scroll extents stay close to real
+   * and scrolling back does not jump. The row's menus and dialogs render in
+   * portals, which the containment this implies does not clip. */
+  .message-row {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 6rem;
+  }
 }
 
 *,
