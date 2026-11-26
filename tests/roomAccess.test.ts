@@ -35,6 +35,8 @@ const {
 } = await import("../src/protocol/roomAccess");
 const { immediateRoomPolicy, scheduledRoomPolicy, SCHEDULED_COVER_PRESETS } =
   await import("../src/protocol/v4");
+const { resolveUniversalLinkTarget } =
+  await import("../src/protocol/universalLink");
 
 describe("room invitation routing", () => {
   const capability = Uint8Array.from(
@@ -122,10 +124,7 @@ describe("room invitation routing", () => {
     }
   });
 
-  test("a query that never carried a policy is treated exactly as before", () => {
-    // Only the four policy parameters changed home, so nothing else about a
-    // query string changes meaning: an empty one still resolves, and an
-    // unrelated parameter is still refused by name.
+  test("an empty query resolves", () => {
     for (const search of ["", "?"]) {
       const bare = resolveRoomInvite("/r", `#v1.${compact}`, search);
       expect(bare.kind).toBe("valid");
@@ -133,11 +132,97 @@ describe("room invitation routing", () => {
       expect(bare.roomUrl).toBe(canonicalRoomUrl);
       expect(bare.policy.authMode).toBe("nopin");
     }
+  });
 
-    const junk = resolveRoomInvite("/r", `#v1.${compact}`, "?secret=value");
-    expect(junk.kind).toBe("invalid");
-    if (junk.kind !== "invalid") throw new Error("invite resolved");
-    expect(junk.error).toContain("Unsupported room invitation parameter");
+  test("invitation with utm and fbclid parameters is accepted", () => {
+    // Mail campaigns, social networks and ad redirectors append their own
+    // query keys to any link they carry. Those keys reach the origin server
+    // whatever this app does with them, and say nothing about the room, so
+    // refusing the invitation over them only broke the link.
+    const path = roomInvitePath(canonicalRoomUrl, immediateRoomPolicy("pin"));
+    const { pathname, hash } = splitInvitePath(path);
+
+    for (const search of [
+      "?utm_source=newsletter",
+      "?fbclid=IwAR0",
+      "?gclid=x",
+      "?utm_source=newsletter&utm_medium=email&utm_campaign=launch&fbclid=IwAR0",
+      "?ref=share&secret=value",
+    ]) {
+      const tracked = resolveRoomInvite(pathname, hash, search);
+      expect(`${search} -> ${tracked.kind}`).toBe(`${search} -> valid`);
+      if (tracked.kind !== "valid") throw new Error("invite did not resolve");
+      expect(tracked.roomUrl).toBe(canonicalRoomUrl);
+      // The room's shape still comes from the fragment, untouched.
+      expect(tracked.policy).toEqual(immediateRoomPolicy("pin"));
+      expect(tracked.specifiedPolicy.authMode).toBe(true);
+    }
+
+    // The native shell hands the query through with the fragment, so the same
+    // link opened as an app link resolves the same way.
+    const nativeTarget = resolveUniversalLinkTarget(
+      `https://p2party.com/r?utm_source=newsletter&fbclid=IwAR0${hash}`,
+    );
+    expect(nativeTarget).toBe(`/r?utm_source=newsletter&fbclid=IwAR0${hash}`);
+    const native = resolvePath(nativeTarget ?? "");
+    expect(native.kind).toBe("valid");
+    if (native.kind !== "valid")
+      throw new Error("native invite did not resolve");
+    expect(native.policy).toEqual(immediateRoomPolicy("pin"));
+  });
+
+  test("invitation with a malformed known parameter is refused", () => {
+    // Tolerating tracking keys must not loosen anything this app reads: each
+    // of these carries tracking keys AND a known parameter that is wrong.
+    const tracking = "?utm_source=newsletter&fbclid=IwAR0";
+    const cases: { hash: string; search: string; error: string }[] = [
+      {
+        hash: `#v1.${compact}&pq=2048`,
+        search: tracking,
+        error: "unsupported ML-KEM suite",
+      },
+      {
+        hash: `#v1.${compact}&auth=maybe`,
+        search: tracking,
+        error: "unsupported authentication mode",
+      },
+      {
+        hash: `#v1.${compact}&pq=768&pq=1024`,
+        search: tracking,
+        error: "must occur once",
+      },
+      {
+        hash: `#v1.${compact}&policy=${"A".repeat(43)}`,
+        search: tracking,
+        error: "malformed policy parameter",
+      },
+      {
+        hash: `#v1.${compact}&v=2`,
+        search: tracking,
+        error: "protocol v4",
+      },
+      // A policy parameter in the query is still an older build's link, even
+      // when a tracker has appended its own keys around it.
+      {
+        hash: `#v1.${compact}`,
+        search: `${tracking}&auth=pin`,
+        error: "older build",
+      },
+      {
+        hash: `#v1.${compact}`,
+        search: `?pq=1024${tracking.replace("?", "&")}`,
+        error: "older build",
+      },
+    ];
+
+    for (const { hash, search, error } of cases) {
+      const refused = resolveRoomInvite("/r", hash, search);
+      expect(`${hash}${search} -> ${refused.kind}`).toBe(
+        `${hash}${search} -> invalid`,
+      );
+      if (refused.kind !== "invalid") throw new Error("invite resolved");
+      expect(refused.error).toContain(error);
+    }
   });
 
   test("the retired protocol v3 is rejected", () => {

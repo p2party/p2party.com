@@ -107,7 +107,7 @@ const pqModeToQuery = (pqMode: RoomPqMode): string => {
  *
  * They are read from the fragment and nowhere else. The query string is
  * matched against this same set for one purpose only: to recognise a link
- * from an older build and say so.
+ * from an older build and say so. Any other query key is ignored.
  */
 const POLICY_PARAMETERS = new Set(["v", "auth", "pq", "policy"]);
 
@@ -305,7 +305,7 @@ const splitInviteFragment = (
 };
 
 /**
- * Refuse a query string on /r, which no longer says anything about a room.
+ * Refuse a query string on /r that still states a room's shape.
  *
  * An invitation states the room's shape in its fragment and only there, so a
  * link still carrying `v`, `auth`, `pq` or `policy` in its query was written
@@ -316,18 +316,21 @@ const splitInviteFragment = (
  * is named, and send the visitor back to the sender for a link this build can
  * read.
  *
- * A query that never carried a policy keeps the treatment it already had: an
- * empty one resolves, an unrelated parameter is refused by name. Neither was
- * part of what leaked, so neither changes meaning here.
+ * Every other query key is ignored. Mail campaigns, social networks and ad
+ * redirectors append their own (`utm_source`, `fbclid`, `gclid`, ...) to any
+ * link they carry; those keys have already reached the origin server by the
+ * time this runs, and they say nothing about the room, so refusing the
+ * invitation over them broke the link and protected nothing. The fragment is
+ * not loosened: only this app writes it, and parseRoomPolicyInvite still
+ * refuses any key there it does not know.
  */
 const rejectInviteQuery = (search: string): void => {
-  const keys = [...new URLSearchParams(search).keys()];
-  if (keys.length === 0) return;
-  throw new Error(
-    keys.some((key) => POLICY_PARAMETERS.has(key))
-      ? "Room invitation is from an older build; ask the sender for a fresh invitation"
-      : `Unsupported room invitation parameter: ${keys[0]}`,
-  );
+  for (const key of new URLSearchParams(search).keys()) {
+    if (POLICY_PARAMETERS.has(key))
+      throw new Error(
+        "Room invitation is from an older build; ask the sender for a fresh invitation",
+      );
+  }
 };
 
 /**
@@ -336,7 +339,7 @@ const rejectInviteQuery = (search: string): void => {
  * `search` is not a source of policy — nothing this app produces puts policy
  * there any more, and nothing reads it back. It is passed in so that a link
  * from an older build can be refused out loud rather than silently downgraded
- * to the default room shape.
+ * to the default room shape; keys that are not policy parameters are ignored.
  */
 export const resolveRoomInvite = (
   pathname: string,
