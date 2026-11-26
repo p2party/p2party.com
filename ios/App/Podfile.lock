@@ -1,21 +1,25 @@
 PODS:
-  - Capacitor (7.4.2):
+  - Capacitor (8.4.2):
     - CapacitorCordova
-  - CapacitorApp (7.0.1):
+  - CapacitorApp (8.1.1):
     - Capacitor
-  - CapacitorCommunitySafeArea (7.0.0-alpha.1):
+  - CapacitorCommunitySafeArea (8.0.1):
     - Capacitor
-  - CapacitorCordova (7.4.2)
-  - CapacitorFilesystem (7.1.2):
+  - CapacitorCordova (8.4.2)
+  - CapacitorFilesystem (8.1.2):
     - Capacitor
-    - IONFilesystemLib (~> 1.0)
-  - CapacitorScreenOrientation (7.0.1):
+    - IONFilesystemLib (~> 1.1.1)
+  - CapacitorFileTransfer (2.0.4):
     - Capacitor
-  - CapacitorStatusBar (7.0.1):
+    - IONFileTransferLib (~> 1.0.2)
+  - CapacitorScreenOrientation (8.0.1):
     - Capacitor
-  - CapawesomeTeamCapacitorFileOpener (7.0.1):
+  - CapacitorStatusBar (8.0.3):
     - Capacitor
-  - IONFilesystemLib (1.0.0)
+  - CapawesomeTeamCapacitorFileOpener (8.0.1):
+    - Capacitor
+  - IONFilesystemLib (1.1.2)
+  - IONFileTransferLib (1.0.3)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -23,6 +27,7 @@ DEPENDENCIES:
   - "CapacitorCommunitySafeArea (from `../../node_modules/@capacitor-community/safe-area`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - "CapacitorFileTransfer (from `../../node_modules/@capacitor/file-transfer`)"
   - "CapacitorScreenOrientation (from `../../node_modules/@capacitor/screen-orientation`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - "CapawesomeTeamCapacitorFileOpener (from `../../node_modules/@capawesome-team/capacitor-file-opener`)"
@@ -30,6 +35,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - IONFilesystemLib
+    - IONFileTransferLib
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -42,6 +48,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorFilesystem:
     :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorFileTransfer:
+    :path: "../../node_modules/@capacitor/file-transfer"
   CapacitorScreenOrientation:
     :path: "../../node_modules/@capacitor/screen-orientation"
   CapacitorStatusBar:
@@ -50,16 +58,18 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capawesome-team/capacitor-file-opener"
 
 SPEC CHECKSUMS:
-  Capacitor: 9d9e481b79ffaeacaf7a85d6a11adec32bd33b59
-  CapacitorApp: febecbb9582cb353aed037e18ec765141f880fe9
-  CapacitorCommunitySafeArea: 3f049619072ab5d0da2529bcb05b358ff6c13dc1
-  CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
-  CapacitorFilesystem: 337eeaf16a9fa5a44d2329df411523fa3a9a6ee9
-  CapacitorScreenOrientation: 6d989dff97440c7bfa78deee13952d7fb03c27f3
-  CapacitorStatusBar: 6e7af040d8fc4dd655999819625cae9c2d74c36f
-  CapawesomeTeamCapacitorFileOpener: ae3340a148c8947dda81ed2a8a600988667909b3
-  IONFilesystemLib: ceacae793975039530458eabab0c495c70515a0d
+  Capacitor: 52f999235b8bd6a7d01694753f4f4d54d182e3a3
+  CapacitorApp: 305bd13c44f6f9d164e2ee66a4faa956ed8c0e06
+  CapacitorCommunitySafeArea: 91738f4ae7f47d2d94e06e429e16fb73cd8fdc48
+  CapacitorCordova: 345eacdc4c8282415446aea4acd8c77d82480bd4
+  CapacitorFilesystem: 2db285a1ac6e475cc27cae2e1bea999000f9e2be
+  CapacitorFileTransfer: 445b9dc69ea5a5e0e708e011a4848e63c471abee
+  CapacitorScreenOrientation: 6c3c84223ea1dd44aaa7184e2b416dd1192270d0
+  CapacitorStatusBar: eca7bc2b58d9f886f1ef9edb66e57a9b29c121af
+  CapawesomeTeamCapacitorFileOpener: 308c522f66aa62e881acf637d5557cf6cf235e7e
+  IONFilesystemLib: 21a63377696b2d8fab5632ecfb7d2ac67bddb68a
+  IONFileTransferLib: addbbf50405c163dcd74a7b1bd8c6f9302342be2
 
-PODFILE CHECKSUM: 824ed3aeb9e83a59b0ecb87cbebfd6358aeff4e9
+PODFILE CHECKSUM: 79d7f2b039d53d4a868b8b575f46bc561566a557
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.17.0
