@@ -156,14 +156,18 @@ HSTS, and the other response headers at the CDN or reverse proxy as described in
 
 ## Android and iOS
 
-This release is validated for the web. The Capacitor 8 native migration is
-incomplete; the native configuration needs migration and platform validation
-before a mobile build or release.
+`android/` and `ios/` are Capacitor 8 projects. On 2026-11-26 an Android debug
+build (`./gradlew assembleDebug` with JDK 21) and an unsigned iOS simulator
+build (`xcodebuild`, Xcode 27.2) succeeded. Neither app has been run on a
+device, emulator or simulator, and a mobile release still needs signing and
+device validation.
 
-`android/` and `ios/` are maintained Capacitor projects. They require separate
-platform builds, signing, and device validation; a passing web build does not
-certify a mobile release. After building the web client, use `npx cap sync android`
-or `npx cap sync ios`, review the generated diff, and open the platform project.
+Build the app's web client with `npm run build:native`, which adds the app's
+Content-Security-Policy, then copy it into the projects with
+`npx cap sync android` or `npx cap sync ios` and review the generated diff.
+Both native builds stop when the copied client loads a different SDK version
+than `package.json` vendors or lacks that policy. See
+[Native builds](docs/native-builds.md).
 
 Keep native archives, signing keys, provisioning profiles, and copied web build
 outputs out of Git. The application ID is `com.p2party.app`; public association
