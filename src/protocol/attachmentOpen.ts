@@ -116,10 +116,11 @@ export interface NativeFilePlugins {
  * A type outside the allowlist is refused before anything is written. The
  * copy goes to the cache folder under a name this app builds, and the type is
  * passed to the opener explicitly; without it Android guesses the type from
- * the file name. Neither platform's opener reports when the viewer is done
- * with the file (the iOS preview resolves when it is shown, the Android
- * intent when it is started), so copies are removed at the next start and by
- * every purge rather than after use.
+ * the file name. The installed opener does not tell the app when the viewer
+ * is done with the file: iOS reports the preview closing to the plugin, which
+ * does not forward it, and the Android intent is started without asking for a
+ * result. So copies are removed at the next start and by every purge rather
+ * than after use.
  */
 export const openFileNatively = async (
   blob: Blob,
@@ -163,7 +164,104 @@ export const removeNativeFileCopies = async (
       recursive: true,
     });
   } catch (error) {
-    if ((error as { code?: unknown } | null)?.code === FILE_NOT_FOUND) return;
+    if (isNotFound(error)) return;
     throw error;
   }
+};
+
+const isNotFound = (error: unknown): boolean =>
+  (error as { code?: unknown } | null)?.code === FILE_NOT_FOUND;
+
+/**
+ * The extensions earlier builds could write: p2party 0.14.10's
+ * KnownFileExtension, or none for a type it did not know.
+ */
+// prettier-ignore
+const LEGACY_EXTENSIONS = [
+  "png", "jpeg", "jpg", "gif", "bmp", "tiff", "svg", "webp", "heic", "ico",
+  "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt",
+  "mp3", "wav", "aac", "flac", "ogg", "m4a", "mp4", "avi", "mkv", "mov",
+  "wmv", "flv", "webm", "zip", "rar", "7z", "tar", "gz", "html", "css", "js",
+  "ts", "jsx", "tsx", "json", "xml", "py", "java", "c", "cpp", "cs", "rb",
+  "php", "sql", "epub", "mobi", "azw", "ttf", "otf", "exe", "dmg", "apk",
+];
+
+/**
+ * The name earlier builds gave a decrypted attachment in Directory.Data:
+ * `${Date.now()}-${name without its extension}.${extension}`. Thirteen digits
+ * cover every millisecond timestamp from 2001 to 2286.
+ */
+export const LEGACY_ATTACHMENT_NAME = new RegExp(
+  `^\\d{13}-[^/\\\\]*\\.(?:${LEGACY_EXTENSIONS.join("|")})?$`,
+);
+
+/** Where earlier builds saved the room QR code, in Directory.Documents. */
+const LEGACY_QR_FOLDER = "p2party";
+const LEGACY_QR_FILE = `${LEGACY_QR_FOLDER}/room-invite.png`;
+
+/**
+ * Removes the copies earlier builds wrote outside the cache folder: decrypted
+ * attachments at the top of Directory.Data (iOS Documents, Android files/)
+ * named as LEGACY_ATTACHMENT_NAME describes, and the room QR code in
+ * Documents/p2party/ together with that folder if nothing else is in it.
+ * Deletes nothing else. Never throws: a failed step is logged and the next
+ * one runs.
+ */
+export const removeLegacyNativeFileCopies = async (
+  platform: string,
+  filesystem: Pick<FilesystemPlugin, "deleteFile" | "readdir" | "rmdir">,
+  log: (message: string, error: unknown) => void = console.error,
+): Promise<void> => {
+  if (platform === "web") return;
+  const attempt = async (step: string, run: () => Promise<unknown>) => {
+    try {
+      await run();
+    } catch (error) {
+      if (!isNotFound(error)) log(`Could not ${step}`, error);
+    }
+  };
+
+  await attempt("remove the room QR code an earlier build saved", () =>
+    filesystem.deleteFile({
+      path: LEGACY_QR_FILE,
+      directory: Directory.Documents,
+    }),
+  );
+  // Not recursive: a folder that still holds anything else is left alone.
+  await attempt("remove the folder an earlier build saved the QR code in", () =>
+    filesystem.rmdir({
+      path: LEGACY_QR_FOLDER,
+      directory: Directory.Documents,
+      recursive: false,
+    }),
+  );
+
+  let entries: { name: string; type: string }[] = [];
+  await attempt("list the files an earlier build may have left", async () => {
+    entries = (
+      await filesystem.readdir({ path: "", directory: Directory.Data })
+    ).files;
+  });
+  for (const entry of entries)
+    if (entry.type === "file" && LEGACY_ATTACHMENT_NAME.test(entry.name))
+      await attempt("remove an attachment copy an earlier build left", () =>
+        filesystem.deleteFile({ path: entry.name, directory: Directory.Data }),
+      );
+};
+
+/**
+ * Everything that runs at an Android or iOS start: this build's cache copies
+ * and the copies earlier builds left elsewhere. Never throws.
+ */
+export const removeNativeFilesAtStartup = async (
+  platform: string,
+  filesystem: Pick<FilesystemPlugin, "deleteFile" | "readdir" | "rmdir">,
+  log: (message: string, error: unknown) => void = console.error,
+): Promise<void> => {
+  try {
+    await removeNativeFileCopies(platform, filesystem);
+  } catch (error) {
+    log("Could not remove earlier attachment copies", error);
+  }
+  await removeLegacyNativeFileCopies(platform, filesystem, log);
 };

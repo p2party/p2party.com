@@ -1,13 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
-import { Filesystem } from "@capacitor/filesystem";
 
 import "./index.css";
 import App from "./App";
 import { pagesForPath, resolvePages } from "./pages/registry";
 import { scrubLegacyRoomUiKeysAtStartup } from "./protocol/roomUiStorage";
-import { removeNativeFileCopies } from "./protocol/attachmentOpen";
 
 // Earlier builds named per-room UI flags in localStorage by the room
 // capability. Move them to the room's tag now, on every route and before
@@ -16,13 +14,23 @@ import { removeNativeFileCopies } from "./protocol/attachmentOpen";
 scrubLegacyRoomUiKeysAtStartup(() => window.localStorage);
 
 // On Android and iOS, opened attachments and saved room QR codes are copies in
-// the cache folder. No platform says when a viewer is done with one, so the
-// copies a previous run left behind go now, before anything can open another.
-removeNativeFileCopies(Capacitor.getPlatform(), Filesystem).catch(
-  (error: unknown) => {
-    console.error("Could not remove earlier attachment copies", error);
-  },
-);
+// the cache folder, and earlier builds left copies in the app's documents.
+// Nothing tells the app when a viewer is done with one, so the copies earlier
+// runs left behind are removed at each start. This runs in the background and
+// is not awaited: a file opened within the first moments of a start could be
+// removed along with them. Imported only here, so the web's entry chunk does
+// not load the Filesystem plugin.
+if (Capacitor.isNativePlatform())
+  void Promise.all([
+    import("@capacitor/filesystem"),
+    import("./protocol/attachmentOpen"),
+  ])
+    .then(([{ Filesystem }, { removeNativeFilesAtStartup }]) =>
+      removeNativeFilesAtStartup(Capacitor.getPlatform(), Filesystem),
+    )
+    .catch((error: unknown) => {
+      console.error("Could not remove earlier attachment copies", error);
+    });
 
 const container = document.getElementById("root")!;
 

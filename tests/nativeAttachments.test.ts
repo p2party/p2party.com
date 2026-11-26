@@ -6,11 +6,13 @@ import type { FilesystemPlugin } from "@capacitor/filesystem";
 import type { FileOpenerPlugin } from "@capawesome-team/capacitor-file-opener";
 
 import {
+  LEGACY_ATTACHMENT_NAME,
   NATIVE_ATTACHMENT_FOLDER,
   nativeAttachmentName,
   openFileNatively,
   openableMimeType,
   removeNativeFileCopies,
+  removeNativeFilesAtStartup,
 } from "../src/protocol/attachmentOpen";
 
 const emptyStorage = (): Storage => {
@@ -84,6 +86,59 @@ const fakeDevice = (seed: Record<string, string> = {}) => {
     openFile: mock<FileOpenerPlugin["openFile"]>(() => Promise.resolve()),
   };
   return { files, filesystem, opener };
+};
+
+/**
+ * A device with folders, for the startup sweep: paths are
+ * `${directory}/${path}`. readdir lists one level, deleteFile removes a file,
+ * and rmdir refuses a folder that is not empty unless asked to recurse.
+ */
+const deviceWithFolders = (files: string[], folders: string[] = []) => {
+  const fileSet = new Set(files);
+  const folderSet = new Set(folders);
+  const notFound = () =>
+    Object.assign(new Error("failed because file does not exist."), {
+      code: "OS-PLUG-FILE-0008",
+    });
+  const inside = (folder: string) =>
+    [...fileSet, ...folderSet].filter((path) => path.startsWith(`${folder}/`));
+  const filesystem = {
+    deleteFile: mock<FilesystemPlugin["deleteFile"]>(({ path, directory }) =>
+      fileSet.delete(`${String(directory)}/${path}`)
+        ? Promise.resolve()
+        : Promise.reject(notFound()),
+    ),
+    rmdir: mock<FilesystemPlugin["rmdir"]>(({ path, directory, recursive }) => {
+      const folder = `${String(directory)}/${path}`;
+      if (!folderSet.has(folder)) return Promise.reject(notFound());
+      if (inside(folder).length > 0 && recursive !== true)
+        return Promise.reject(new Error("Folder is not empty"));
+      for (const entry of inside(folder)) {
+        fileSet.delete(entry);
+        folderSet.delete(entry);
+      }
+      folderSet.delete(folder);
+      return Promise.resolve();
+    }),
+    readdir: mock<FilesystemPlugin["readdir"]>(({ path, directory }) => {
+      const folder = path ? `${String(directory)}/${path}` : String(directory);
+      return Promise.resolve({
+        files: inside(folder)
+          .map((entry) => entry.slice(folder.length + 1))
+          .filter((name) => !name.includes("/"))
+          .map((name) => ({
+            name,
+            type: folderSet.has(`${folder}/${name}`)
+              ? ("directory" as const)
+              : ("file" as const),
+            size: 1,
+            mtime: 0,
+            uri: `file:///${folder}/${name}`,
+          })),
+      });
+    }),
+  };
+  return { fileSet, folderSet, filesystem };
 };
 
 // On Android and iOS a received attachment is handed to the operating system's
@@ -242,13 +297,130 @@ describe("native attachment opening", () => {
       }),
     ).rejects.toThrow("denied");
 
-    // The entry point runs it before the app renders.
+    // The entry point starts it on Android and iOS only, before rendering,
+    // and loads the Filesystem plugin only there.
     const main = read("../src/main.tsx");
     const removal = main.indexOf(
-      "removeNativeFileCopies(Capacitor.getPlatform(), Filesystem)",
+      "removeNativeFilesAtStartup(Capacitor.getPlatform(), Filesystem)",
     );
     expect(removal).toBeGreaterThan(-1);
     expect(removal).toBeLessThan(main.indexOf("void boot()"));
+    expect(main.indexOf("if (Capacitor.isNativePlatform())")).toBeLessThan(
+      removal,
+    );
+    expect(main).not.toMatch(/^import .*@capacitor\/filesystem/m);
+  });
+
+  test("startup removes attachment copies written by earlier builds", async () => {
+    const leftBehind = [
+      // `${Date.now()}-${name}.${extension}` in Directory.Data.
+      "DATA/1732612345678-holiday.png",
+      "DATA/1732612345678-report.final.pdf",
+      "DATA/1700000000000-voice message.webm",
+      "DATA/1732612345678-unknown.",
+      "DATA/1732612345678-.png",
+      // The room QR code in Documents/p2party/.
+      "DOCUMENTS/p2party/room-invite.png",
+      // This build's cache copies.
+      `CACHE/${NATIVE_ATTACHMENT_FOLDER}/0123abcd-photo.png`,
+    ];
+    const device = deviceWithFolders(leftBehind, [
+      "DOCUMENTS/p2party",
+      `CACHE/${NATIVE_ATTACHMENT_FOLDER}`,
+    ]);
+    const log = mock(() => {});
+
+    await removeNativeFilesAtStartup("ios", device.filesystem, log);
+
+    expect([...device.fileSet]).toEqual([]);
+    expect([...device.folderSet]).toEqual([]);
+    expect(log).not.toHaveBeenCalled();
+    expect(device.filesystem.readdir.mock.calls[0][0]).toEqual({
+      path: "",
+      directory: Directory.Data,
+    });
+
+    // A failure never escapes startup, and the other copies still go.
+    const stubborn = deviceWithFolders(
+      [
+        "DATA/1732612345678-a.png",
+        "DATA/1732612345678-b.png",
+        "DOCUMENTS/p2party/room-invite.png",
+      ],
+      ["DOCUMENTS/p2party"],
+    );
+    stubborn.filesystem.deleteFile.mockImplementationOnce(() =>
+      Promise.reject(new Error("permission denied")),
+    );
+    await removeNativeFilesAtStartup("android", stubborn.filesystem, log);
+    expect([...stubborn.fileSet]).toEqual([
+      "DOCUMENTS/p2party/room-invite.png",
+    ]);
+    expect(log).toHaveBeenCalled();
+
+    const unreadable = deviceWithFolders(
+      ["DOCUMENTS/p2party/room-invite.png"],
+      ["DOCUMENTS/p2party"],
+    );
+    unreadable.filesystem.readdir.mockImplementation(() =>
+      Promise.reject(new Error("cannot list")),
+    );
+    unreadable.filesystem.rmdir.mockImplementation(() => {
+      throw new Error("synchronous plugin failure");
+    });
+    await removeNativeFilesAtStartup("ios", unreadable.filesystem, log);
+    expect([...unreadable.fileSet]).toEqual([]);
+
+    const web = deviceWithFolders(["DATA/1732612345678-a.png"]);
+    await removeNativeFilesAtStartup("web", web.filesystem, log);
+    expect([...web.fileSet]).toEqual(["DATA/1732612345678-a.png"]);
+    expect(web.filesystem.readdir).not.toHaveBeenCalled();
+  });
+
+  test("the legacy sweep leaves other files alone", async () => {
+    const kept = [
+      "DATA/notes.txt",
+      "DATA/123-short.png",
+      "DATA/173261234567-twelve-digits.png",
+      "DATA/17326123456789-fourteen-digits.png",
+      "DATA/x1732612345678-prefixed.png",
+      "DATA/1732612345678_underscore.png",
+      "DATA/1732612345678-no-extension",
+      "DATA/1732612345678-unknown.exe2",
+      "DATA/1732612345678-upper.PNG",
+      "DATA/1732612345678-folder.png/inside.txt",
+      "DATA/nested/1732612345678-deeper.png",
+      "DOCUMENTS/p2party/notes.txt",
+      "DOCUMENTS/room-invite.png",
+      "DOCUMENTS/1732612345678-public.png",
+      "CACHE/WebView/Default/HTTP Cache/index",
+    ];
+    const device = deviceWithFolders(
+      [...kept, "DOCUMENTS/p2party/room-invite.png"],
+      [
+        "DATA/1732612345678-folder.png",
+        "DATA/nested",
+        "DOCUMENTS/p2party",
+        "CACHE/WebView",
+        "CACHE/WebView/Default",
+        "CACHE/WebView/Default/HTTP Cache",
+      ],
+    );
+
+    await removeNativeFilesAtStartup("android", device.filesystem, () => {});
+
+    // Only the QR code went; its folder stays because it holds another file.
+    expect([...device.fileSet].sort()).toEqual([...kept].sort());
+    expect(device.folderSet.has("DOCUMENTS/p2party")).toBe(true);
+    expect(device.folderSet.has("DATA/1732612345678-folder.png")).toBe(true);
+    for (const call of device.filesystem.deleteFile.mock.calls)
+      expect(["DOCUMENTS/p2party/room-invite.png"]).toContain(
+        `${String(call[0].directory)}/${call[0].path}`,
+      );
+
+    expect(LEGACY_ATTACHMENT_NAME.test("1732612345678-a.docx")).toBe(true);
+    expect(LEGACY_ATTACHMENT_NAME.test("1732612345678-a/b.png")).toBe(false);
+    expect(LEGACY_ATTACHMENT_NAME.test("1732612345678-a.png\n")).toBe(false);
   });
 
   test("every purge removes native attachment copies", async () => {
