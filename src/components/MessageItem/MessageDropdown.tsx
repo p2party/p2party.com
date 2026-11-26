@@ -9,6 +9,10 @@ import {
   openPeerMessageUrl,
   peerMessageUrl,
 } from "../../protocol/peerMessageUrl";
+import {
+  openAttachmentNatively,
+  openableMimeType,
+} from "../../protocol/attachmentOpen";
 
 import { FileCard, MessageBubble } from "../custom/MessageBubble";
 
@@ -105,37 +109,6 @@ const MessageDropdown = ({
     throw new Error("This message has no file attached.");
   };
 
-  /**
-   * A blob: URL inherits THIS page's origin, so anything the browser executes
-   * from one runs as p2party.com. The message type — and therefore the Blob's
-   * MIME type — is chosen by the sender, and MessageType includes ImageSVG and
-   * CodeHTML. Opening a peer's .html or .svg in a tab would hand them script
-   * execution against our localStorage and IndexedDB, which hold identity and
-   * ratchet state. Anyone holding the room link can send one.
-   *
-   * So: only render inline what cannot carry script. Everything else is
-   * downloaded instead, which is inert.
-   */
-  const INLINE_SAFE = [
-    "image/png",
-    "image/jpeg",
-    "image/gif",
-    "image/webp",
-    "image/avif",
-    "image/bmp",
-    "audio/",
-    "video/",
-    "application/pdf",
-  ];
-
-  const isInlineSafe = (type: string): boolean => {
-    const mime = type.split(";", 1)[0].trim().toLowerCase();
-    // image/svg+xml must never match: SVG is a script-bearing document.
-    return INLINE_SAFE.some((safe) =>
-      safe.endsWith("/") ? mime.startsWith(safe) : mime === safe,
-    );
-  };
-
   const handleOpen = async () => {
     setFileError("");
     // Claim the tab inside the click, before anything is awaited. Reassembly
@@ -152,7 +125,9 @@ const MessageDropdown = ({
     if (tab) tab.opener = null;
     try {
       const blob = await materializeFile();
-      if (!isInlineSafe(blob.type)) {
+      // Only what cannot carry script is rendered inline (see
+      // OPENABLE_MIME_TYPES); everything else is downloaded, which is inert.
+      if (openableMimeType(blob.type) === undefined) {
         tab?.close();
         await handleDownload();
         return;
@@ -217,20 +192,22 @@ const MessageDropdown = ({
         document.body.removeChild(link);
         setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
       } else {
-        const base64 = await readAsDataURL(blob);
         const name = `${String(new Date().getTime())}-${msgFilename.replace("." + msgExtension, "")}.${msgExtension}`;
-        await Filesystem.appendFile({
-          path: name,
-          data: base64,
-          directory: Directory.Data,
+        await openAttachmentNatively(blob, name, {
+          save: async (path, file) => {
+            await Filesystem.appendFile({
+              path,
+              data: await readAsDataURL(file),
+              directory: Directory.Data,
+            });
+            const { uri } = await Filesystem.getUri({
+              path,
+              directory: Directory.Data,
+            });
+            return uri;
+          },
+          open: (path, mimeType) => FileOpener.openFile({ path, mimeType }),
         });
-
-        const { uri } = await Filesystem.getUri({
-          path: name,
-          directory: Directory.Data,
-        });
-
-        await FileOpener.openFile({ path: uri });
       }
     } catch (error) {
       console.error(error);
