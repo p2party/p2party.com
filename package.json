@@ -12,10 +12,10 @@
   "bugs": {
     "url": "https://github.com/p2party/p2party.com/issues"
   },
-  "packageManager": "npm@11.6.2",
+  "packageManager": "npm@12.2.3",
   "engines": {
-    "node": ">=22.22.0",
-    "npm": ">=11.6.2"
+    "node": ">=26.13.1",
+    "npm": ">=12.2.3"
   },
   "type": "module",
   "scripts": {
