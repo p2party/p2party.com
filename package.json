@@ -34,6 +34,7 @@
     "preview": "vite preview",
     "prerender": "node scripts/prerender.mjs",
     "build:client": "vite build",
+    "build:native": "vite build --mode native",
     "build:server": "vite build --ssr src/entry-server.tsx --outDir dist-ssr"
   },
   "dependencies": {

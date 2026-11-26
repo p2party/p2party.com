@@ -1,8 +1,74 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
+
+import type { Plugin } from "vite";
+
+/**
+ * The web Content-Security-Policy, as docs/deployment.md specifies it for the
+ * CDN. Read from that document so the native policy below cannot drift from it.
+ */
+export const documentedWebPolicy = (deploymentDoc: string): string => {
+  const line = /^Content-Security-Policy: (.+)$/m.exec(deploymentDoc);
+  if (line === null)
+    throw new Error("docs/deployment.md has no Content-Security-Policy line");
+  return line[1].trim();
+};
+
+/**
+ * The iOS app's page origin. Android's is https://localhost, which 'self'
+ * matches. capacitor: is not a special URL scheme, so under the URL standard
+ * its origin is opaque and a CSP 'self' is not guaranteed to match it; the
+ * origin is listed explicitly wherever the web policy allows 'self'.
+ */
+const CAPACITOR_IOS_ORIGIN = "capacitor://localhost";
+
+/**
+ * The web policy for a document meta element in the Android and iOS apps,
+ * which have no response headers to carry one. frame-ancestors is dropped:
+ * browsers ignore it in a meta element and log an error.
+ */
+export const nativeContentSecurityPolicy = (webPolicy: string): string =>
+  webPolicy
+    .split(";")
+    .map((directive) => directive.trim())
+    .filter(
+      (directive) =>
+        directive.length > 0 && !directive.startsWith("frame-ancestors"),
+    )
+    .map((directive) =>
+      directive.split(/\s+/).includes("'self'")
+        ? `${directive} ${CAPACITOR_IOS_ORIGIN}`
+        : directive,
+    )
+    .join("; ");
+
+/**
+ * Put the native policy in index.html for `vite build --mode native` only. The
+ * web build gets its policy as a response header from the CDN instead, where
+ * frame-ancestors works.
+ */
+const nativeContentSecurityPolicyMeta = (mode: string): Plugin => ({
+  name: "native-content-security-policy",
+  transformIndexHtml() {
+    if (mode !== "native") return [];
+    const policy = nativeContentSecurityPolicy(
+      documentedWebPolicy(
+        readFileSync(resolve(__dirname, "docs", "deployment.md"), "utf8"),
+      ),
+    );
+    return [
+      {
+        tag: "meta",
+        attrs: { "http-equiv": "Content-Security-Policy", content: policy },
+        // Before every script and stylesheet the policy has to govern.
+        injectTo: "head-prepend",
+      },
+    ];
+  },
+});
 
 /**
  * Make `vite preview` answer like the bucket does.
@@ -62,7 +128,12 @@ export default defineConfig((configEnv) => {
   const isDevelopment = configEnv.mode === "development";
 
   return {
-    plugins: [react(), tailwindcss(), previewLikeTheBucket()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      previewLikeTheBucket(),
+      nativeContentSecurityPolicyMeta(configEnv.mode),
+    ],
     // `vite preview` is this project's stand-in for the real origin, and by
     // default it is a liar: with the SPA fallback on, every prerendered route
     // is answered with dist/index.html, so /rooms/ serves the landing page's

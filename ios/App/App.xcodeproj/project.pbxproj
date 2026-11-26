@@ -104,6 +104,7 @@
 			buildConfigurationList = 504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "App" */;
 			buildPhases = (
 				6634F4EFEBD30273BCE97C65 /* [CP] Check Pods Manifest.lock */,
+				7D1A4C2E9B3F5A6D8E0C1B24 /* Check bundled web client */,
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
@@ -171,6 +172,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		7D1A4C2E9B3F5A6D8E0C1B24 /* Check bundled web client */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Check bundled web client";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# The web client in the app is the copy `npx cap sync` left in App/public,\n# which Git ignores, so a build can package an old one. Refuse a copy that\n# loads a different SDK than package.json vendors, or one built without the\n# app's Content-Security-Policy (`npm run build:native`).\nfix=\"Run 'npm run build:native && npx cap sync ios', then build again.\"\nexpected=$(sed -n 's#.*\"p2party\": *\"file:vendor/p2party-\\([0-9][0-9A-Za-z.+-]*\\)\\.tgz\".*#\\1#p' \"${SRCROOT}/../../package.json\")\nif [ -z \"$expected\" ]; then\n  echo \"error: package.json does not vendor p2party as file:vendor/p2party-<version>.tgz\" >&2\n  exit 1\nfi\nloaded=$(cat \"${SRCROOT}/App/public/assets/\"*.js 2>/dev/null | grep -oE 'vendor/p2party-[0-9][0-9A-Za-z.+-]*/' | sed 's#^vendor/p2party-##; s#/$##' | sort -u | tr '\\n' ' ' | sed 's/ $//')\nif [ \"$loaded\" != \"$expected\" ]; then\n  echo \"error: The bundled web client loads p2party ${loaded:-from no vendor path}, but package.json vendors ${expected}. $fix\" >&2\n  exit 1\nfi\nif ! grep -q 'http-equiv=\"Content-Security-Policy\"' \"${SRCROOT}/App/public/index.html\" 2>/dev/null; then\n  echo \"error: The bundled web client has no Content-Security-Policy meta element, so it was not built for the app. $fix\" >&2\n  exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 		6634F4EFEBD30273BCE97C65 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

@@ -8,6 +8,14 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: "always",
   },
+  // `cap sync` writes config.xml for Cordova plugins and adds a wildcard
+  // <access origin="*"/> unless this list is given. Nothing here reads it: on
+  // Android only Cordova's own WebView stack consults the allow-list, and
+  // Capacitor replaces that stack; iOS's CDVConfigParser ignores <access>. No
+  // Cordova plugin is installed. An empty list writes no <access> at all.
+  cordova: {
+    accessOrigins: [],
+  },
   plugins: {
     // @capacitor-community/safe-area installs its own window-insets listener
     // on the decor view and already pads for the keyboard. Capacitor core's

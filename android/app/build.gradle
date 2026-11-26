@@ -44,6 +44,36 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
+// The web client inside the APK is the copy `npx cap sync` left in
+// src/main/assets/public. Git ignores that copy, so a build can package an old
+// one. Refuse a copy that loads a different SDK than package.json vendors, or
+// one built without the app's Content-Security-Policy (`npm run build:native`).
+def checkBundledWebClient = tasks.register('checkBundledWebClient') {
+    def packageJson = rootProject.file('../package.json')
+    def bundle = file('src/main/assets/public')
+    doLast {
+        def fix = 'Run `npm run build:native && npx cap sync android`, then build again.'
+        def dependency = new groovy.json.JsonSlurper().parse(packageJson).dependencies?.p2party ?: ''
+        def vendored = dependency =~ /^file:vendor\/p2party-([0-9][^\/]*)\.tgz$/
+        if (!vendored.find()) {
+            throw new GradleException("package.json does not vendor p2party as file:vendor/p2party-<version>.tgz")
+        }
+        def expected = vendored.group(1)
+        def loaded = [] as SortedSet
+        fileTree(dir: new File(bundle, 'assets'), include: '*.js').each { script ->
+            (script.text =~ /vendor\/p2party-([0-9][0-9A-Za-z.+-]*)\//).each { match -> loaded << match[1] }
+        }
+        if (loaded != ([expected] as SortedSet)) {
+            throw new GradleException("The bundled web client loads p2party ${loaded ? loaded.join(', ') : 'from no vendor path'}, but package.json vendors ${expected}. ${fix}")
+        }
+        def index = new File(bundle, 'index.html')
+        if (!index.isFile() || !index.text.contains('http-equiv="Content-Security-Policy"')) {
+            throw new GradleException("The bundled web client has no Content-Security-Policy meta element, so it was not built for the app. ${fix}")
+        }
+    }
+}
+tasks.named('preBuild') { dependsOn checkBundledWebClient }
+
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
