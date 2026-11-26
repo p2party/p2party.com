@@ -9,9 +9,6 @@ PODS:
   - CapacitorFilesystem (8.1.2):
     - Capacitor
     - IONFilesystemLib (~> 1.1.1)
-  - CapacitorFileTransfer (2.0.4):
-    - Capacitor
-    - IONFileTransferLib (~> 1.0.2)
   - CapacitorScreenOrientation (8.0.1):
     - Capacitor
   - CapacitorStatusBar (8.0.3):
@@ -19,7 +16,6 @@ PODS:
   - CapawesomeTeamCapacitorFileOpener (8.0.1):
     - Capacitor
   - IONFilesystemLib (1.1.2)
-  - IONFileTransferLib (1.0.3)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -27,7 +23,6 @@ DEPENDENCIES:
   - "CapacitorCommunitySafeArea (from `../../node_modules/@capacitor-community/safe-area`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
-  - "CapacitorFileTransfer (from `../../node_modules/@capacitor/file-transfer`)"
   - "CapacitorScreenOrientation (from `../../node_modules/@capacitor/screen-orientation`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - "CapawesomeTeamCapacitorFileOpener (from `../../node_modules/@capawesome-team/capacitor-file-opener`)"
@@ -35,7 +30,6 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - IONFilesystemLib
-    - IONFileTransferLib
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -48,8 +42,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorFilesystem:
     :path: "../../node_modules/@capacitor/filesystem"
-  CapacitorFileTransfer:
-    :path: "../../node_modules/@capacitor/file-transfer"
   CapacitorScreenOrientation:
     :path: "../../node_modules/@capacitor/screen-orientation"
   CapacitorStatusBar:
@@ -63,13 +55,11 @@ SPEC CHECKSUMS:
   CapacitorCommunitySafeArea: 91738f4ae7f47d2d94e06e429e16fb73cd8fdc48
   CapacitorCordova: 345eacdc4c8282415446aea4acd8c77d82480bd4
   CapacitorFilesystem: 2db285a1ac6e475cc27cae2e1bea999000f9e2be
-  CapacitorFileTransfer: 445b9dc69ea5a5e0e708e011a4848e63c471abee
   CapacitorScreenOrientation: 6c3c84223ea1dd44aaa7184e2b416dd1192270d0
   CapacitorStatusBar: eca7bc2b58d9f886f1ef9edb66e57a9b29c121af
   CapawesomeTeamCapacitorFileOpener: 308c522f66aa62e881acf637d5557cf6cf235e7e
   IONFilesystemLib: 21a63377696b2d8fab5632ecfb7d2ac67bddb68a
-  IONFileTransferLib: addbbf50405c163dcd74a7b1bd8c6f9302342be2
 
-PODFILE CHECKSUM: f4267109cd7e079ffbfe5920ca1b3d4222863851
+PODFILE CHECKSUM: 7e5908523545faf1fb7f5d00a887f365940ed45e
 
 COCOAPODS: 1.17.0
