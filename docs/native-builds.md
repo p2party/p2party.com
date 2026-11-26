@@ -8,12 +8,24 @@ here, and release signing is not set up in the repository.
 ## Toolchain
 
 - **Capacitor:** 8.6.3 for the CLI, core, Android and iOS packages.
-- **Android:** Gradle wrapper 8.14.3, Android Gradle Plugin 8.13.0, compile
-  and target SDK 36, minimum SDK 24. The plugins compile with a Java 21
-  toolchain. Gradle does not find Homebrew's keg-only `openjdk@21` by itself,
-  and with only a newer JDK on the path the build stops at "Cannot find a Java
-  installation on your machine (...) matching: {languageVersion=21, ...}".
-  Point `JAVA_HOME` at a JDK 21:
+- **Android:** Gradle wrapper 9.5.1, Android Gradle Plugin 8.13.2, compile
+  and target SDK 37, minimum SDK 24. Building needs Android SDK Platform 37
+  (`platforms;android-37.0` in `sdkmanager`), which this machine does not
+  have. Two pins are held below their latest release:
+  - Android Gradle Plugin 9 (each of 9.0.1 to 9.5.3 was tried) cannot
+    configure `@capacitor-community/safe-area` 8.0.1, its latest release. With
+    AGP 9's defaults its `apply plugin: 'kotlin-android'` collides with AGP's
+    built-in Kotlin; with `android.builtInKotlin=false` and
+    `android.newDsl=false` it stops at
+    `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 no longer
+    supports. AGP 8.13 in turn does not run on Gradle 9.6 or later, so the
+    wrapper stays at 9.5.1 (9.9.2 is the latest).
+  - `androidx.core` stays at 1.18.0: 1.19 requires AGP 9.1.0 or later.
+
+  The plugins compile with a Java 21 toolchain. Gradle does not find Homebrew's
+  keg-only `openjdk@21` by itself, and with only a newer JDK on the path the
+  build stops at "Cannot find a Java installation on your machine (...)
+  matching: {languageVersion=21, ...}". Point `JAVA_HOME` at a JDK 21:
 
   ```sh
   cd android
@@ -197,21 +209,26 @@ and the generated file has no `<access>` element.
 
 ## Last verified: 2026-11-26
 
-- **Android:** `./gradlew clean assembleDebug` with JDK 21.0.13 succeeded on a
-  `build:native` copy. With the copy's SDK path changed to 0.14.4, and with a
-  `build:client` copy, the build failed in `checkBundledWebClient`; after
-  `build:native` and `cap sync android` it passed. Not installed on a device or
-  emulator.
-- **iOS:** with the deployment target at 16.0, `pod install --deployment`
-  succeeded, which confirms that `Podfile.lock` matches the `Podfile`. The
-  unsigned simulator build succeeded with Xcode 27.2 on a `build:native` copy
-  and failed in "Check bundled web client" for a `build:client` copy and for a
-  copy loading 0.14.4. Not run on a simulator or device.
-- **Policy:** `npm run e2e:native-csp` passed: zero violations, zero page
-  errors, zero requests leaving loopback, WASM fetched and compiled. With
-  `blob:` removed from `worker-src` it failed with a recorded `worker-src`
-  violation on `/rooms`. `e2e/native-csp-webkit.swift` on macOS 27.2 WebKit:
-  the home page rendered and the local crypto proof finished with no
-  violation. It failed at the room dialog because of the SDK's WASM-source
-  check described above. With `'wasm-unsafe-eval'` removed, both engines
-  refused the WASM.
+- **Android:** with compile and target SDK 37, `./gradlew assembleDebug` stops
+  at "Failed to find target with hash string 'android-37'", because SDK
+  Platform 37 is not installed here. With both temporarily set to 36 and
+  everything else as committed (Gradle 9.5.1, AGP 8.13.2, the AndroidX and
+  Cordova versions in `variables.gradle`), `./gradlew clean assembleDebug` with
+  JDK 21.0.13 succeeded on a `build:native` copy, and `checkBundledWebClient`
+  failed for a `build:client` copy and passed after `build:native` and
+  `cap sync`. Not installed on a device or emulator.
+- **iOS:** with the deployment target at 16.0 and Capacitor 8.6.3,
+  `pod install --deployment` succeeded, which confirms that `Podfile.lock`
+  matches the `Podfile`, and the unsigned simulator build succeeded with Xcode
+  27.2 on a `build:native` copy. The "Check bundled web client" phase is run
+  against fixture bundles by `tests/nativeBuild.test.ts`. Not run on a
+  simulator or device.
+- **Policy:** on the Vite 8 build, `npm run e2e:native-csp` passed: zero
+  violations, zero page errors, zero requests leaving loopback, WASM fetched
+  and compiled. `e2e/native-csp-webkit.swift` on macOS 27.2 WebKit: the home
+  page rendered and the local crypto proof finished with no violation. It
+  failed at the room dialog because of the SDK's WASM-source check described
+  above. In the earlier run on the Vite 7 build, the same two checks gave the
+  same results; with `blob:` removed from `worker-src` the Chromium check
+  failed with a recorded `worker-src` violation on `/rooms`, and with
+  `'wasm-unsafe-eval'` removed both engines refused the WASM.
