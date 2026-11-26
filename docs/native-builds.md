@@ -8,19 +8,32 @@ here, and release signing is not set up in the repository.
 ## Toolchain
 
 - **Capacitor:** 8.6.3 for the CLI, core, Android and iOS packages.
-- **Android:** Gradle wrapper 9.5.1, Android Gradle Plugin 8.13.2, compile
-  and target SDK 37, minimum SDK 24. Building needs Android SDK Platform 37
-  (`platforms;android-37.0` in `sdkmanager`), which this machine does not
-  have. Two pins are held below their latest release:
+- **Android:** Gradle wrapper 9.5.1 (the distribution is checked against
+  Gradle's published SHA-256), Android Gradle Plugin 8.13.2, compile and
+  target SDK 36, minimum SDK 24. Cordova Android 15.1.0 (only its `framework`
+  library is used; no Cordova plugin is installed). Four pins are held below
+  their latest release, all for one reason:
   - Android Gradle Plugin 9 (each of 9.0.1 to 9.5.3 was tried) cannot
     configure `@capacitor-community/safe-area` 8.0.1, its latest release. With
     AGP 9's defaults its `apply plugin: 'kotlin-android'` collides with AGP's
     built-in Kotlin; with `android.builtInKotlin=false` and
     `android.newDsl=false` it stops at
     `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 no longer
-    supports. AGP 8.13 in turn does not run on Gradle 9.6 or later, so the
-    wrapper stays at 9.5.1 (9.9.2 is the latest).
-  - `androidx.core` stays at 1.18.0: 1.19 requires AGP 9.1.0 or later.
+    supports. That plugin is the only part of the build AGP 9 refuses: the
+    app's own build files already use `proguard-android-optimize.txt` and
+    `layout.buildDirectory`.
+  - AGP 8.13 does not run on Gradle 9.6 or later, so the wrapper stays at
+    9.5.1 (9.9.2 is the latest).
+  - `androidx.core` stays at 1.18.0: 1.19 requires AGP 9.1.0 and compile SDK 37.
+  - Compile and target SDK stay at 36, the highest compile SDK AGP 8.13.2
+    recommends (37 is the latest). Moving to 37, once the safe-area plugin
+    builds with AGP 9, needs three things: SDK Platform 37 installed
+    (`platforms;android-37.0`); `android.permission.ACCESS_LOCAL_NETWORK`
+    declared in `AndroidManifest.xml` and requested at runtime before a room
+    is joined, because Android 17 blocks an app targeting 37, and its WebView,
+    from local-network TCP, UDP and `.local` resolution without it, which
+    stops WebRTC host and mDNS candidates between two phones on one Wi-Fi; and
+    a test of a room between two phones on one Wi-Fi.
 
   The plugins compile with a Java 21 toolchain. Gradle does not find Homebrew's
   keg-only `openjdk@21` by itself, and with only a newer JDK on the path the
@@ -200,7 +213,7 @@ again once the new SDK is vendored.
 
 `cap sync` writes `config.xml` for Cordova plugins and adds
 `<access origin="*"/>` unless `cordova.accessOrigins` is set. Nothing in these
-apps reads it. On Android, Cordova 14's `AllowListPlugin` parses the element,
+apps reads it. On Android, Cordova 15's `AllowListPlugin` parses the element,
 but only Cordova's own WebView classes (`CordovaWebViewImpl`,
 `SystemWebViewClient`, `CordovaBridge`) ask it, and Capacitor replaces those
 with its own bridge; no Cordova plugin is installed. On iOS, `CDVConfigParser`
@@ -209,14 +222,12 @@ and the generated file has no `<access>` element.
 
 ## Last verified: 2026-11-26
 
-- **Android:** with compile and target SDK 37, `./gradlew assembleDebug` stops
-  at "Failed to find target with hash string 'android-37'", because SDK
-  Platform 37 is not installed here. With both temporarily set to 36 and
-  everything else as committed (Gradle 9.5.1, AGP 8.13.2, the AndroidX and
-  Cordova versions in `variables.gradle`), `./gradlew clean assembleDebug` with
-  JDK 21.0.13 succeeded on a `build:native` copy, and `checkBundledWebClient`
-  failed for a `build:client` copy and passed after `build:native` and
-  `cap sync`. Not installed on a device or emulator.
+- **Android:** as committed (Gradle 9.5.1, AGP 8.13.2, compile and target SDK
+  36, the AndroidX and Cordova versions in `variables.gradle`),
+  `./gradlew clean assembleDebug` with JDK 21.0.13 succeeded on a
+  `build:native` copy, and `checkBundledWebClient` failed for a `build:client`
+  copy and passed after `build:native` and `cap sync`. Not installed on a
+  device or emulator.
 - **iOS:** with the deployment target at 16.0 and Capacitor 8.6.3,
   `pod install --deployment` succeeded, which confirms that `Podfile.lock`
   matches the `Podfile`, and the unsigned simulator build succeeded with Xcode

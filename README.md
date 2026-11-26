@@ -156,12 +156,11 @@ HSTS, and the other response headers at the CDN or reverse proxy as described in
 
 ## Android and iOS
 
-`android/` and `ios/` are Capacitor 8 projects. The Android app compiles
-against Android SDK Platform 37, which must be installed before
-`./gradlew assembleDebug` (JDK 21) can build it; on 2026-11-26 it built with
-SDK 36 substituted, and an unsigned iOS simulator build (`xcodebuild`, Xcode
-27.2) succeeded. Neither app has been run on a device, emulator or simulator,
-and a mobile release still needs signing and device validation.
+`android/` and `ios/` are Capacitor 8 projects. On 2026-11-26 an Android debug
+build (`./gradlew assembleDebug` with JDK 21) and an unsigned iOS simulator
+build (`xcodebuild`, Xcode 27.2) succeeded. Neither app has been run on a
+device, emulator or simulator, and a mobile release still needs signing and
+device validation.
 
 Build the app's web client with `npm run build:native`, which adds the app's
 Content-Security-Policy, then copy it into the projects with
