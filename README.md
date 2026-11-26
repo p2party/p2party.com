@@ -45,7 +45,7 @@ in the separate library repository.
 
 ## Run locally
 
-Use Node **24.11.1** and npm **11.6.2** to match CI. Bun **1.3.14** runs tests;
+Use Node **26.13.1** and npm **12.2.3** to match CI. Bun **1.4.5** runs tests;
 npm and `package-lock.json` are the dependency authority.
 
 ```bash
