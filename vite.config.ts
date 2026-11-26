@@ -26,20 +26,21 @@ export const documentedWebPolicy = (deploymentDoc: string): string => {
 const CAPACITOR_IOS_ORIGIN = "capacitor://localhost";
 
 /**
- * The web and native builds target the current release of each evergreen
- * browser, as MDN's browser-compat-data 8.1.11 listed them on 2026-11-26:
- * nothing older gets lowered syntax, CSS fallbacks or vendor prefixes. Raise
- * these as new versions ship.
+ * One browser target for the web and native builds: the current major of each
+ * browser; for Safari the major's first release, because the iOS deployment
+ * target follows it. Majors as MDN's browser-compat-data 8.1.11 listed them as
+ * current on 2026-11-26. Nothing older gets lowered syntax, CSS fallbacks or
+ * vendor prefixes. Raise these as new majors ship.
  *
  * The apps run the bundle in the platform WebView, so their minimums follow:
- * Safari 27.2 "is available for iOS 27.2" (Apple's Safari 27.2 release notes),
- * which is the deployment target in ios/App/Podfile, and Chromium 158 builds
- * Android System WebView with min_sdk_version 29 (build/config/android/
- * config.gni at 158.0.8127.102), which is minSdkVersion in
- * android/variables.gradle. tests/nativeBuild.test.ts fails if either falls
- * below what this target needs.
+ * "Safari 27 is available for iOS 27, iPadOS 27, ..." (Apple's Safari 27
+ * release notes), so the deployment target in ios/App/Podfile is 27.0, and
+ * Chromium 158 builds Android System WebView with min_sdk_version 29
+ * (build/config/android/config.gni at 158.0.8127.102), so minSdkVersion in
+ * android/variables.gradle is 29. tests/nativeBuild.test.ts fails if either
+ * falls below what this target needs.
  */
-const BROWSER_TARGET = ["chrome158", "edge158", "firefox161", "safari27.2"];
+const BROWSER_TARGET = ["chrome158", "edge158", "firefox161", "safari27"];
 
 /**
  * The web policy for a document meta element in the Android and iOS apps,

@@ -219,8 +219,11 @@ describe("native build hygiene", () => {
   });
 
   // The apps run the bundle in the platform WebView. iOS's is the WebKit of
-  // the installed iOS and Safari N ships with iOS N, so the deployment target
-  // must be at least the targeted Safari. Android System WebView needs a
+  // the installed iOS and Safari N ships with iOS N. The target names the
+  // current major of each browser, for Safari the major's first release, and
+  // the deployment target is that iOS: not below it, which would run the
+  // bundle on an older engine, and not a later point release, which would shut
+  // out a phone one update behind. Android System WebView needs a
   // minimum API level that rises with Chromium; the table is what Chromium's
   // build/config/android/config.gni sets as default_min_sdk_version at the
   // release tag. A device below either minimum would install the app and then
@@ -261,7 +264,10 @@ describe("native build hygiene", () => {
       ),
     ].map((match) => match[1]);
     expect(configurations).toEqual([podfile, podfile, podfile, podfile]);
-    expect(atLeast(podfile ?? "0", targetVersion("safari"))).toBe(true);
+    const safari = targetVersion("safari");
+    expect(safari).toMatch(/^\d+$/);
+    expect(atLeast(podfile ?? "0", safari)).toBe(true);
+    expect(podfile).toBe(`${safari}.0`);
   });
 
   test("the Android minimum SDK runs the targeted Chrome's WebView", () => {

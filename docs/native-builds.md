@@ -2,8 +2,9 @@
 
 The Android and iOS apps are Capacitor 8 shells around the web client
 (`webDir: "dist"` in `capacitor.config.ts`). A passing native build is not a
-mobile release: neither app has been run on a device, emulator or simulator
-here, and release signing is not set up in the repository.
+mobile release: neither app has been run on a device here (see "Last
+verified" for the emulator run), and release signing is not set up in the
+repository.
 
 ## Toolchain
 
@@ -13,7 +14,10 @@ here, and release signing is not set up in the repository.
   target SDK 36, minimum SDK 29 (Android 10). The minimum follows the browser
   target: Chromium 158 builds Android System WebView with `min_sdk_version` 29
   (`build/config/android/config.gni` at tag 158.0.8127.102), and Google's
-  Chrome system requirements list "Android 10 or later". Cordova Android
+  Chrome system requirements list "Android 10 or later". The app also needs
+  Android System WebView at Chrome 158 or newer, which the system updates
+  independently of the Android version; the one emulator run so far was on
+  WebView 133. Cordova Android
   15.1.0 (only its `framework` library is used; no Cordova plugin is
   installed). Four pins are held below
   their latest release, all for one reason:
@@ -50,16 +54,16 @@ here, and release signing is not set up in the repository.
     ./gradlew assembleDebug
   ```
 
-- **iOS:** deployment target 27.2 (`ios/App/Podfile` and every configuration
-  in `App.xcodeproj`). The minimum follows the browser target: Apple's Safari
-  27.2 release notes say "Safari 27.2 is available for iOS 27.2, iPadOS 27.2,
-  visionOS 27.2, macOS 27.2, macOS 26, and macOS Sequoia". Apple lists iOS 27
-  for iPhone 11 and later and iPhone SE (2nd generation and later), and
+- **iOS:** deployment target 27.0 (`ios/App/Podfile` and every configuration
+  in `App.xcodeproj`). The minimum follows the browser target, Safari 27:
+  Apple's Safari 27 release notes say "Safari 27 is available for iOS 27,
+  iPadOS 27, visionOS 27, macOS 27, macOS 26, and macOS Sequoia". Apple lists
+  iOS 27 for iPhone 11 and later and iPhone SE (2nd generation and later), and
   iPadOS 27 for iPad Pro (4th generation and later), iPad Air (4th generation
   and later), iPad (9th generation and later) and iPad mini (6th generation
   and later). Dependencies through CocoaPods (`Podfile.lock` was written by
-  1.17.0); the pods keep their own minimum of iOS 15.0. Build the workspace, not
-  the project:
+  1.17.0); the pods keep their own minimum of iOS 15.0. Build the workspace,
+  not the project:
 
   ```sh
   cd ios/App
@@ -82,11 +86,13 @@ npx cap sync android   # or: npx cap sync ios
 
 `build:native` is `vite build --mode native`: the web client plus the app's
 Content-Security-Policy (below). Both builds use one browser target,
-`BROWSER_TARGET` in `vite.config.ts`: the current release of each evergreen
-browser (Chrome and Edge 158, Firefox 161, Safari 27.2), with nothing lowered,
-prefixed or given a fallback for older engines. The apps' minimums follow from
-it (see Toolchain), and `tests/nativeBuild.test.ts` fails if the `Podfile`,
-any Xcode configuration or `minSdkVersion` falls below what the target needs.
+`BROWSER_TARGET` in `vite.config.ts`: the current major of each browser, for
+Safari the major's first release because the iOS deployment target follows it
+(Chrome and Edge 158, Firefox 161, Safari 27), with nothing lowered, prefixed
+or given a fallback for older engines. The apps' minimums follow from it (see
+Toolchain). `tests/nativeBuild.test.ts` fails if the `Podfile` or any Xcode
+configuration is not the iOS that ships the targeted Safari major, or if
+`minSdkVersion` falls below what the targeted Chrome's WebView needs.
 `cap sync` also rewrites
 `android/capacitor.settings.gradle`, `android/app/capacitor.build.gradle`, the
 plugin list in `ios/App/Podfile` and the generated `config.xml` files, and runs
@@ -204,8 +210,8 @@ again once the new SDK is vendored.
   start also deletes those: the top-level `Directory.Data` files whose names
   match that pattern exactly, the QR file, and its `p2party` folder if nothing
   else is in it. Nothing else is touched. A step that fails is logged and the
-  start continues. Listing `Directory.Data` uses an empty path, which was not
-  run on a device here.
+  start continues. Listing `Directory.Data` uses an empty path; on an Android
+  emulator it returned an empty list, and it has not run on a device.
 - On iOS the file opens in the system preview (`UIDocumentInteractionController`),
   whose share sheet offers Save to Files and, for images, Save Image. That is
   standard iOS behaviour and was not exercised here.
@@ -232,9 +238,13 @@ and the generated file has no `<access>` element.
   36, the AndroidX and Cordova versions in `variables.gradle`),
   `./gradlew clean assembleDebug` with JDK 21.0.13 succeeded on a
   `build:native` copy, and `checkBundledWebClient` failed for a `build:client`
-  copy and passed after `build:native` and `cap sync`. Not installed on a
-  device or emulator.
-- **iOS:** with the deployment target at 27.2 and Capacitor 8.6.3,
+  copy and passed after `build:native` and `cap sync`. Installed and launched
+  on an Android 16 (API 36) emulator with WebView 133.0.6943.137: the process
+  stayed up and the home page rendered; the only console errors were the
+  startup sweep's removals of files a fresh install does not have, and
+  listing `Directory.Data` with an empty path returned an empty list. Not run
+  on a device.
+- **iOS:** with the deployment target at 27.0 and Capacitor 8.6.3,
   `pod install --deployment` succeeded, which confirms that `Podfile.lock`
   matches the `Podfile`, and the unsigned simulator build succeeded with Xcode
   27.2 on a `build:native` copy. The "Check bundled web client" phase is run
