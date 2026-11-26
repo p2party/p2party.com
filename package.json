@@ -30,6 +30,7 @@
     "lint:check": "eslint . --ext .ts,.tsx --max-warnings 0",
     "provenance:check": "node scripts/verifyLocalDependency.mjs",
     "e2e": "node e2e/run.mjs",
+    "e2e:native-csp": "npm run build:native && node e2e/native-csp.mjs",
     "upload": "npm run build && node --env-file=.env scripts/uploadAllToS3.mjs",
     "preview": "vite preview",
     "prerender": "node scripts/prerender.mjs",
