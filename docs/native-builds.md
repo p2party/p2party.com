@@ -10,8 +10,12 @@ here, and release signing is not set up in the repository.
 - **Capacitor:** 8.6.3 for the CLI, core, Android and iOS packages.
 - **Android:** Gradle wrapper 9.5.1 (the distribution is checked against
   Gradle's published SHA-256), Android Gradle Plugin 8.13.2, compile and
-  target SDK 36, minimum SDK 24. Cordova Android 15.1.0 (only its `framework`
-  library is used; no Cordova plugin is installed). Four pins are held below
+  target SDK 36, minimum SDK 29 (Android 10). The minimum follows the browser
+  target: Chromium 158 builds Android System WebView with `min_sdk_version` 29
+  (`build/config/android/config.gni` at tag 158.0.8127.102), and Google's
+  Chrome system requirements list "Android 10 or later". Cordova Android
+  15.1.0 (only its `framework` library is used; no Cordova plugin is
+  installed). Four pins are held below
   their latest release, all for one reason:
   - Android Gradle Plugin 9 (each of 9.0.1 to 9.5.3 was tried) cannot
     configure `@capacitor-community/safe-area` 8.0.1, its latest release. With
@@ -46,9 +50,15 @@ here, and release signing is not set up in the repository.
     ./gradlew assembleDebug
   ```
 
-- **iOS:** deployment target 16.0 (`ios/App/Podfile` and every configuration
-  in `App.xcodeproj`; see the policy section for why), dependencies through
-  CocoaPods (`Podfile.lock` was written by 1.17.0). Build the workspace, not
+- **iOS:** deployment target 27.2 (`ios/App/Podfile` and every configuration
+  in `App.xcodeproj`). The minimum follows the browser target: Apple's Safari
+  27.2 release notes say "Safari 27.2 is available for iOS 27.2, iPadOS 27.2,
+  visionOS 27.2, macOS 27.2, macOS 26, and macOS Sequoia". Apple lists iOS 27
+  for iPhone 11 and later and iPhone SE (2nd generation and later), and
+  iPadOS 27 for iPad Pro (4th generation and later), iPad Air (4th generation
+  and later), iPad (9th generation and later) and iPad mini (6th generation
+  and later). Dependencies through CocoaPods (`Podfile.lock` was written by
+  1.17.0); the pods keep their own minimum of iOS 15.0. Build the workspace, not
   the project:
 
   ```sh
@@ -71,14 +81,13 @@ npx cap sync android   # or: npx cap sync ios
 ```
 
 `build:native` is `vite build --mode native`: the web client plus the app's
-Content-Security-Policy (below), built for a different browser target. The web
-build targets only the current release of each evergreen browser (Chrome and
-Edge 158, Firefox 161, Safari 27.2 in `vite.config.ts`). The native build
-targets Chrome 158 for Android's System WebView, which updates like Chrome, and
-Safari 16 for iOS, whose WebView is the WebKit of the installed iOS, so the
-bundle keeps the syntax lowering, `-webkit-` prefixes and CSS fallbacks the
-iOS 16.0 deployment target needs. A test checks that the native Safari target
-matches the `Podfile` platform. `cap sync` also rewrites
+Content-Security-Policy (below). Both builds use one browser target,
+`BROWSER_TARGET` in `vite.config.ts`: the current release of each evergreen
+browser (Chrome and Edge 158, Firefox 161, Safari 27.2), with nothing lowered,
+prefixed or given a fallback for older engines. The apps' minimums follow from
+it (see Toolchain), and `tests/nativeBuild.test.ts` fails if the `Podfile`,
+any Xcode configuration or `minSdkVersion` falls below what the target needs.
+`cap sync` also rewrites
 `android/capacitor.settings.gradle`, `android/app/capacitor.build.gradle`, the
 plugin list in `ios/App/Podfile` and the generated `config.xml` files, and runs
 `pod install`. When no plugin was added or removed the tracked files come out
@@ -123,12 +132,9 @@ therefore outside the policy; iOS injects it as a `WKUserScript`.
 
 The cryptography module is WebAssembly, which the policy allows through
 `'wasm-unsafe-eval'` only. A WebKit without that keyword refuses to compile it,
-so the app would install and then fail to run any cryptography. The iOS
-deployment target is therefore 16.0: devices that cannot run iOS 16 cannot
-install the app; the web app is unaffected. That `'wasm-unsafe-eval'` first
-shipped in Safari and iOS 16 is unverified here: no compatibility data or
-WebKit release notes are available offline, and no iOS 15 runtime is
-installed.
+so the app would install and then fail to run any cryptography. MDN's
+browser-compat-data lists the keyword from Safari 16 and Android WebView 97,
+far below the minimums the browser target sets.
 
 ### Checking the policy
 
@@ -228,7 +234,7 @@ and the generated file has no `<access>` element.
   `build:native` copy, and `checkBundledWebClient` failed for a `build:client`
   copy and passed after `build:native` and `cap sync`. Not installed on a
   device or emulator.
-- **iOS:** with the deployment target at 16.0 and Capacitor 8.6.3,
+- **iOS:** with the deployment target at 27.2 and Capacitor 8.6.3,
   `pod install --deployment` succeeded, which confirms that `Podfile.lock`
   matches the `Podfile`, and the unsigned simulator build succeeded with Xcode
   27.2 on a `build:native` copy. The "Check bundled web client" phase is run

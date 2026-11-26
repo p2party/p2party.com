@@ -90,11 +90,6 @@ const buildConfig = (mode: string) =>
     }) => UserConfig
   )({ command: "build", mode, isSsrBuild: false, isPreview: false });
 
-const safariTargets = (mode: string) =>
-  ([buildConfig(mode).build?.target ?? []].flat() as string[]).filter(
-    (target) => target.startsWith("safari"),
-  );
-
 const nativeMetaTags = async (mode: string) => {
   const config = buildConfig(mode);
   const plugin = (config.plugins as Plugin[]).find(
@@ -223,33 +218,62 @@ describe("native build hygiene", () => {
     expect(current).toEqual({ status: 0, stderr: "" });
   });
 
-  // The policy admits the cryptography WASM only through 'wasm-unsafe-eval'.
-  // An iOS whose WebKit lacks that keyword would install the app and then
-  // refuse every cryptographic operation, so it must not be able to install it.
-  test("the iOS app requires iOS 16 in the Podfile and every configuration", () => {
-    expect(read("../ios/App/Podfile")).toMatch(/^platform :ios, '16\.0'$/m);
-    const targets = [
+  // The apps run the bundle in the platform WebView. iOS's is the WebKit of
+  // the installed iOS and Safari N ships with iOS N, so the deployment target
+  // must be at least the targeted Safari. Android System WebView needs a
+  // minimum API level that rises with Chromium; the table is what Chromium's
+  // build/config/android/config.gni sets as default_min_sdk_version at the
+  // release tag. A device below either minimum would install the app and then
+  // run a bundle built for a newer engine.
+  const webViewMinSdk: Array<[chrome: number, minSdk: number]> = [[158, 29]];
+
+  const targetVersion = (browser: string) => {
+    const targets = [buildConfig("native").build?.target ?? []].flat();
+    const found = (targets as string[]).filter((target) =>
+      target.startsWith(browser),
+    );
+    expect(found).toHaveLength(1);
+    return found[0].slice(browser.length);
+  };
+
+  /** Whether dotted version a is at least b, comparing each part as a number. */
+  const atLeast = (a: string, b: string) => {
+    const [x, y] = [a, b].map((v) => v.split(".").map(Number));
+    for (let i = 0; i < Math.max(x.length, y.length); i++)
+      if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0);
+    return true;
+  };
+
+  test("the web and native builds share one browser target", () => {
+    expect(buildConfig("native").build?.target).toEqual(
+      buildConfig("production").build?.target,
+    );
+  });
+
+  test("the iOS deployment target ships the targeted Safari", () => {
+    const podfile = /^platform :ios, '(\d+\.\d+)'$/m.exec(
+      read("../ios/App/Podfile"),
+    )?.[1];
+    expect(podfile).toBeDefined();
+    const configurations = [
       ...read("../ios/App/App.xcodeproj/project.pbxproj").matchAll(
         /IPHONEOS_DEPLOYMENT_TARGET = ([^;]+);/g,
       ),
     ].map((match) => match[1]);
-    expect(targets).toEqual(["16.0", "16.0", "16.0", "16.0"]);
+    expect(configurations).toEqual([podfile, podfile, podfile, podfile]);
+    expect(atLeast(podfile ?? "0", targetVersion("safari"))).toBe(true);
   });
 
-  // The iOS app runs the bundle in the WebKit of the installed iOS, so the
-  // native build must lower syntax and keep CSS fallbacks down to the
-  // deployment target; the web build targets current browsers only.
-  test("the native build targets the WebKit of the iOS deployment target", () => {
-    const ios = /^platform :ios, '(\d+)\.0'$/m.exec(
-      read("../ios/App/Podfile"),
-    )?.[1];
-    expect(ios).toBeDefined();
-    expect(safariTargets("native")).toEqual([`safari${ios}`]);
-
-    const web = safariTargets("production");
-    expect(web).toHaveLength(1);
-    expect(Number.parseFloat(web[0].slice("safari".length))).toBeGreaterThan(
-      Number(ios),
+  test("the Android minimum SDK runs the targeted Chrome's WebView", () => {
+    const chrome = Number(targetVersion("chrome"));
+    const known = webViewMinSdk.filter(([release]) => release <= chrome);
+    expect(known.length).toBeGreaterThan(0);
+    const required = Math.max(...known.map(([, minSdk]) => minSdk));
+    const minSdk = Number(
+      /^\s*minSdkVersion = (\d+)$/m.exec(
+        read("../android/variables.gradle"),
+      )?.[1],
     );
+    expect(minSdk).toBeGreaterThanOrEqual(required);
   });
 });

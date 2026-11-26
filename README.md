@@ -154,6 +154,32 @@ Android verified links require the production certificate fingerprint in
 HSTS, and the other response headers at the CDN or reverse proxy as described in
 [Deployment](docs/deployment.md).
 
+## Supported browsers and devices
+
+The client is built for the current release of each evergreen browser, as
+MDN's browser-compat-data listed them on 2026-11-26: Chrome and Edge 158,
+Firefox 161 and Safari 27.2 (`BROWSER_TARGET` in `vite.config.ts`). The web
+build and the Android and iOS apps use the same target. The apps run it in the
+platform WebView, so they require:
+
+- **iOS and iPadOS 27.2 or later**, the release that ships Safari 27.2. Per
+  Apple, iOS 27 runs on iPhone 11 and later and iPhone SE (2nd generation and
+  later), and iPadOS 27 on iPad Pro (4th generation and later), iPad Air (4th
+  generation and later), iPad (9th generation and later) and iPad mini (6th
+  generation and later). Older devices, and devices not yet updated to 27.2,
+  cannot install the app.
+- **Android 10 (API 29) or later**, the lowest version Chromium 158's Android
+  System WebView supports, with that WebView kept up to date. Android 9 and
+  earlier cannot install the app.
+
+An older browser receives the same files: nothing is lowered, polyfilled or
+prefixed for it, and it is shown no notice. Compared with Vite's default target
+(Chrome and Edge 111, Firefox 114, Safari 16.4), the build of 2026-11-26
+differed only in CSS: no `-webkit-` prefixes for `backdrop-filter` and
+`text-decoration`, and no fallback for `light-dark()` colours. An older
+browser may draw those styles wrongly, and code added later may not run in it
+at all.
+
 ## Android and iOS
 
 `android/` and `ios/` are Capacitor 8 projects. On 2026-11-26 an Android debug
@@ -170,11 +196,8 @@ than `package.json` vendors or lacks that policy. Run `npm run e2e:native-csp`
 after any change to that policy or to the SDK version. See
 [Native builds](docs/native-builds.md).
 
-The iOS app requires iOS 16. The policy loads the cryptography module through
-`'wasm-unsafe-eval'`, and an older WebKit would refuse it, so the app would
-install and then fail. Devices that cannot run iOS 16 are no longer supported
-by the native app; the web app is unaffected. That the keyword first shipped in
-iOS 16 is unverified here.
+The iOS app requires iOS or iPadOS 27.2 and the Android app Android 10; see
+[Supported browsers and devices](#supported-browsers-and-devices).
 
 The iOS app also needs p2party 0.15.0 or later. With the vendored 0.14.10 every
 route that loads the SDK fails on iOS, because 0.14.10 accepts a WASM source

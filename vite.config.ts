@@ -26,24 +26,20 @@ export const documentedWebPolicy = (deploymentDoc: string): string => {
 const CAPACITOR_IOS_ORIGIN = "capacitor://localhost";
 
 /**
- * The web build targets the current release of each evergreen browser, as
- * MDN's browser-compat-data 8.1.11 listed them on 2026-11-26: nothing older
- * gets lowered syntax, CSS fallbacks or vendor prefixes. Raise these as new
- * versions ship.
+ * The web and native builds target the current release of each evergreen
+ * browser, as MDN's browser-compat-data 8.1.11 listed them on 2026-11-26:
+ * nothing older gets lowered syntax, CSS fallbacks or vendor prefixes. Raise
+ * these as new versions ship.
+ *
+ * The apps run the bundle in the platform WebView, so their minimums follow:
+ * Safari 27.2 "is available for iOS 27.2" (Apple's Safari 27.2 release notes),
+ * which is the deployment target in ios/App/Podfile, and Chromium 158 builds
+ * Android System WebView with min_sdk_version 29 (build/config/android/
+ * config.gni at 158.0.8127.102), which is minSdkVersion in
+ * android/variables.gradle. tests/nativeBuild.test.ts fails if either falls
+ * below what this target needs.
  */
-const WEB_BROWSER_TARGET = ["chrome158", "edge158", "firefox161", "safari27.2"];
-
-/**
- * The native build runs in the platform WebView. Android's System WebView
- * updates like Chrome. iOS's is the WebKit of the installed iOS, so its floor
- * is the app's deployment target, iOS 16.0 (ios/App/Podfile). Built for the
- * web target instead, the bundle loses the -webkit- prefixes for
- * backdrop-filter, text-decoration and hyphens, the light-dark() fallback and
- * the min-width form of the breakpoint media queries, and the blog's link
- * patterns become lookbehind regex literals, which WebKit before 16.4 cannot
- * parse.
- */
-const NATIVE_BROWSER_TARGET = ["chrome158", "safari16"];
+const BROWSER_TARGET = ["chrome158", "edge158", "firefox161", "safari27.2"];
 
 /**
  * The web policy for a document meta element in the Android and iOS apps,
@@ -193,10 +189,7 @@ export default defineConfig((configEnv) => {
       // The server build renders HTML and is never served, so it has no use
       // for a copy of public/ -- which includes the WASM module and every logo.
       copyPublicDir: !configEnv.isSsrBuild,
-      target:
-        configEnv.mode === "native"
-          ? NATIVE_BROWSER_TARGET
-          : WEB_BROWSER_TARGET,
+      target: BROWSER_TARGET,
       rolldownOptions: {
         output: {
           // No manual chunking. Two attempts at steering it (under Rollup,
