@@ -2,15 +2,16 @@ import { useEffect } from "react";
 import { BrowserRouter } from "react-router";
 
 import { Capacitor } from "@capacitor/core";
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { StatusBar } from "@capacitor/status-bar";
 // import { ScreenOrientation } from "@capacitor/screen-orientation";
-import { SafeArea, SystemBarsStyle } from "@capacitor-community/safe-area";
+import { SafeArea } from "@capacitor-community/safe-area";
 
 import { useDarkMode } from "usehooks-ts";
 import { UniversalLinkProvider } from "./hooks/useUniversalLink";
 import { AppRoutes } from "./routes";
 import { lazyPages } from "./pages/registry";
 import { useVisualViewport } from "./hooks/useVisualViewport";
+import { applySystemBarTheme } from "./protocol/systemBars";
 
 import type { RoutePages } from "./pages/registry";
 
@@ -34,32 +35,16 @@ const App = ({ pages = lazyPages }: { pages?: RoutePages }) => {
   //   };
   // }, []);
 
+  // The theme follows the system appearance (prefers-color-scheme), so this
+  // runs at start-up and again whenever the appearance changes while the app
+  // is open.
   useEffect(() => {
-    const controller = new AbortController();
-
-    const changeSafeArea = async () => {
-      if (Capacitor.getPlatform() !== "web") {
-        if (isDarkMode) {
-          // await StatusBar.setBackgroundColor({ color: "#000" });
-          await StatusBar.setStyle({ style: Style.Dark });
-          await SafeArea.setSystemBarsStyle({
-            style: SystemBarsStyle.Dark,
-          });
-        } else {
-          // await StatusBar.setBackgroundColor({ color: "#fff" });
-          await StatusBar.setStyle({ style: Style.Dark });
-          await SafeArea.setSystemBarsStyle({
-            style: SystemBarsStyle.Light,
-          });
-        }
-      }
-    };
-
-    changeSafeArea();
-
-    return () => {
-      controller.abort();
-    };
+    applySystemBarTheme(Capacitor.getPlatform(), isDarkMode, {
+      safeArea: SafeArea,
+      statusBar: StatusBar,
+    }).catch((error: unknown) => {
+      console.error("Could not style the status bar", error);
+    });
   }, [isDarkMode]);
 
   return (

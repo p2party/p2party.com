@@ -75,6 +75,24 @@ set up in the repository.
     CODE_SIGNING_ALLOWED=NO build
   ```
 
+- **Status bar:** `applySystemBarTheme` (`src/protocol/systemBars.ts`), run
+  by `App.tsx` at start-up and whenever the page's theme changes, is the one
+  place that styles the bars. The theme follows the system appearance
+  (`prefers-color-scheme`); the app has no theme switch of its own. On both
+  platforms SafeArea's `setSystemBarsStyle` alone sets the glyphs: dark glyphs
+  on the light theme, light glyphs on the dark one. On Android it also paints
+  the window behind the bars white or black. On iOS the web view sits below
+  the status bar (`StatusBar.overlaysWebView: false`), so page content never
+  scrolls under the clock or the Dynamic Island, and the StatusBar plugin
+  fills the bar with a view of its own, black by default;
+  `StatusBar.setBackgroundColor` paints it the page's background (`#ffffff`
+  or `#000000`, from `bg-white` and `dark:bg-black` on `<html>`). Until that
+  first call the band has the plugin's default colour, black. Earlier code
+  called `StatusBar.setStyle` and then `SafeArea.setSystemBarsStyle`; on iOS
+  the second undid the first, and nothing coloured the band, which left black
+  glyphs on a black band in light mode. `tests/systemBars.test.ts` checks one
+  glyph call per theme and platform, the band colour on iOS, and the
+  Capacitor settings this relies on.
 - **iOS scene life cycle:** the app uses UIKit's scene-based life cycle.
   Apple's iOS & iPadOS 27 release notes (Deprecations, 141837548): "Apps built
   with the latest SDK must adopt the scene-based life cycle or they fail to
@@ -277,7 +295,12 @@ and the generated file has no `<access>` element.
   running for at least 30 seconds and showed the home page, loaded from
   `capacitor://localhost`; the console showed no Content-Security-Policy
   refusal, only the startup sweep's removals of files a fresh install does not
-  have. Not run on a device.
+  have. Those first screenshots also showed a black band behind the status bar
+  with the clock and icons invisible on it in light mode (black on black; see
+  "Status bar" below). After that fix, in light and in dark appearance, at
+  launch and when the appearance was switched with the app open, the band is
+  the page's background (white or black) and the clock and icons contrast
+  with it; the page starts below the band. Not run on a device.
 - **Policy:** on the Vite 8 build, `npm run e2e:native-csp` passed: zero
   violations, zero page errors, zero requests leaving loopback, WASM fetched
   and compiled. `e2e/native-csp-webkit.swift` on macOS 27.2 WebKit: the home
