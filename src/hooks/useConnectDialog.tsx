@@ -1,6 +1,12 @@
 import { useCallback } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
+import {
+  connectDialogDismissedKey,
+  connectDialogOpenKey,
+  migrateLegacyRoomUiKeys,
+} from "../protocol/roomUiKeys";
+
 /**
  * The join dialog's open/dismissed state, per room.
  *
@@ -11,16 +17,21 @@ import { useLocalStorage } from "usehooks-ts";
  * the room view can ask for the dialog without the layout having to thread a
  * setter down through it.
  *
- * The key spellings are load-bearing — they name values already stored in
- * users' browsers — so they are built here, once, rather than concatenated at
- * each call site.
+ * The keys are named by protocol/roomUiKeys, which keys them by a tag of the
+ * room rather than by its capability.
  */
-export const connectDialogOpenKey = (roomUrl: string | undefined): string =>
-  "alertIsOpenInRoom" + String(roomUrl);
 
-export const connectDialogDismissedKey = (
-  roomUrl: string | undefined,
-): string => "pressedCancelButtonInRoom" + String(roomUrl);
+// Every room route loads this module before it reads a flag, so this is the
+// point at which flags an earlier build stored under a capability are moved to
+// the room's tag. Server rendering has no storage and skips it; a browser that
+// refuses storage access has nothing here this page could read.
+if (typeof window !== "undefined") {
+  try {
+    migrateLegacyRoomUiKeys(window.localStorage);
+  } catch {
+    // Storage is unavailable to this page.
+  }
+}
 
 export const useConnectDialog = (roomUrl: string | undefined) => {
   const [isOpen, setIsOpen] = useLocalStorage(

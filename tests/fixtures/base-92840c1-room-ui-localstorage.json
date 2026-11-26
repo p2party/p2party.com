@@ -1,0 +1,15 @@
+{
+  "generatedFrom": "p2party.com 92840c1 src/hooks/useConnectDialog.tsx key builders, values serialised as usehooks-ts useLocalStorage writes them",
+  "capabilities": {
+    "roomA": "031425364758697a8b9cadbecfe0f102132435465768798a9bacbdcedff00112",
+    "roomB": "0b2845627f9cb9d6f3102d4a6784a1bedbf815324f6c89a6c3e0fd1a3754718e"
+  },
+  "rows": {
+    "alertIsOpenInRoom031425364758697a8b9cadbecfe0f102132435465768798a9bacbdcedff00112": "false",
+    "pressedCancelButtonInRoom031425364758697a8b9cadbecfe0f102132435465768798a9bacbdcedff00112": "true",
+    "alertIsOpenInRoom0b2845627f9cb9d6f3102d4a6784a1bedbf815324f6c89a6c3e0fd1a3754718e": "true",
+    "pressedCancelButtonInRoom0b2845627f9cb9d6f3102d4a6784a1bedbf815324f6c89a6c3e0fd1a3754718e": "false",
+    "alertIsOpenInRoomundefined": "true",
+    "pressedCancelButtonInRoomundefined": "true"
+  }
+}

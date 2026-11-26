@@ -23,6 +23,7 @@ import {
   DEFAULT_STUN_URLS,
 } from "../../hooks/useRoom";
 import { coverModeSummary, roomPqModeParameterSet } from "../../protocol/v4";
+import { connectDialogDismissedKey } from "../../protocol/roomUiKeys";
 
 // import { Checkbox, CheckboxField } from "../checkbox";
 import { Description, Label } from "../fieldset";
@@ -57,7 +58,7 @@ const SettingsAlert: FC<SettingsAlertProps> = ({ isOpen, setIsOpen }) => {
     90,
   );
   const [pressedCancelInConnect, setPressedCancelInConnect] = useLocalStorage(
-    "pressedCancelButtonInRoom" + roomUrl,
+    connectDialogDismissedKey(roomUrl),
     false,
   );
 
