@@ -46,7 +46,14 @@ npx cap sync android   # or: npx cap sync ios
 ```
 
 `build:native` is `vite build --mode native`: the web client plus the app's
-Content-Security-Policy (below). `cap sync` also rewrites
+Content-Security-Policy (below), built for a different browser target. The web
+build targets only the current release of each evergreen browser (Chrome and
+Edge 158, Firefox 161, Safari 27.2 in `vite.config.ts`). The native build
+targets Chrome 158 for Android's System WebView, which updates like Chrome, and
+Safari 16 for iOS, whose WebView is the WebKit of the installed iOS, so the
+bundle keeps the syntax lowering, `-webkit-` prefixes and CSS fallbacks the
+iOS 16.0 deployment target needs. A test checks that the native Safari target
+matches the `Podfile` platform. `cap sync` also rewrites
 `android/capacitor.settings.gradle`, `android/app/capacitor.build.gradle`, the
 plugin list in `ios/App/Podfile` and the generated `config.xml` files, and runs
 `pod install`. When no plugin was added or removed the tracked files come out

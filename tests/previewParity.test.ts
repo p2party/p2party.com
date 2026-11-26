@@ -42,8 +42,8 @@ describe("preview answers like the bucket", () => {
     // The redirect exists to match S3, not to invent routes. Without this
     // guard every unknown path would bounce to a slashed form and then 404
     // anyway, turning one wrong answer into two.
-    expect(config).toContain(
-      '!existsSync(resolve(__dirname, "dist", pathname.slice(1), "index.html"))',
+    expect(config).toMatch(
+      /!existsSync\(\s*resolve\(import\.meta\.dirname, "dist", pathname\.slice\(1\), "index\.html"\),?\s*\)/,
     );
   });
 });

@@ -80,8 +80,8 @@ const nativeIndex =
 const webIndex =
   '<!doctype html><html><head><meta charset="UTF-8" /></head><body></body></html>';
 
-const nativeMetaTags = async (mode: string) => {
-  const config = (
+const buildConfig = (mode: string) =>
+  (
     viteConfig as (env: {
       command: "build";
       mode: string;
@@ -89,6 +89,14 @@ const nativeMetaTags = async (mode: string) => {
       isPreview: boolean;
     }) => UserConfig
   )({ command: "build", mode, isSsrBuild: false, isPreview: false });
+
+const safariTargets = (mode: string) =>
+  ([buildConfig(mode).build?.target ?? []].flat() as string[]).filter(
+    (target) => target.startsWith("safari"),
+  );
+
+const nativeMetaTags = async (mode: string) => {
+  const config = buildConfig(mode);
   const plugin = (config.plugins as Plugin[]).find(
     (candidate) => candidate.name === "native-content-security-policy",
   );
@@ -226,5 +234,22 @@ describe("native build hygiene", () => {
       ),
     ].map((match) => match[1]);
     expect(targets).toEqual(["16.0", "16.0", "16.0", "16.0"]);
+  });
+
+  // The iOS app runs the bundle in the WebKit of the installed iOS, so the
+  // native build must lower syntax and keep CSS fallbacks down to the
+  // deployment target; the web build targets current browsers only.
+  test("the native build targets the WebKit of the iOS deployment target", () => {
+    const ios = /^platform :ios, '(\d+)\.0'$/m.exec(
+      read("../ios/App/Podfile"),
+    )?.[1];
+    expect(ios).toBeDefined();
+    expect(safariTargets("native")).toEqual([`safari${ios}`]);
+
+    const web = safariTargets("production");
+    expect(web).toHaveLength(1);
+    expect(Number.parseFloat(web[0].slice("safari".length))).toBeGreaterThan(
+      Number(ios),
+    );
   });
 });

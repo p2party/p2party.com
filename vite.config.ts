@@ -26,6 +26,26 @@ export const documentedWebPolicy = (deploymentDoc: string): string => {
 const CAPACITOR_IOS_ORIGIN = "capacitor://localhost";
 
 /**
+ * The web build targets the current release of each evergreen browser, as
+ * MDN's browser-compat-data 8.1.11 listed them on 2026-11-26: nothing older
+ * gets lowered syntax, CSS fallbacks or vendor prefixes. Raise these as new
+ * versions ship.
+ */
+const WEB_BROWSER_TARGET = ["chrome158", "edge158", "firefox161", "safari27.2"];
+
+/**
+ * The native build runs in the platform WebView. Android's System WebView
+ * updates like Chrome. iOS's is the WebKit of the installed iOS, so its floor
+ * is the app's deployment target, iOS 16.0 (ios/App/Podfile). Built for the
+ * web target instead, the bundle loses the -webkit- prefixes for
+ * backdrop-filter, text-decoration and hyphens, the light-dark() fallback and
+ * the min-width form of the breakpoint media queries, and the blog's link
+ * patterns become lookbehind regex literals, which WebKit before 16.4 cannot
+ * parse.
+ */
+const NATIVE_BROWSER_TARGET = ["chrome158", "safari16"];
+
+/**
  * The web policy for a document meta element in the Android and iOS apps,
  * which have no response headers to carry one. frame-ancestors is dropped:
  * browsers ignore it in a meta element and log an error.
@@ -56,7 +76,10 @@ const nativeContentSecurityPolicyMeta = (mode: string): Plugin => ({
     if (mode !== "native") return [];
     const policy = nativeContentSecurityPolicy(
       documentedWebPolicy(
-        readFileSync(resolve(__dirname, "docs", "deployment.md"), "utf8"),
+        readFileSync(
+          resolve(import.meta.dirname, "docs", "deployment.md"),
+          "utf8",
+        ),
       ),
     );
     return [
@@ -108,7 +131,9 @@ const previewLikeTheBucket = () => ({
         return;
       }
       if (
-        !existsSync(resolve(__dirname, "dist", pathname.slice(1), "index.html"))
+        !existsSync(
+          resolve(import.meta.dirname, "dist", pathname.slice(1), "index.html"),
+        )
       ) {
         next();
         return;
@@ -145,9 +170,9 @@ export default defineConfig((configEnv) => {
     appType: configEnv.isPreview === true ? "mpa" : "spa",
     resolve: {
       alias: {
-        app: resolve(__dirname, "src"),
-        components: resolve(__dirname, "src", "pages"),
-        hooks: resolve(__dirname, "src", "hooks"),
+        app: resolve(import.meta.dirname, "src"),
+        components: resolve(import.meta.dirname, "src", "pages"),
+        hooks: resolve(import.meta.dirname, "src", "hooks"),
       },
     },
     css: {
@@ -168,16 +193,21 @@ export default defineConfig((configEnv) => {
       // The server build renders HTML and is never served, so it has no use
       // for a copy of public/ -- which includes the WASM module and every logo.
       copyPublicDir: !configEnv.isSsrBuild,
-      rollupOptions: {
+      target:
+        configEnv.mode === "native"
+          ? NATIVE_BROWSER_TARGET
+          : WEB_BROWSER_TARGET,
+      rolldownOptions: {
         output: {
-          // No manual chunking. Two attempts at steering it made things worse:
-          // `{ p2party: ["p2party"] }` let Rollup group the CommonJS interop
-          // helpers into the SDK chunk, and since the entry imports those
-          // helpers every page did `import{g,c}from"./p2party-*.js"` and
-          // dragged 406 KB of WebRTC and cryptography onto a blog post. A
-          // path predicate moved the helpers *and* grew the chunk to 519 KB.
+          // No manual chunking. Two attempts at steering it (under Rollup,
+          // before Vite 8) made things worse: `{ p2party: ["p2party"] }` let
+          // Rollup group the CommonJS interop helpers into the SDK chunk, and
+          // since the entry imports those helpers every page did
+          // `import{g,c}from"./p2party-*.js"` and dragged 406 KB of WebRTC and
+          // cryptography onto a blog post. A path predicate moved the helpers
+          // *and* grew the chunk to 519 KB.
           //
-          // Left alone, Rollup puts a module in a chunk reachable from the
+          // Left alone, Rolldown puts a module in a chunk reachable from the
           // things that actually import it, which is the property that matters
           // here: the SDK is imported only by the room routes and by one
           // deferred call on the landing page.
