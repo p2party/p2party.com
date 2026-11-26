@@ -187,9 +187,10 @@ at all.
 
 `android/` and `ios/` are Capacitor 8 projects. On 2026-11-26 an Android debug
 build (`./gradlew assembleDebug` with JDK 21) and an unsigned iOS simulator
-build (`xcodebuild`, Xcode 27.2) succeeded, and the Android app launched and
-showed its home page on an emulator. Neither app has been run on a device, and
-a mobile release still needs signing and device validation.
+build (`xcodebuild`, Xcode 27.2) succeeded, and both apps launched and showed
+their home page, the Android app on an emulator and the iOS app on the iOS 27.0
+simulator. Neither app has been run on a device, and a mobile release still
+needs signing and device validation.
 
 Build the app's web client with `npm run build:native`, which adds the app's
 Content-Security-Policy, then copy it into the projects with

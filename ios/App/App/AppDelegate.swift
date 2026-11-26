@@ -46,7 +46,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
+    // Lets @capacitor/screen-orientation lock presented view controllers too.
+    // Under the scene life cycle SceneDelegate owns the window and self.window
+    // is nil, so read the root view controller from the window passed in (the
+    // plugin's README, "If your app already has an earlier version of this
+    // snippet, update it").
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
-      return UIInterfaceOrientationMask(rawValue: (self.window!.rootViewController as! CAPBridgeViewController).supportedInterfaceOrientations.rawValue)
+        guard let bridgeViewController = window?.rootViewController as? CAPBridgeViewController else {
+            return .all
+        }
+        return bridgeViewController.supportedInterfaceOrientations
+    }
+
+    func application(_ application: UIApplication,
+                     configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+
+        let config = UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+        config.delegateClass = SceneDelegate.self
+        return config
     }
 }

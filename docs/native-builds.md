@@ -3,8 +3,8 @@
 The Android and iOS apps are Capacitor 8 shells around the web client
 (`webDir: "dist"` in `capacitor.config.ts`). A passing native build is not a
 mobile release: neither app has been run on a device here (see "Last
-verified" for the emulator run), and release signing is not set up in the
-repository.
+verified" for the emulator and simulator runs), and release signing is not
+set up in the repository.
 
 ## Toolchain
 
@@ -71,6 +71,25 @@ repository.
     -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
     CODE_SIGNING_ALLOWED=NO build
   ```
+
+- **iOS scene life cycle:** the app uses UIKit's scene-based life cycle.
+  Apple's iOS & iPadOS 27 release notes (Deprecations, 141837548): "Apps built
+  with the latest SDK must adopt the scene-based life cycle or they fail to
+  launch", with migration guidance in TN3187, "Migrating to the UIKit
+  scene-based life cycle". Built with the iOS 27.2 SDK and no scene manifest,
+  the app was refused on the iOS 27.0 simulator: "Application failed to launch:
+  UIScene life cycle is required for apps built with this SDK", and the process
+  exited with SIGTRAP. The project now has what `@capacitor/cli` 8.6.3's iOS
+  template and its UIScene migration produce: a `UIApplicationSceneManifest` in
+  `Info.plist` (one scene, `$(PRODUCT_MODULE_NAME).SceneDelegate`, the `Main`
+  storyboard), `SceneDelegate.swift` in the App target, which hosts
+  `CAPBridgeViewController` and forwards the connection options, URL opens and
+  user activities (universal links) to Capacitor's `SceneDelegateProxy`, and
+  `application(_:configurationForConnecting:options:)` in `AppDelegate.swift`.
+  The AppDelegate's orientation hook for `@capacitor/screen-orientation` reads
+  the window UIKit passes in, as the plugin's README requires under scenes,
+  because `self.window` is now nil. `tests/nativeBuild.test.ts` pins all four
+  parts.
 
 ## Refresh the bundled web client
 
@@ -247,9 +266,13 @@ and the generated file has no `<access>` element.
 - **iOS:** with the deployment target at 27.0 and Capacitor 8.6.3,
   `pod install --deployment` succeeded, which confirms that `Podfile.lock`
   matches the `Podfile`, and the unsigned simulator build succeeded with Xcode
-  27.2 on a `build:native` copy. The "Check bundled web client" phase is run
-  against fixture bundles by `tests/nativeBuild.test.ts`. Not run on a
-  simulator or device.
+  27.2 on a `build:native` copy, with the "Check bundled web client" phase
+  passing; `tests/nativeBuild.test.ts` also runs that phase against fixture
+  bundles. On the iOS 27.0 simulator (iPhone 17) the app launched, stayed
+  running for at least 30 seconds and showed the home page, loaded from
+  `capacitor://localhost`; the console showed no Content-Security-Policy
+  refusal, only the startup sweep's removals of files a fresh install does not
+  have. Not run on a device.
 - **Policy:** on the Vite 8 build, `npm run e2e:native-csp` passed: zero
   violations, zero page errors, zero requests leaving loopback, WASM fetched
   and compiled. `e2e/native-csp-webkit.swift` on macOS 27.2 WebKit: the home

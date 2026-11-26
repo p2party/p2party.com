@@ -283,3 +283,79 @@ describe("native build hygiene", () => {
     expect(minSdk).toBeGreaterThanOrEqual(required);
   });
 });
+
+// Apps built with the iOS 27 SDK must adopt the scene-based life cycle or they
+// fail to launch ("Application failed to launch: UIScene life cycle is
+// required for apps built with this SDK" on the iOS 27.0 simulator). The shape
+// is Capacitor 8.6.3's iOS template: a scene manifest, a SceneDelegate that
+// hosts CAPBridgeViewController and forwards URL opens and user activities
+// (universal links) to SceneDelegateProxy, and an AppDelegate that names it.
+describe("iOS scene life cycle", () => {
+  test("Info.plist declares one scene served by SceneDelegate", () => {
+    const plist = read("../ios/App/App/Info.plist");
+    const manifest =
+      /<key>UIApplicationSceneManifest<\/key>\s*<dict>([\s\S]*?)<\/array>/.exec(
+        plist,
+      )?.[1];
+    expect(manifest).toBeDefined();
+    expect(manifest).toMatch(
+      /<key>UIApplicationSupportsMultipleScenes<\/key>\s*<false\/>/,
+    );
+    expect(manifest).toMatch(
+      /<key>UISceneConfigurationName<\/key>\s*<string>Default Configuration<\/string>/,
+    );
+    expect(manifest).toMatch(
+      /<key>UISceneDelegateClassName<\/key>\s*<string>\$\(PRODUCT_MODULE_NAME\)\.SceneDelegate<\/string>/,
+    );
+  });
+
+  test("SceneDelegate hosts the bridge and forwards links to Capacitor", () => {
+    const scene = read("../ios/App/App/SceneDelegate.swift");
+    expect(scene).toContain(
+      "class SceneDelegate: UIResponder, UIWindowSceneDelegate",
+    );
+    expect(scene).toContain(
+      "window?.rootViewController = CAPBridgeViewController()",
+    );
+    for (const forward of [
+      "SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)",
+      "SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)",
+      "SceneDelegateProxy.shared.scene(scene, continue: userActivity)",
+    ])
+      expect(scene).toContain(forward);
+  });
+
+  test("AppDelegate names the scene configuration and never unwraps its own window", () => {
+    const app = read("../ios/App/App/AppDelegate.swift");
+    expect(app).toContain(
+      'UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)',
+    );
+    expect(app).toContain("config.delegateClass = SceneDelegate.self");
+    // Under scenes self.window is nil; the orientation hook reads the window
+    // UIKit passes in.
+    expect(app).not.toContain("self.window!");
+    expect(app).toContain(
+      "window?.rootViewController as? CAPBridgeViewController",
+    );
+  });
+
+  test("SceneDelegate.swift is compiled into the App target", () => {
+    const project = read("../ios/App/App.xcodeproj/project.pbxproj");
+    const reference =
+      /(\w{24}) \/\* SceneDelegate\.swift \*\/ = \{isa = PBXFileReference;[^}]*path = SceneDelegate\.swift;/.exec(
+        project,
+      )?.[1];
+    expect(reference).toBeDefined();
+    const buildFile = new RegExp(
+      `(\\w{24}) /\\* SceneDelegate\\.swift in Sources \\*/ = \\{isa = PBXBuildFile; fileRef = ${reference} `,
+    ).exec(project)?.[1];
+    expect(buildFile).toBeDefined();
+    const sources =
+      /\/\* Sources \*\/ = \{\s*isa = PBXSourcesBuildPhase;[\s\S]*?files = \(([^)]*)\)/.exec(
+        project,
+      )?.[1] ?? "";
+    expect(sources).toContain(
+      `${buildFile} /* SceneDelegate.swift in Sources */`,
+    );
+  });
+});
