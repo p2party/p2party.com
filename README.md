@@ -176,6 +176,12 @@ install and then fail. Devices that cannot run iOS 16 are no longer supported
 by the native app; the web app is unaffected. That the keyword first shipped in
 iOS 16 is unverified here.
 
+The iOS app also needs p2party 0.15.0 or later. With the vendored 0.14.10 every
+route that loads the SDK fails on iOS, because 0.14.10 accepts a WASM source
+only over `http:` or `https:` and the iOS app is served from `capacitor://`.
+`e2e/native-csp-webkit.swift` is expected to fail at the room dialog until the
+site vendors the new SDK; run it again then.
+
 Keep native archives, signing keys, provisioning profiles, and copied web build
 outputs out of Git. The application ID is `com.p2party.app`; public association
 files contain identifiers and certificate fingerprints, never private keys.

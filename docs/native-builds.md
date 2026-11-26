@@ -118,14 +118,22 @@ after `npx cap sync ios`:
 swift e2e/native-csp-webkit.swift ios/App/App/public
 ```
 
-On 2026-11-26 it fails at the room dialog, and not because of the policy: the
-rooms page throws `TypeError: WASM source must use http: or https:`.
-`src/protocol/sdk.ts` points the SDK at `/vendor/.../libcrypto.wasm` relative
-to the page, which on iOS is a `capacitor:` URL, and p2party 0.14.10's
-`setWasmSourceUrl` accepts only `http:` and `https:`. The same error appears
-with the policy removed. It is thrown when `sdk.ts` loads, so every route that
-imports it is affected on iOS. The home page and the local crypto proof (which
-passes its WASM bytes directly) work, with no violations.
+### The iOS app needs p2party 0.15.0 or later
+
+With the vendored p2party 0.14.10, every route that loads the SDK fails on
+iOS. `src/protocol/sdk.ts` points the SDK at `/vendor/.../libcrypto.wasm`
+relative to the page, which on iOS is a `capacitor:` URL, and 0.14.10's
+`setWasmSourceUrl` accepts only `http:` and `https:`. The rooms page throws
+`TypeError: WASM source must use http: or https:` when `sdk.ts` loads, with or
+without the policy. The home page and the session lab's local crypto proof,
+which passes its WASM bytes directly, work with no violations. Android
+(`https://localhost`) and the web are not affected.
+
+The fix belongs in the SDK, not here: from 0.15.0 its loader accepts a WASM
+source on the page's own origin whatever the scheme, because it checks the
+hash of the fetched bytes itself. Until the site vendors 0.15.0,
+`e2e/native-csp-webkit.swift` is expected to fail at the room dialog. Run it
+again once the new SDK is vendored.
 
 ## Received attachments and the room QR code
 
@@ -143,10 +151,23 @@ passes its WASM bytes directly) work, with no violations.
   then the extension of the allowlisted type. The app's FileProvider already
   shares the cache directory (`cache-path` in `file_paths.xml`); it does not
   share `Directory.Data`, which the earlier code wrote to.
-- Neither platform reports when a viewer is done with a file: the iOS preview
-  resolves when it is shown and the Android intent when it is started. So the
-  folder is removed at every app start and by every purge (identity, room and
-  everything), not after use.
+- The installed opener does not tell the app when a viewer is done with a
+  file. iOS reports the preview closing to the plugin
+  (`UIDocumentInteractionController`'s delegate), but the plugin does not
+  forward it; on Android the plugin starts the intent without asking for a
+  result, and its call resolves at once. So the folder is removed at every app
+  start and by every purge (identity, room and everything), not after use. The
+  startup removal runs in the background: a file opened in the first moments
+  after a start could be removed with the rest.
+- Earlier builds wrote decrypted copies to `Directory.Data` (iOS Documents,
+  Android `files/`) as `<13-digit milliseconds>-<name>.<extension>`, with the
+  extension one of p2party 0.14.10's file extensions or empty, and saved the
+  room QR code as `p2party/room-invite.png` in `Directory.Documents`. Each
+  start also deletes those: the top-level `Directory.Data` files whose names
+  match that pattern exactly, the QR file, and its `p2party` folder if nothing
+  else is in it. Nothing else is touched. A step that fails is logged and the
+  start continues. Listing `Directory.Data` uses an empty path, which was not
+  run on a device here.
 - On iOS the file opens in the system preview (`UIDocumentInteractionController`),
   whose share sheet offers Save to Files and, for images, Save Image. That is
   standard iOS behaviour and was not exercised here.
