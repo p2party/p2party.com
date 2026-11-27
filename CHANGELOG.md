@@ -1,5 +1,10 @@
 # Web client changelog
 
+## November 27, 2026 — Wallet balances in navigation
+
+- The restored wallet totals its unspent Testnet 1 units locally. Each displayed total has a ledger height. Visitors can refresh using the same public history as everyone else.
+- A wallet holder can explicitly show just the amount and height in the p2party.com navigation for one tab, or hide and forget them.
+
 ## November 27, 2026 — Relay pricing, holder privacy and bonded voting
 
 - Put **Restore a wallet** in the first view of the homepage and wallet guide. The browser accepts a dropped file or pasted backup and unlocks spending with its separate recovery code.

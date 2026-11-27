@@ -27,6 +27,10 @@ The [whitepaper](https://p2party.com/whitepaper) gives a worked purchase through
 
 Two field notes cover the [November discrete-log and structured-LWE results](https://p2party.com/blog/ai-math-and-p2party-keys) and [an offline restore with both public wallet suites](https://p2party.com/blog/restoring-a-p2party-wallet).
 
+The [public balance refresh](https://p2party.com/wallet/snapshot/) reads a pinned Testnet 1 prefix and fetches later public receipt heights in fixed batches. Every visitor requests the same data for a given chain head. The signer verifies the native transfer suffix and matches its own commitments locally. The public site can show an amount and height voluntarily shared with this tab. It receives no list of wallet addresses.
+
+The release checkpoint was reproduced from the published genesis and public RPC using the native C verifier. To prepare a new checkpoint, run `python3 scripts/wallet-checkpoint.py --native-verifier /path/to/demos-ledger-verify --output /path/to/candidate.json`, check the candidate against a second verified replay, and release the same reviewed prefix and pins to the signer and the public broker together. The public experiment currently refreshes up to 256 later receipts within an 8 MiB transfer-wire budget.
+
 ## What works
 
 - Text and file transfers with authenticated receipts and selective retry.

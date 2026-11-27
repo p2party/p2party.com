@@ -1,0 +1,52 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  background: #fafafa;
+  color: #18181b;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 34rem;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 800;
+}
+h1 {
+  font-size: clamp(1.8rem, 7vw, 3rem);
+  letter-spacing: -0.04em;
+}
+p {
+  line-height: 1.6;
+}
+button,
+a {
+  border: 2px solid currentColor;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-weight: 650;
+  background: transparent;
+  color: inherit;
+}
+a {
+  display: inline-block;
+}
+[hidden] {
+  display: none;
+}
+#status {
+  border-inline-start: 4px solid #ea580c;
+  padding-inline-start: 1rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    background: #18181b;
+    color: #fafafa;
+  }
+}
