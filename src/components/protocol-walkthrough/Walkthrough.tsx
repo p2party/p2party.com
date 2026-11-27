@@ -1,3 +1,4 @@
+import { walletDocumentHref } from "../../lib/walletRestore";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { stories } from "./stories";
 import { FlowMap } from "./FlowMap";
@@ -91,7 +92,7 @@ function Player({ story }: { story: (typeof stories)[number] }) {
       </div>
       <div className='walk-sources'>
         {story.sources.map(([label, href]) => (
-          <a key={href} href={href}>
+          <a key={href} href={walletDocumentHref(href)}>
             {label}
           </a>
         ))}

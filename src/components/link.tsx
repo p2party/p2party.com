@@ -1,6 +1,7 @@
 import * as Headless from "@headlessui/react";
 import React, { forwardRef } from "react";
 import { Link as RouterLink } from "react-router";
+import { walletDocumentHref } from "../lib/walletRestore";
 
 /**
  * Catalyst ships this as a plain `<a>` with a TODO to wire it to the router.
@@ -11,21 +12,25 @@ import { Link as RouterLink } from "react-router";
  *
  * Anything with a scheme, a protocol-relative prefix, a `mailto:`, an explicit
  * `target`, or a download stays a real anchor -- those are genuinely leaving
- * the app, and handing them to the router would break them.
+ * the app, and handing them to the router would break them. The signer and
+ * public history download have independent documents and script policies.
  */
-const isExternal = (href: string, target?: string, download?: unknown) =>
+const needsDocument = (href: string, target?: string, download?: unknown) =>
   target !== undefined ||
   download !== undefined ||
   /^[a-z][a-z0-9+.-]*:/iu.test(href) ||
-  href.startsWith("//");
+  href.startsWith("//") ||
+  /^\/wallet\/?(?:[?#]|$)/u.test(href) ||
+  href.startsWith("/wallet/snapshot/");
 
 export const Link = forwardRef(function Link(
   props: { href: string } & React.ComponentPropsWithoutRef<"a">,
   ref: React.ForwardedRef<HTMLAnchorElement>,
 ) {
-  const { href, target, download, ...rest } = props;
+  const { href: requested, target, download, ...rest } = props;
+  const href = walletDocumentHref(requested);
 
-  if (isExternal(href, target, download)) {
+  if (needsDocument(href, target, download)) {
     return (
       <Headless.DataInteractive>
         <a

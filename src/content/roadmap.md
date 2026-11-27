@@ -18,7 +18,7 @@ The web client uses SDK **0.15.2**, signaling server **0.2.4** with protocol **v
 
 **Stake and validator recovery.** Four local processes independently checked owner-authorized bonds and agreed on the state after two native spends. A process that had missed the history caught up by retrieving certificates from peers. A wallet reader required a fresh challenge signed by more than two thirds of bonded weight. This run used one machine. Independent operation, epoch transitions and wide-area performance remain open. [Evidence and open decisions](/whitepaper#decisions-before-mainnet)
 
-**Wallet recovery.** A replacement browser restored both Testnet 1 spending suites from an encrypted recovery file and separate recovery code, then signed and verified a disposable transfer offline. The restored wallet totals its unspent units at a known height and can refresh from public history. A public watch link carries only a read handle. [Bring a wallet to another browser](/wallet)
+**Wallet recovery.** A replacement browser restored both Testnet 1 spending suites from an encrypted recovery file and separate recovery code, then signed and verified a disposable transfer offline. The restored wallet totals its unspent units at a known height and can refresh from public history. A public watch link carries only a read handle. [Bring a wallet to another browser](/wallet/)
 
 ## Next milestones
 

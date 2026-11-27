@@ -1,7 +1,6 @@
-// This page reads the same public history for every visitor. It accepts no
-// wallet, address, or query parameters from the calling window.
+// Every wallet reads the same public ledger range. RPC requests contain only
+// the network, anchor and consecutive heights.
 export const endpoint = "https://signaling.p2party.com/rpc";
-export const signerOrigin = "https://p2party.github.io";
 const chain =
   "0x09a0ffa8e6af6aeb11d26671c6c76648965d60509cc3b7a1a4b454b6ec73c760";
 const genesis =
@@ -344,49 +343,56 @@ export async function readPublicCatchup({
   return streamPinnedHistory(start, { fetcher, signal, nonce, sendAndWait });
 }
 
-export function awaitVerifiedPage(
-  peer,
-  message,
-  height,
-  signal,
-  events = window,
-) {
-  signal.throwIfAborted();
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => finish(false), 45000);
-    function finish(ok) {
-      clearTimeout(timeout);
-      events.removeEventListener("message", receive);
-      signal.removeEventListener("abort", cancel);
-      if (ok) resolve();
-      else reject(Error("The wallet did not confirm this public page."));
-    }
-    function cancel() {
-      finish(false);
-    }
-    function receive(event) {
-      const data = event.data;
-      if (
-        event.source === peer &&
-        event.origin === signerOrigin &&
-        data &&
-        typeof data === "object" &&
-        Object.keys(data).length === 3 &&
-        Object.hasOwn(data, "type") &&
-        Object.hasOwn(data, "nonce") &&
-        Object.hasOwn(data, "height") &&
-        data.type === "p2party.wallet.catchup.ack.v1" &&
-        data.nonce === message.nonce &&
-        data.height === height
-      )
-        finish(true);
-    }
-    events.addEventListener("message", receive);
-    signal.addEventListener("abort", cancel, { once: true });
+// The wallet creates a fresh dedicated worker for each refresh. Only this
+// wallet can talk to it; the nonce and verified height bind each ACK to a page.
+export function servePublicHistory(channel, readHistory = readPublicCatchup) {
+  async function start({ data }) {
+    if (data?.type !== "sync" || Object.keys(data).length !== 1) return;
+    channel.removeEventListener("message", start);
+    const nonce = hex(crypto.getRandomValues(new Uint8Array(32)));
+    const controller = new AbortController();
     try {
-      peer.postMessage(message, signerOrigin);
+      const result = await readHistory({
+        nonce,
+        signal: controller.signal,
+        sendAndWait: (message, height) =>
+          new Promise((resolve, reject) => {
+            function stopWaiting() {
+              channel.removeEventListener("message", acknowledge);
+              clearTimeout(timer);
+            }
+            function acknowledge(event) {
+              const ack = event.data;
+              if (
+                ack?.type !== "p2party.wallet.catchup.ack.v1" ||
+                Object.keys(ack).length !== 3 ||
+                ack.nonce !== nonce ||
+                ack.height !== height
+              )
+                return;
+              stopWaiting();
+              resolve();
+            }
+            const timer = setTimeout(() => {
+              stopWaiting();
+              reject(Error("The wallet did not confirm the public history."));
+            }, 45000);
+            channel.addEventListener("message", acknowledge);
+            try {
+              channel.postMessage(message);
+            } catch (error) {
+              stopWaiting();
+              reject(error);
+            }
+          }),
+      });
+      channel.postMessage(result);
     } catch {
-      finish(false);
+      channel.postMessage({ type: "error" });
+    } finally {
+      controller.abort();
+      channel.close();
     }
-  });
+  }
+  channel.addEventListener("message", start);
 }

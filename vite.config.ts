@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
 import { existsSync, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -152,12 +155,70 @@ const previewLikeTheBucket = () => ({
   },
 });
 
+// Public HTML normally falls through to Vite's SPA transform. The wallet
+// must serve its actual signing document without development or React scripts.
+const walletDevelopmentPage = (): Plugin => ({
+  name: "wallet-development-page",
+  configureServer(server) {
+    const root = server.config.root;
+    const build = promisify(execFile);
+    let compiled: Promise<unknown> | undefined;
+    server.watcher.on("change", (file) => {
+      if (
+        file.startsWith(resolve(root, "wallet") + "/") ||
+        file === resolve(root, "src/pages/site.css") ||
+        file === resolve(root, "scripts/buildWallet.mjs") ||
+        file === resolve(root, "public/wallet/snapshot/checkpoint.json")
+      )
+        compiled = undefined;
+    });
+    server.middlewares.use((req, res, next) => {
+      const [path, query] = (req.url ?? "/").split("?");
+      if (path === "/wallet") {
+        res.writeHead(302, {
+          Location: "/wallet/" + (query === undefined ? "" : "?" + query),
+        });
+        res.end();
+        return;
+      }
+      if (
+        ![
+          "/wallet/",
+          "/wallet/index.html",
+          "/wallet/restore-wallet.html",
+        ].includes(path)
+      )
+        return next();
+      compiled ??= build(process.execPath, ["scripts/buildWallet.mjs"], {
+        cwd: root,
+      }).catch((e) => {
+        compiled = undefined;
+        throw e;
+      });
+      void compiled
+        .then(async () => {
+          const file = path.endsWith("/")
+            ? "index.html"
+            : path.split("/").pop()!;
+          const document = await readFile(resolve(root, "public/wallet", file));
+          res.writeHead(200, {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store",
+          });
+          res.end(document);
+        })
+        .catch(next);
+    });
+  },
+});
+
 // https://vitejs.dev/config/
 export default defineConfig((configEnv) => {
   const isDevelopment = configEnv.mode === "development";
 
   return {
     plugins: [
+      walletDevelopmentPage(),
       react(),
       tailwindcss(),
       previewLikeTheBucket(),

@@ -151,6 +151,13 @@ if (!shellHtml.includes(ROOT_MARKER))
 
 let failures = 0;
 for (const route of ROUTES) {
+  // The wallet is a separate first-party document with its own restricted CSP.
+  if (route === "/wallet") {
+    const wallet = await readFile(join(DIST, "wallet/index.html"), "utf8");
+    if (!wallet.includes('id="restore-form"') || wallet.includes('id="root"'))
+      throw new Error("The isolated wallet document is missing.");
+    continue;
+  }
   let rendered;
   try {
     rendered = await render(route);

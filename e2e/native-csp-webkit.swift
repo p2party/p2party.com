@@ -134,7 +134,7 @@ expect(
   evaluate(
     """
     const button = [...document.querySelectorAll('button')]
-      .find((b) => b.textContent.includes('run local crypto proof'));
+      .find((b) => b.textContent.toLowerCase().includes('run local crypto proof'));
     if (!button) return 'no button';
     button.click();
     for (let i = 0; i < 600; i++) {

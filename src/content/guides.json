@@ -14,5 +14,9 @@
   "wallet": {
     "title": "P2PARTY wallet",
     "description": "Restore your P2PARTY wallet with its backup file and recovery code, or create your first wallet for Testnet 1. The test units have no monetary value."
+  },
+  "wallet/help": {
+    "title": "Wallet help",
+    "description": "Move a P2PARTY wallet between browsers, check for an offline payment, or look up a public receive request on Testnet 1."
   }
 }

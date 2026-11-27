@@ -63,7 +63,7 @@ export const AppRoutes = ({ pages }: { pages: RoutePages }) => {
             </Suspense>
           }
         />
-        {(["protocol", "roadmap", "whitepaper", "wallet"] as const).map(
+        {(["protocol", "roadmap", "whitepaper", "wallet/help"] as const).map(
           (page) => (
             <Route
               key={page}

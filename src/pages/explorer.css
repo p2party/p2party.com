@@ -1,20 +1,11 @@
-.ex-shell {
-  position: relative;
-  max-width: 76rem;
-  margin-inline: auto;
-  padding: 0 clamp(1.25rem, 4vw, 2rem);
-  color: var(--site-ink);
-}
 .ex-hero-copy {
   min-width: 0;
-  padding: 2.4rem 0;
 }
 .ex-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(6.75rem, 23vw, 13rem);
   align-items: center;
   gap: 1rem;
-  min-height: 14rem;
 }
 .ex-crumb,
 .ex-network-status {
@@ -34,14 +25,8 @@
 .ex-crumb a:hover {
   text-decoration: underline;
 }
-.ex-header h1 {
-  margin: 0.65rem 0;
-}
-.ex-intro {
-  max-width: 35rem;
-  color: var(--site-muted);
-  font-size: clamp(0.95rem, 2.5vw, 1.12rem);
-  line-height: 1.55;
+.ex-crumb {
+  margin-bottom: 0.75rem;
 }
 .ex-mark {
   justify-self: end;
@@ -204,7 +189,12 @@
   border-radius: 0;
   box-shadow: var(--shadow-brutal-sm);
 }
-.ex-button:hover {
+.ex-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.ex-button:hover:enabled,
+a.ex-button:hover {
   background: var(--color-orange-400);
 }
 .ex-text-button,
@@ -322,10 +312,6 @@
 @media (max-width: 580px) {
   .ex-header {
     grid-template-columns: minmax(0, 1fr) 4.5rem;
-    min-height: 0;
-  }
-  .ex-hero-copy {
-    padding: 1.8rem 0;
   }
   .ex-networks {
     grid-template-columns: 1fr;

@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="__WALLET_CSP__" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <title>P2PARTY wallet · p2party</title>
+    <meta
+      name="description"
+      content="Create or restore your P2PARTY wallet and check Testnet 1 payments on this device."
+    />
+    <link rel="canonical" href="https://p2party.com/wallet/" />
+    <link rel="icon" href="__WALLET_ICON__" />
+    __WALLET_STYLE__
+  </head>
+  <body class="site-frame">
+    <a href="#main" class="site-skip">Skip to wallet</a>
+    <header class="site-header">
+      <nav class="site-bar" aria-label="Site navigation">
+        <a class="site-brand" href="/" aria-label="p2party home"
+          ><img width="36" height="36" src="__WALLET_LOGO__" alt="" />p2party</a
+        >
+        <div class="site-sections">
+          <a href="/protocol/">Protocol</a><a href="/roadmap/">Roadmap</a
+          ><a href="/whitepaper/">Whitepaper</a><a href="/explorer/">Explorer</a
+          ><a href="/rooms/">Rooms</a>
+        </div>
+        <details class="account-nav" id="account-menu">
+          <summary class="account-button" id="account-toggle" role="button">
+            Account <span aria-hidden="true">▾</span>
+          </summary>
+          <div class="account-panel" aria-label="Account options">
+            <h2>Testnet wallet</h2>
+            <div id="shared-total" class="account-balance" hidden>
+              <p>Last shared balance</p>
+              <strong id="shared-amount"></strong>
+              <p id="shared-height"></p>
+            </div>
+            <a href="#" class="account-action" aria-current="page"
+              >Open wallet</a
+            >
+            <a href="#receive">Receive P2PARTY</a>
+            <button
+              id="balance-button"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="balance-dialog"
+            >
+              Balance details
+            </button>
+            <button id="forget-total" type="button" hidden>
+              Hide and forget balance
+            </button>
+            <div class="account-room">
+              <h2>Room identity</h2>
+              <a href="/rooms/#restore-room-identity">Restore chat identity</a>
+            </div>
+          </div>
+        </details>
+      </nav>
+    </header>
+    <dialog id="balance-dialog" aria-labelledby="balance-heading">
+      <div class="card-head">
+        <h2 id="balance-heading">Wallet balance</h2>
+        <button id="balance-close" type="button" class="secondary" autofocus>
+          Close
+        </button>
+      </div>
+      <p class="hint">P2Party Testnet 1 · No monetary value</p>
+      <div class="balance-amount">
+        <span>Reported available</span
+        ><strong id="balance-amount">Locked</strong>
+      </div>
+      <p id="balance-explanation">
+        Unlock your wallet to check its receive requests.
+      </p>
+      <a id="balance-unlock" href="#balance">Open your wallet to check</a>
+      <p class="hint" id="balance-scope" hidden>
+        This total counts unspent units at this height for receive requests in
+        the open backup. Other backups can hold additional units. A signed
+        payment awaiting submission can spend a unit still counted here.
+      </p>
+      <dl id="balance-meta" hidden>
+        <dt>Snapshot height</dt>
+        <dd id="balance-height"></dd>
+        <dt>Source</dt>
+        <dd id="balance-source"></dd>
+        <dt id="balance-observed-label" hidden>Publisher observation</dt>
+        <dd id="balance-observed" hidden></dd>
+        <dt>Last checked on this device</dt>
+        <dd><time id="balance-time"></time></dd>
+      </dl>
+      <div id="balance-tools" hidden>
+        <div class="actions">
+          <button type="button" id="balance-refresh">Refresh balance</button>
+        </div>
+        <p class="hint" id="balance-refresh-help">
+          Downloads public history and checks your payments on this device.
+        </p>
+        <details id="balance-offline">
+          <summary>Import a snapshot offline</summary>
+          <form id="balance-form" autocomplete="off">
+            <label for="balance-file">Testnet 1 snapshot (.json)</label>
+            <input
+              id="balance-file"
+              type="file"
+              accept=".json,application/json"
+              required
+            />
+            <button id="balance-import" type="submit">Check snapshot</button>
+            <p class="hint">
+              Use a complete snapshot from a replica you trust. This device
+              matches its units to your receive requests.
+            </p>
+          </form>
+        </details>
+        <details id="balance-website">
+          <summary>Show the total in Account</summary>
+          <p id="balance-share-help">
+            Show your checked amount and block height in this tab.
+          </p>
+          <button type="button" id="balance-present" class="secondary">
+            Show balance in Account
+          </button>
+        </details>
+      </div>
+      <p
+        class="balance-status"
+        id="balance-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      ></p>
+    </dialog>
+    <main id="main" tabindex="-1">
+      <div class="intro">
+        <p class="chain-label">Testnet 1 · No monetary value</p>
+        <h1 id="title" tabindex="-1">P2PARTY wallet</h1>
+        <p id="intro">
+          Create a wallet to receive your first test payment, or open one you
+          already have.
+        </p>
+      </div>
+      <div id="welcome" class="task-list" aria-label="Wallet actions">
+        <a class="task" href="#create">
+          <strong>Create a wallet</strong>
+          <span>Get a private backup and your first payment request.</span>
+        </a>
+        <a class="task" href="#restore">
+          <strong>Restore a wallet</strong>
+          <span>Open your latest backup with your recovery code.</span>
+        </a>
+      </div>
+      <a id="back-home" href="#" hidden>All wallet actions</a>
+      <section
+        id="dashboard"
+        class="card"
+        aria-labelledby="summary-heading"
+        hidden
+      >
+        <div class="card-head">
+          <h2 id="summary-heading" tabindex="-1">Wallet balance</h2>
+          <button type="button" class="secondary" id="lock">Lock wallet</button>
+        </div>
+        <p class="summary-amount" id="summary-amount">Unavailable</p>
+        <p id="summary-source" aria-live="polite"></p>
+        <div class="actions">
+          <button type="button" id="summary-check">Check for payments</button>
+          <button type="button" class="secondary" id="summary-details">
+            Balance details
+          </button>
+          <a href="#receive">Receive a payment</a>
+        </div>
+        <p class="hint" id="summary-status" role="status"></p>
+        <details id="move-wallet">
+          <summary>Move this wallet to another browser</summary>
+          <p>
+            Take this encrypted .jwe file to the other browser. Choose
+            <strong>Restore a wallet</strong>, select the file or paste its
+            contents, then enter your original recovery code. Keep the code
+            separate from the file.
+          </p>
+          <a id="move-download" class="download-link" download
+            >Download this wallet backup</a
+          >
+          <p class="hint">
+            Every new receive request adds a key. Keep the newest backup from
+            this wallet and move it again after adding requests. If two browsers
+            added requests independently, keep both files.
+          </p>
+        </details>
+      </section>
+      <div id="saved-area" hidden>
+        <strong>Encrypted wallet saved on this device</strong>
+        <div class="actions">
+          <button id="use-saved" type="button" class="secondary">
+            Use saved wallet</button
+          ><button id="forget" type="button" class="secondary">
+            Forget saved wallet
+          </button>
+        </div>
+      </div>
+      <noscript
+        >Enable JavaScript to restore your wallet on this device.</noscript
+      >
+      <section
+        class="card"
+        id="restore"
+        aria-labelledby="restore-heading"
+        hidden
+      >
+        <h2 id="restore-heading">Open a backup</h2>
+        <form id="restore-form" autocomplete="off">
+          <div id="drop" class="drop">
+            <label for="archive">Encrypted backup file</label>
+            <p id="drop-help">
+              Choose your .jwe file, drop it here, or paste a copied file.
+            </p>
+            <input
+              id="archive"
+              type="file"
+              accept=".jwe,.json,text/plain,application/json,application/octet-stream"
+              aria-describedby="drop-help"
+            />
+          </div>
+          <details id="paste-panel">
+            <summary>Paste encrypted contents</summary>
+            <label for="archive-text">Encrypted backup text</label
+            ><textarea
+              id="archive-text"
+              rows="3"
+              spellcheck="false"
+              autocapitalize="off"
+              autocomplete="off"
+            ></textarea>
+          </details>
+          <p id="chosen" class="selection" aria-live="polite"></p>
+          <label for="code">Recovery code</label>
+          <div class="code-row">
+            <input
+              id="code"
+              type="password"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+              aria-describedby="code-help"
+            /><button
+              id="show-code"
+              class="secondary"
+              type="button"
+              aria-pressed="false"
+            >
+              Show code
+            </button>
+          </div>
+          <p id="code-help" class="hint">
+            Use the P2W1- code you saved separately when you made this wallet.
+          </p>
+          <label class="check"
+            ><input type="checkbox" id="remember" />Remember encrypted wallet on
+            this device</label
+          >
+          <p class="hint">
+            With this option, you can reopen the saved backup here using your
+            recovery code.
+          </p>
+          <button type="submit" id="open">Restore wallet</button>
+        </form>
+        <details id="legacy-panel">
+          <summary>Import an older command-line wallet</summary>
+          <p>
+            Each original receive folder holds one request. Use its two private
+            files and the full public commitment from your saved receive
+            descriptor.
+          </p>
+          <form id="legacy-form" autocomplete="off">
+            <label for="legacy-key">Spending key (key.pk8)</label
+            ><input type="file" id="legacy-key" required />
+            <label for="legacy-nonce">Receive nonce (nonce)</label
+            ><input type="file" id="legacy-nonce" required />
+            <label for="legacy-commitment"
+              >Expected full receive commitment</label
+            ><input
+              type="text"
+              id="legacy-commitment"
+              autocomplete="off"
+              spellcheck="false"
+              required
+            />
+            <button type="submit" id="legacy-convert">
+              Create encrypted backup
+            </button>
+          </form>
+          <p id="legacy-status" role="status"></p>
+          <div id="legacy-result" hidden>
+            <a id="legacy-download" download>Download encrypted backup</a>
+            <button type="button" class="secondary" id="legacy-show-code">
+              Show new recovery code
+            </button>
+            <p><code id="legacy-code"></code></p>
+            <p>
+              Save both. Open the downloaded file with its new code in the
+              restore form above.
+            </p>
+          </div>
+        </details>
+      </section>
+      <section
+        id="receive"
+        class="card"
+        aria-labelledby="receive-heading"
+        hidden
+      >
+        <h2 id="receive-heading" tabindex="-1">Receive P2PARTY</h2>
+        <p id="receive-help">
+          Each request receives one payment of 1 P2PARTY. The sender can pay
+          while your wallet is closed.
+        </p>
+        <section id="receive-kit" hidden aria-labelledby="receive-kit-heading">
+          <h3 id="receive-kit-heading" tabindex="-1">
+            Keep your private backup
+          </h3>
+          <p id="kit-help"></p>
+          <p class="step-label">1. Save your private file</p>
+          <a id="kit-download" class="download-link" download
+            >Download encrypted backup</a
+          >
+          <div id="new-code-area" hidden>
+            <p class="step-label">2. Save your recovery code separately</p>
+            <button
+              type="button"
+              class="secondary"
+              id="show-new-code"
+              aria-expanded="false"
+            >
+              Show recovery code</button
+            ><code id="new-wallet-code" hidden></code>
+          </div>
+          <form id="check-kit" autocomplete="off">
+            <p id="kit-check-step" class="step-label"></p>
+            <label for="kit-file">Choose the downloaded backup</label>
+            <input
+              id="kit-file"
+              type="file"
+              accept=".jwe,application/octet-stream"
+              required
+            />
+            <label for="kit-code">Saved recovery code</label
+            ><input
+              id="kit-code"
+              type="password"
+              required
+              autocomplete="off"
+              spellcheck="false"
+              autocapitalize="off"
+            />
+            <label class="check"
+              ><input id="kit-remember" type="checkbox" />Remember this
+              encrypted backup on this device</label
+            >
+            <div class="actions">
+              <button type="submit">Check backup and open request</button
+              ><button id="cancel-kit" type="button" class="secondary">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </section>
+        <div id="receive-public" hidden>
+          <label for="receive-account">Saved receive request</label
+          ><select id="receive-account"></select>
+          <p id="receive-observation" role="status"></p>
+          <button id="receive-sync" class="secondary" type="button">
+            Check this request
+          </button>
+          <p id="receive-offline-help" class="hint" hidden>
+            To check new receipts, open your backup in the
+            <a
+              href="https://p2party.com/wallet/#receive"
+              target="_blank"
+              rel="noopener noreferrer"
+              >hosted wallet</a
+            >
+            and sync. In this offline copy, you can import a snapshot through
+            Balance to see the units it reports.
+          </p>
+          <div id="request-public-data">
+            <p>
+              Send the payer this public request as text, a file or a QR code.
+              Keep your wallet backup and recovery code private.
+            </p>
+            <label for="receive-text">Public payment request</label
+            ><textarea
+              id="receive-text"
+              readonly
+              rows="3"
+              spellcheck="false"
+            ></textarea>
+            <div class="actions">
+              <button id="copy-receive" type="button">Copy request</button
+              ><a id="download-receive" download="p2party-payment-request.json"
+                >Download request</a
+              >
+            </div>
+            <details id="receive-qr">
+              <summary>Show payment QR</summary>
+              <img
+                id="request-qr"
+                alt="QR code for the public one-unit payment request"
+              />
+            </details>
+          </div>
+        </div>
+        <div id="receive-start">
+          <details id="suite-options">
+            <summary>Signing algorithm</summary>
+            <label for="receive-suite">Signing suite for the new request</label>
+            <select id="receive-suite">
+              <option value="1">ML-DSA-65</option>
+              <option value="2">SLH-DSA-SHA2-192s</option>
+            </select>
+          </details>
+          <div class="actions">
+            <button type="button" id="create-receive">Create a wallet</button
+            ><a href="#restore" id="receive-restore">I already have a wallet</a>
+          </div>
+        </div>
+        <p id="receive-status" role="status" aria-live="polite"></p>
+      </section>
+      <section
+        id="overview"
+        class="card"
+        hidden
+        aria-labelledby="accounts-heading"
+      >
+        <div class="card-head">
+          <h2 id="accounts-heading">Receive request details</h2>
+        </div>
+        <p id="accounts-count"></p>
+        <div id="accounts"></div>
+      </section>
+      <section
+        class="card"
+        id="payment"
+        hidden
+        aria-labelledby="payment-heading"
+      >
+        <details id="payment-panel">
+          <summary id="payment-heading">Sign an offline payment</summary>
+          <p>
+            Choose an unsigned Testnet 1 request. You can review the recipient
+            and whole-unit amount before signing.
+          </p>
+          <form id="compose-form" autocomplete="off">
+            <label for="payer-request"
+              >Public payment request from recipient</label
+            ><textarea
+              id="payer-request"
+              rows="3"
+              required
+              autocomplete="off"
+              spellcheck="false"
+            ></textarea>
+            <label for="payer-source">Unit to spend</label
+            ><select id="payer-source">
+              <option value="">Enter unit details</option>
+            </select>
+            <div id="payer-manual">
+              <label for="payer-unit"
+                >Unspent unit JSON from demos_getUnit</label
+              ><textarea
+                id="payer-unit"
+                rows="3"
+                autocomplete="off"
+                spellcheck="false"
+              ></textarea>
+            </div>
+            <label for="payer-expiry">Last valid block height (inclusive)</label
+            ><input
+              id="payer-expiry"
+              type="text"
+              inputmode="numeric"
+              required
+              autocomplete="off"
+              pattern="[0-9]+"
+            />
+            <button type="submit" class="secondary">Review this request</button>
+          </form>
+          <details id="advanced-payment" open>
+            <summary>Open a prepared transfer file</summary>
+            <form id="review-form" autocomplete="off">
+              <label for="request">Unsigned payment request (.json)</label
+              ><input
+                type="file"
+                id="request"
+                accept=".json,application/json"
+                required
+              />
+              <button type="submit" class="secondary" id="review">
+                Review payment
+              </button>
+            </form>
+          </details>
+          <div id="review-panel" hidden>
+            <h3 tabindex="-1" id="review-heading">Review this payment</h3>
+            <dl id="review-details"></dl>
+            <p>
+              Check the recipient’s full commitment through a trusted channel.
+              Anyone with the signed file can submit this payment.
+            </p>
+            <div class="actions">
+              <button type="button" id="sign">Sign this payment</button
+              ><button type="button" class="secondary" id="cancel">
+                Cancel
+              </button>
+            </div>
+          </div>
+          <div id="signed-panel" hidden>
+            <h3 tabindex="-1" id="signed-heading">Payment signed</h3>
+            <p>
+              Save the signed file to submit it from a connected device. This
+              wallet signs offline.
+            </p>
+            <p>
+              On a connected device, submit the file’s signed wire with ethers
+              or viem and check the returned receipt.
+              <a
+                href="/explorer/testnet/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Look up the receipt in the testnet explorer</a
+              >
+            </p>
+            <button id="download" type="button">Download signed payment</button>
+          </div>
+        </details>
+      </section>
+      <p id="status" role="status" aria-live="polite" aria-atomic="true"></p>
+      <p id="save-tool" class="hint" hidden>
+        <a href="./restore-wallet.html" download="p2party-restore-wallet.html"
+          >Download the offline wallet tool</a
+        >
+        to open your wallet without an internet connection.
+      </p>
+      <p class="help-link">
+        <a href="/wallet/help/">Wallet help and public balance lookup</a>
+      </p>
+    </main>
+    <footer class="site-footer">
+      <div class="site-bar">
+        <span>© 2026 p2party</span>
+        <nav aria-label="More from p2party">
+          <a href="/blog/">Field notes</a><a href="/session-lab/">Crypto lab</a
+          ><a href="/privacy-policy/">Privacy</a
+          ><a href="/terms-of-service/">Terms</a>
+        </nav>
+      </div>
+    </footer>
+    __WALLET_SCRIPT__
+  </body>
+</html>

@@ -100,15 +100,9 @@ try {
   await page
     .getByRole("heading", { name: "P2PARTY wallet", exact: true })
     .waitFor();
-  assert.equal(
-    await page
-      .getByRole("link", { name: "Restore a wallet", exact: true })
-      .getAttribute("href"),
-    "https://p2party.github.io/p2party-server/restore/#restore",
-  );
-  await page
-    .getByText("Look up one public receive request", { exact: true })
-    .click();
+  assert.equal(new URL(page.url()).pathname, "/wallet/");
+  assert.equal(await page.locator("#root").count(), 0);
+  await page.goto(origin.origin + "/wallet/help/#check-a-public-balance");
   await page
     .getByLabel("Check a Testnet 1 balance")
     .fill("0x" + "a".repeat(128));

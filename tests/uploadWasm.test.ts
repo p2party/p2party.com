@@ -12,6 +12,7 @@ interface UploadResult {
     key: string;
     contentType: string;
     contentEncoding?: string;
+    contentDisposition?: string;
     cacheControl: string;
     decodedMatches: boolean;
     sriMatches: boolean;
@@ -40,6 +41,12 @@ const runUpload = (prune: boolean): UploadResult => {
       const wasm = Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]);
       const files = {
         "index.html": Buffer.from("<!doctype html><title>Offline upload fixture</title>"),
+        "wallet/index.html": Buffer.from("<!doctype html><title>Wallet</title>"),
+        "wallet/assets/signer-0123456789abcdefabcd.js": Buffer.from("void 0"),
+        "wallet/restore-wallet.html": Buffer.from("<!doctype html><title>Offline</title>"),
+        "wallet/SHA256SUMS": Buffer.from("test checksum"),
+        "wallet/snapshot/worker.mjs": Buffer.from("void 0"),
+        "wallet/help/index.html": Buffer.from("help"),
         "robots.txt": Buffer.from("User-agent: *"),
         "sitemap.xml": Buffer.from("<urlset/>"),
         "manifest.webmanifest": Buffer.from(JSON.stringify({ name: "P2Party" })),
@@ -68,6 +75,7 @@ const runUpload = (prune: boolean): UploadResult => {
               key: input.Key,
               contentType: input.ContentType,
               contentEncoding: input.ContentEncoding,
+              contentDisposition: input.ContentDisposition,
               cacheControl: input.CacheControl,
               decodedMatches: decoded.equals(files[input.Key]),
               sriMatches: hash(decoded) === hash(files[input.Key]),
@@ -76,7 +84,7 @@ const runUpload = (prune: boolean): UploadResult => {
           }
           if (command instanceof ListObjectsV2Command) {
             listCalls++;
-            return { Contents: [...Object.keys(files), "assets/older-client.js", "obsolete.txt", "apple-developer-merchantid-domain-association"].map(Key => ({ Key })) };
+            return { Contents: [...Object.keys(files), "assets/older-client.js", "wallet/assets/signer-00000000000000000000.js", "obsolete.txt", "apple-developer-merchantid-domain-association"].map(Key => ({ Key })) };
           }
           if (command instanceof DeleteObjectsCommand) {
             deletedKeys.push(...input.Delete.Objects.map(({Key}) => Key));
@@ -162,6 +170,32 @@ describe("self-hosted WASM upload", () => {
     expect(
       result.puts.find((asset) => asset.key.endsWith(".sha256"))?.contentType,
     ).toBe("text/plain");
+    const keys = result.puts.map((asset) => asset.key);
+    const signer = "wallet/assets/signer-0123456789abcdefabcd.js";
+    expect(keys.indexOf(signer)).toBeLessThan(
+      keys.indexOf("wallet/index.html"),
+    );
+    expect(keys.indexOf("wallet/snapshot/worker.mjs")).toBeLessThan(
+      keys.indexOf("wallet/index.html"),
+    );
+    expect(keys.indexOf("wallet/index.html")).toBeLessThan(
+      keys.indexOf("wallet/help/index.html"),
+    );
+    expect(
+      result.puts.find((asset) => asset.key === signer)?.cacheControl,
+    ).toContain("immutable");
+    expect(
+      result.puts.find((asset) => asset.key === "wallet/snapshot/worker.mjs")
+        ?.cacheControl,
+    ).toContain("no-store");
+    expect(
+      result.puts.find((asset) => asset.key === "wallet/SHA256SUMS")
+        ?.contentType,
+    ).toBe("text/plain");
+    expect(
+      result.puts.find((asset) => asset.key === "wallet/restore-wallet.html")
+        ?.contentDisposition,
+    ).toBe('attachment; filename="restore-wallet.html"');
     expect(result.puts.at(-1)?.key).toBe("index.html");
     for (const asset of result.puts.filter((asset) => asset.key !== wasmKey)) {
       expect(asset.contentEncoding).toBeUndefined();

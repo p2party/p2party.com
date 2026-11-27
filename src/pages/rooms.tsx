@@ -62,18 +62,12 @@ const RoomsPage = () => {
         </Suspense>
       </div>
 
-      <div className='relative z-10 mx-auto w-full max-w-3xl px-2 pb-28 sm:px-4'>
-        <header className='pt-6 pb-4'>
-          <h1 className='font-mono text-xs font-bold tracking-[0.18em] text-zinc-500 uppercase dark:text-zinc-400'>
-            Saved rooms
-          </h1>
-          <p className='mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
-            This list is kept entirely client-side, in this browser&apos;s
-            IndexedDB. No account, operator or backup holds it, and clearing
-            site data deletes it for good. The secret part of an invite lives in
-            the link&apos;s <code>#</code> fragment, which browsers do not send
-            in web requests &mdash; joining sends it to the signaling server,
-            which keeps only a hash of it.
+      <div className='relative z-10 mx-auto w-full max-w-3xl px-5 pb-28 sm:px-8'>
+        <header className='pt-8 pb-6 sm:pt-12'>
+          <h1 className='site-title'>Your rooms</h1>
+          <p className='mt-3 text-base leading-relaxed text-zinc-600 dark:text-zinc-300'>
+            Rooms you join are saved in this browser. Keep a copy of the invite
+            link to reopen a room on another device.
           </p>
         </header>
 
@@ -88,50 +82,16 @@ const RoomsPage = () => {
           </ul>
         )}
 
-        {/* An empty list here is the product working, not the product failing.
-            Nobody can populate it for you, which is worth saying out loud
-            instead of apologising for the blank space. */}
         {rooms !== null && rooms.length === 0 && (
           <div className='shadow-brutal-sm border-2 border-zinc-950 bg-white dark:border-zinc-200 dark:bg-zinc-950'>
-            <div className='flex items-center gap-2 border-b-2 border-zinc-950 px-3 py-1.5 dark:border-zinc-200'>
-              <span className='bg-darkOrange size-2' aria-hidden />
-              <span className='font-mono text-[11px] font-bold tracking-[0.12em] text-zinc-500 uppercase dark:text-zinc-400'>
-                p2party://rooms
-              </span>
-            </div>
-
-            <div className='px-4 py-6 sm:px-6 sm:py-8'>
-              <pre className='overflow-x-auto font-mono text-xs leading-relaxed text-zinc-600 sm:text-sm dark:text-zinc-300'>
-                <span className='text-darkOrange'>$</span> p2party ls ~/rooms
-                {"\n"}
-                <span className='text-zinc-950 dark:text-white'>
-                  0 rooms on this device
-                </span>
-              </pre>
-
-              <p className='mt-5 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
-                That is not a sync problem. The store is entirely client-side:
-                every invite link lives in this browser&apos;s IndexedDB and is
-                never uploaded, so there is no account holding a list of them
-                and no server that could hand you one. An empty list is the only
-                thing we are able to show a new device.
+            <div className='p-5 sm:p-8'>
+              <h2 className='text-2xl font-extrabold tracking-tight'>
+                No saved rooms yet
+              </h2>
+              <p className='mt-2 max-w-prose text-base leading-relaxed text-zinc-600 dark:text-zinc-300'>
+                Open an invite from a friend or generate a room and share its
+                link. You can chat and send files without a wallet.
               </p>
-              <p className='mt-3 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
-                The same goes for your identity: the secret key this browser
-                signs with never leaves it. The matching public half is what the
-                signaling server stores to recognise you, as the privacy policy
-                explains. An identity created from a recovery phrase can be
-                rebuilt from those words in another browser; one created without
-                a phrase cannot, so for it a cleared profile is a new person as
-                far as everyone else is concerned.
-              </p>
-              <p className='mt-3 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-300'>
-                Generate a room and it appears here once you have been in it.
-                Clearing site data removes it again, permanently &mdash; keep
-                the link somewhere else if the room needs to outlive this
-                browser profile.
-              </p>
-
               <Button
                 onClick={() => setRoomSetupOpen(true)}
                 color='orange'

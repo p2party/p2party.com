@@ -12,7 +12,17 @@ import {
 import { getMimeTypeFromExtension } from "./getMimeTypeFromExtension.mjs";
 
 const buildDir = path.resolve("dist");
-const entrypointKeys = new Set(["index.html"]);
+const offlineWallet = "wallet/restore-wallet.html";
+const walletAsset =
+  /^wallet\/assets\/(?:signer-[a-f0-9]{20}\.js|wallet-[a-f0-9]{20}\.css)$/u;
+
+// Publish dependencies before pages linking to them, then switch the landing page.
+function uploadOrder(key) {
+  if (key === "index.html") return 3;
+  if (key === "wallet/index.html") return 1;
+  if (key.endsWith("/index.html")) return 2;
+  return 0;
+}
 const expectedAppleAppId = "Y4UAPYWG26.com.p2party.app";
 const protectedRemoteKeys = new Set([
   "robots.txt",
@@ -98,6 +108,7 @@ const objectKey = (absolutePath) => {
 };
 
 const contentTypeForKey = (key) => {
+  if (key === "wallet/SHA256SUMS") return "text/plain";
   if (key.endsWith(".wasm")) return "application/wasm";
   if (
     key === ".well-known/apple-app-site-association" ||
@@ -111,6 +122,7 @@ const cacheControlForKey = (key) => {
   // Page entrypoints and crawler discovery files can change on each release.
   if (
     key.endsWith(".html") ||
+    (key.startsWith("wallet/") && !walletAsset.test(key)) ||
     key === "robots.txt" ||
     key === "sitemap.xml" ||
     key.startsWith(".well-known/")
@@ -121,6 +133,7 @@ const cacheControlForKey = (key) => {
   // ever return the same bytes.
   if (
     key.startsWith("assets/") ||
+    walletAsset.test(key) ||
     /^vendor\/p2party-\d+\.\d+\.\d+\//u.test(key)
   )
     return "public, max-age=31536000, immutable";
@@ -245,10 +258,9 @@ const main = async () => {
     throw new Error("dist/index.html is missing");
 
   objects.sort((left, right) => {
-    const leftEntrypoint = entrypointKeys.has(left.key) ? 1 : 0;
-    const rightEntrypoint = entrypointKeys.has(right.key) ? 1 : 0;
     return (
-      leftEntrypoint - rightEntrypoint || left.key.localeCompare(right.key)
+      uploadOrder(left.key) - uploadOrder(right.key) ||
+      left.key.localeCompare(right.key)
     );
   });
 
@@ -267,6 +279,9 @@ const main = async () => {
         Key: key,
         Body: gzipWasm ? gzipSync(source, { level: 9 }) : source,
         ContentType: contentTypeForKey(key),
+        ...(key === offlineWallet
+          ? { ContentDisposition: 'attachment; filename="restore-wallet.html"' }
+          : {}),
         ...(gzipWasm ? { ContentEncoding: "gzip" } : {}),
         CacheControl: cacheControlForKey(key),
       }),
@@ -280,7 +295,8 @@ const main = async () => {
       (key) =>
         !desiredKeys.has(key) &&
         !protectedRemoteKeys.has(key) &&
-        !key.startsWith("assets/"),
+        !key.startsWith("assets/") &&
+        !walletAsset.test(key),
     );
     if (staleKeys.length > 0) {
       await deleteRemoteKeys(staleKeys);

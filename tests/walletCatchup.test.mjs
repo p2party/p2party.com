@@ -2,10 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import {
-  awaitVerifiedPage,
   endpoint,
   readPublicCatchup,
-  signerOrigin,
+  servePublicHistory,
   streamPinnedHistory,
 } from "../public/wallet/snapshot/broker.mjs";
 
@@ -231,57 +230,67 @@ describe("windowed public wallet history", () => {
     ).rejects.toThrow();
     expect(f.queries.at(-1).height).toBe(35);
   });
-  test("only the expected window, exact signer origin, nonce and verified height advance the public page", async () => {
-    const events = new EventTarget(),
-      stop = controller();
-    const message = {
-      type: "p2party.wallet.catchup.page.v1",
-      nonce,
-      afterHeight: "0x3",
-      receipts: ["wire"],
+  test("dedicated worker only reads public history and waits for the exact acknowledgement", async () => {
+    const channel = new EventTarget();
+    const started = Promise.withResolvers();
+    const closed = Promise.withResolvers();
+    const sent = [];
+    channel.postMessage = (value) => {
+      sent.push(value);
+      if (value.type === "p2party.wallet.catchup.start.v1")
+        started.resolve(value);
     };
-    let sent = 0,
-      completed = false;
-    const peer = {
-      postMessage(value, origin) {
-        expect(value).toBe(message);
-        expect(origin).toBe(signerOrigin);
-        sent++;
-      },
-    };
-    const ack = { type: "p2party.wallet.catchup.ack.v1", nonce, height: "0x4" };
-    const dispatch = (data, origin = signerOrigin, source = peer) => {
-      const event = new Event("message");
-      Object.assign(event, { data, origin, source });
-      events.dispatchEvent(event);
-    };
-    const waiting = awaitVerifiedPage(
-      peer,
-      message,
-      "0x4",
-      stop.signal,
-      events,
-    ).then(() => {
-      completed = true;
+    channel.close = closed.resolve;
+    const send = (data) =>
+      channel.dispatchEvent(new MessageEvent("message", { data }));
+    let reads = 0;
+    servePublicHistory(channel, async ({ nonce, signal, sendAndWait }) => {
+      reads++;
+      expect(nonce).toMatch(/^[a-f0-9]{64}$/);
+      expect(signal.aborted).toBe(false);
+      await sendAndWait(
+        { type: "p2party.wallet.catchup.start.v1", nonce },
+        "0x3",
+      );
+      return { type: "p2party.wallet.catchup.done.v1", nonce };
     });
-    dispatch(ack, "https://example.invalid");
-    dispatch(ack, signerOrigin, {});
-    dispatch({ ...ack, nonce: "wrong" });
-    dispatch({ ...ack, height: "0x3" });
-    dispatch({ ...ack, handle: "extra" });
+    send({ type: "sync", address: "unexpected" });
+    send(null);
+    expect(reads).toBe(0);
+    send({ type: "sync" });
+    const start = await started.promise;
+    const ack = {
+      type: "p2party.wallet.catchup.ack.v1",
+      nonce: start.nonce,
+      height: "0x3",
+    };
+    send({ type: "sync" });
+    send({ ...ack, nonce: "wrong" });
+    send({ ...ack, height: "0x2" });
+    send({ ...ack, extra: true });
     await Promise.resolve();
-    expect(completed).toBe(false);
-    expect(sent).toBe(1);
-    dispatch(ack);
-    await waiting;
-    const canceled = awaitVerifiedPage(
-      peer,
-      message,
-      "0x4",
-      stop.signal,
-      events,
+    expect(reads).toBe(1);
+    expect(sent).toEqual([start]);
+    send(ack);
+    await closed.promise;
+    expect(sent.at(-1)).toEqual({
+      type: "p2party.wallet.catchup.done.v1",
+      nonce: start.nonce,
+    });
+  });
+  test("worker failure closes the job and returns a generic error", async () => {
+    const channel = new EventTarget(),
+      closed = Promise.withResolvers(),
+      sent = [];
+    channel.postMessage = (value) => sent.push(value);
+    channel.close = closed.resolve;
+    servePublicHistory(channel, async () => {
+      throw Error("upstream diagnostic");
+    });
+    channel.dispatchEvent(
+      new MessageEvent("message", { data: { type: "sync" } }),
     );
-    stop.abort();
-    await expect(canceled).rejects.toThrow();
+    await closed.promise;
+    expect(sent).toEqual([{ type: "error" }]);
   });
 });

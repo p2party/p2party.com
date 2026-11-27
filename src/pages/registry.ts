@@ -21,7 +21,7 @@ export interface RoutePages {
   Privacy: ComponentType;
   SessionLab: ComponentType;
   Guide: ComponentType<{
-    page: "protocol" | "roadmap" | "whitepaper" | "wallet";
+    page: "protocol" | "roadmap" | "whitepaper" | "wallet/help";
   }>;
   Explorer: ComponentType<{ page: "overview" | "testnet" | "mainnet" }>;
   Blog: ComponentType;
@@ -74,7 +74,9 @@ export const pagesForPath = (rawPathname: string): PageKey[] => {
     rawPathname.length > 1 ? rawPathname.replace(/\/+$/u, "") : rawPathname;
   if (pathname === "/" || pathname === "") return ["Home"];
   if (pathname.startsWith("/blog/")) return ["BlogPost"];
-  if (["/protocol", "/roadmap", "/whitepaper", "/wallet"].includes(pathname))
+  if (
+    ["/protocol", "/roadmap", "/whitepaper", "/wallet/help"].includes(pathname)
+  )
     return ["Guide"];
   if (
     ["/explorer", "/explorer/testnet", "/explorer/mainnet"].includes(pathname)

@@ -1,5 +1,11 @@
 # Web client changelog
 
+## November 27, 2026 — Wallet on p2party.com
+
+- Create, restore, receive and check a balance in the [wallet](https://p2party.com/wallet/). Create and Restore open within the same page. An encrypted backup and its separate recovery code still work when moving to another browser.
+- [Wallet help](https://p2party.com/wallet/help/) covers recovery and late payments and lets you look up a single public receive request.
+- Articles, legal pages, the explorer, the crypto lab and the wallet use the same typography, spacing and navigation as the landing page. The empty Rooms screen now puts the invite and create actions first.
+
 ## November 27, 2026 — Account and wallet navigation
 
 - **Account** opens wallet actions and chat identity recovery. Shared testnet balances show their observation height inside this menu. **Rooms** remains a direct navigation link.

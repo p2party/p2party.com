@@ -31,13 +31,13 @@ The 21 November structured-LWE manuscript credits ChatGPT and prompting by Nigel
 | Receipt and state proofs | SHA-512 binds the committed data. A wallet also trusts its genesis, committee, checkpoint freshness and quorum policy. A valid hash path cannot make a dishonest sole operator independent.                                                                                  |
 | Network infrastructure   | HTTPS, WebRTC and the management VPN have their own negotiated algorithms, authentication and software updates. The ledger’s choice of spending signature does not change any of them.                                                                                       |
 
-The higher-parameter ML-DSA and SHAKE-based SLH-DSA options are available in a local research policy. Increasing the size of a lattice key keeps the same broad family of assumptions. Hash-based SLH-DSA provides signature diversity and cannot replace a room’s key-exchange mechanism. [\[9, Table 2\]][m9] · [Room protocol](/protocol) · [Wallet guide](/wallet)
+The higher-parameter ML-DSA and SHAKE-based SLH-DSA options are available in a local research policy. Increasing the size of a lattice key keeps the same broad family of assumptions. Hash-based SLH-DSA provides signature diversity and cannot replace a room’s key-exchange mechanism. [\[9, Table 2\]][m9] · [Room protocol](/protocol) · [Wallet guide](/wallet/)
 
 ## Checks on the released software and network
 
 The SDK 0.15.1 build record pins mlkem-native v2.1.0 and a libsodium 1.0.22-stable snapshot. The native verifier has its own build record and distribution patches. We checked these records and NIST’s posted corrections to FIPS 203 and 204. Test vectors, dependency checks and the wallet restore exercise establish implementation behavior under specific conditions. They cannot prove a mathematical assumption or rule out an undisclosed vulnerability. [SDK build provenance](https://github.com/p2party/p2party-js/blob/v0.15.1/src/cryptography/libcrypto.provenance.json) · [Native release build](https://github.com/p2party/libdemos/actions/runs/45985760486) · [NIST updates for FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) · [NIST updates for FIPS 204](https://csrc.nist.gov/pubs/fips/204/final)
 
-On 27 November, a certificate-validating TLS client negotiated hybrid X25519MLKEM768 with the website and signaling endpoint, and classical P-256 key exchange with TURN. All three connections used classical ECDSA P-256 authentication. This samples those connections only. The configured static website origin supports HTTP only. Verifying HTTPS at the public edge leaves the upstream content-delivery hop unresolved. The balance form on p2party.com accepts public read handles. The separate HTTPS restore application opens the encrypted file in the browser. For local signing, compare the downloaded wallet archive with the checksum in the separately published repository. [S3 website endpoint capabilities](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteEndpoints.html) · [Versioned wallet checksum](https://github.com/p2party/p2party-js/blob/baa723d/docs/testnet-1.md#install-the-wallet-client)
+On 27 November, a certificate-validating TLS client negotiated hybrid X25519MLKEM768 with the website and signaling endpoint, and classical P-256 key exchange with TURN. All three connections used classical ECDSA P-256 authentication. This samples those connections only. The configured static website origin supports HTTP only. Verifying HTTPS at the public edge leaves the upstream content-delivery hop unresolved. The balance form on p2party.com accepts public read handles. The [wallet on p2party.com](/wallet/#restore) opens the encrypted backup in your browser. For local signing, compare the downloaded wallet archive with the checksum in the separately published repository. [S3 website endpoint capabilities](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteEndpoints.html) · [Versioned wallet checksum](https://github.com/p2party/p2party-js/blob/baa723d/docs/testnet-1.md#install-the-wallet-client)
 
 ## What would change the decision
 
@@ -62,7 +62,7 @@ For a still-trustworthy spending suite, a wallet can transfer an unspent unit to
 [m3]: https://www.rfc-editor.org/rfc/rfc8032#section-5.1
 [m4]: https://github.com/bochum-crypto/subexponential-ecdl/blob/1ee44e562b1b9a50ea339f3b8f81112b5a24b96f/subexponential-ecdl.pdf
 [m5]: https://eprint.iacr.org/2026/3020
-[m6]: https://nigelsmart.github.io/Sub-Exp-LWE/main.pdf
+[m6]: https://github.com/nigelsmart/nigelsmart.github.io/blob/01eec435d81050f804c541369a5ce3dfef06c175/Sub-Exp-LWE/main.pdf
 [m7]: https://doi.org/10.6028/NIST.FIPS.203
 [m8]: https://doi.org/10.6028/NIST.FIPS.204
 [m9]: https://doi.org/10.6028/NIST.FIPS.205

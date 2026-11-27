@@ -111,7 +111,7 @@ function BalanceForm({ initial }: { initial: string }) {
 }
 
 function WatchLink({ address }: { address: string }) {
-  const url = "https://p2party.com/wallet/#watch=" + address;
+  const url = "https://p2party.com/wallet/help/#watch=" + address;
   const [qr, setQr] = useState("");
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);

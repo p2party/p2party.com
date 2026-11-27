@@ -25,6 +25,7 @@ const routes = [
   "/explorer/mainnet/",
   "/whitepaper/",
   "/wallet/",
+  "/wallet/help/",
   "/blog/",
   ...manifest.posts.map((post) => post.href + "/"),
   "/rooms/",
@@ -106,20 +107,18 @@ try {
         );
       }
       if (pathname === "/wallet/") {
-        const account = header.getByRole("button", {
-          name: "Account",
-          exact: true,
-        });
-        await account.click();
-        const openWallet = page
-          .getByLabel("Account options")
-          .getByRole("link", { name: "Open wallet", exact: true });
-        assert.equal(await openWallet.getAttribute("aria-current"), "page");
-        await page.keyboard.press("Escape");
+        assert.equal(await page.locator("#root").count(), 0);
+        assert(
+          await header
+            .getByRole("button", { name: "Account", exact: true })
+            .isVisible(),
+        );
         for (const action of ["Create a wallet", "Restore a wallet"])
           assert(
             await page
-              .getByRole("link", { name: action, exact: true })
+              .getByText(action, { exact: true })
+              .filter({ visible: true })
+              .first()
               .isVisible(),
           );
       }

@@ -435,7 +435,7 @@ function Testnet() {
           by that validator.{" "}
           <Link
             className='ex-text-button'
-            href='/wallet/#check-a-public-balance'
+            href='/wallet/help/#check-a-public-balance'
           >
             Check one public receive request
           </Link>
@@ -455,8 +455,8 @@ export default function Explorer({ page }: { page: Page }) {
     };
   }, [meta]);
   return (
-    <main className='ex-shell'>
-      <header className='ex-header'>
+    <main className='site-reading ex-shell'>
+      <header className='site-reading-header ex-header'>
         <div className='ex-hero-copy'>
           <p className='ex-crumb'>
             <Link href='/'>p2party</Link>
@@ -480,7 +480,7 @@ export default function Explorer({ page }: { page: Page }) {
                 ? "Testnet 1"
                 : "Mainnet"}
           </h1>
-          <p className='ex-intro'>
+          <p className='site-intro'>
             {page === "overview"
               ? "Explore the P2PARTY networks and follow native transfers from one unit to the next."
               : page === "testnet"

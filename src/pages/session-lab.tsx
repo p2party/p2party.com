@@ -11,8 +11,6 @@ import {
 
 import { loadSessionWasmBinary } from "../protocol/wasm";
 
-import { Button } from "../components/button";
-
 const makeLink = () => {
   const queued: Uint8Array[] = [];
   const waiters: Array<(bytes: Uint8Array) => void> = [];
@@ -194,34 +192,28 @@ const SessionLabPage = () => {
   };
 
   return (
-    <main className='relative mx-auto max-w-5xl px-5 py-10 sm:px-8'>
-      <div>
-        <div className='shadow-brutal mt-6 border-2 border-zinc-950 bg-zinc-50 p-5 sm:p-8 dark:border-zinc-200 dark:bg-zinc-950'>
-          <p className='font-mono text-xs font-bold tracking-[0.2em] text-orange-700 uppercase dark:text-orange-300'>
-            protocol-v4 / standalone lab
+    <main className='site-reading'>
+      <header className='site-reading-header'>
+        <h1 className='site-title'>Crypto lab</h1>
+        <p className='site-intro'>
+          Exchange an encrypted message between two peers in this tab. Restore a
+          Double Ratchet session and follow its first post-quantum key update.
+        </p>
+      </header>
+      <div className='site-lab'>
+        <section className='site-paper'>
+          <h2 className='site-section-title'>Run a handshake</h2>
+          <p className='site-reference-note'>
+            Both peers run locally over an in-memory connection. Protocol v4
+            persists the new state before each key-update frame. Your
+            application supplies the transport and verifies peer identities when
+            it calls <code>createSession()</code>.
           </p>
-          <h1 className='mt-3 text-3xl font-black tracking-tight sm:text-5xl'>
-            Bring your own transport.
-          </h1>
-          <p className='mt-4 max-w-3xl leading-relaxed text-zinc-600 dark:text-zinc-300'>
-            This runs two <code>createSession()</code> peers in this tab,
-            encrypts a message, serializes one Double Ratchet, restores it,
-            proves the reverse direction still decrypts, then drives one sparse
-            post-quantum healing exchange (OFFER → ADVANCE → ACK) to PQ epoch 1
-            under the persist-before-send contract.
-          </p>
-          <div className='mt-4 rounded-lg border border-amber-400 bg-amber-50 p-3 font-mono text-xs leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200'>
-            Honest boundary: this is an in-process byte-pipe demo. It does not
-            discover peers, open WebRTC, hide metadata, or send anything to
-            another device. <code>createSession()</code> supplies crypto; your
-            application supplies transport and identity verification.
-          </div>
-
           <label
             htmlFor='session-message'
             className='mt-7 block font-mono text-sm font-bold'
           >
-            plaintext
+            Plaintext message
           </label>
           <textarea
             id='session-message'
@@ -230,14 +222,14 @@ const SessionLabPage = () => {
             rows={3}
             className='mt-2 block w-full resize-y rounded-none border-2 border-zinc-900 bg-white p-3 font-mono text-sm outline-none focus:border-orange-500 dark:border-zinc-300 dark:bg-black'
           />
-          <Button
-            color='orange'
+          <button
+            type='button'
             onClick={runDemo}
             disabled={isRunning}
-            className='shadow-brutal-sm mt-4 rounded-none font-mono'
+            className='ex-button mt-4'
           >
-            {isRunning ? "handshaking…" : "run local crypto proof"}
-          </Button>
+            {isRunning ? "Handshaking…" : "Run local crypto proof"}
+          </button>
 
           {error && (
             <p
@@ -280,10 +272,12 @@ const SessionLabPage = () => {
               </dl>
             </section>
           )}
-        </div>
+        </section>
 
-        <pre className='shadow-brutal mt-10 overflow-x-auto border border-zinc-700 bg-zinc-950 p-5 text-xs leading-relaxed text-orange-200'>
-          <code>{`import {
+        <section className='site-paper blog-prose'>
+          <h2 className='site-section-title'>Session code</h2>
+          <pre>
+            <code>{`import {
   createSession,
   generateSessionIdentity,
   restoreSession
@@ -303,7 +297,8 @@ if (frame) {
 }
 restored.pqEpoch;            // 0n → 1n after the exchange
 restored.healingInProgress;  // true while the exchange gates traffic`}</code>
-        </pre>
+          </pre>
+        </section>
       </div>
     </main>
   );

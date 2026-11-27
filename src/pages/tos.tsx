@@ -1,10 +1,5 @@
 import { Link } from "../components/link";
-
-const SectionHeading = ({ children }: { children: React.ReactNode }) => (
-  <h2 className='mt-10 mb-4 text-xl font-bold text-zinc-900 dark:text-white'>
-    {children}
-  </h2>
-);
+import { LegalDocument, SectionHeading } from "../components/LegalDocument";
 
 const Para = ({ children }: { children: React.ReactNode }) => (
   <p className='mb-4 text-base/7 text-zinc-600 dark:text-zinc-300'>
@@ -20,14 +15,8 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 
 const TOSPage = () => {
   return (
-    <main className='site-legal'>
-      <article className='site-paper'>
-        <h1 className='site-title mb-2'>Terms of Service</h1>
-        <p className='mb-8 text-sm text-zinc-400 dark:text-zinc-500'>
-          Effective date: 17 October 2024 &middot; Last updated: 27 November
-          2026
-        </p>
-
+    <LegalDocument title='Terms of Service'>
+      <article className='site-paper site-article-column blog-prose'>
         {/* 1 */}
         <SectionHeading>1. Agreement to Terms</SectionHeading>
         <Para>
@@ -382,7 +371,7 @@ const TOSPage = () => {
           </Link>
         </div>
       </article>
-    </main>
+    </LegalDocument>
   );
 };
 

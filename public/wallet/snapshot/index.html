@@ -9,34 +9,69 @@
     />
     <meta name="referrer" content="no-referrer" />
     <meta name="robots" content="noindex" />
-    <title>Check for payments · P2Party</title>
-    <link rel="icon" href="/logo-cat-tight.svg" />
-    <link rel="stylesheet" href="./page.css" />
+    <title>Public ledger history · P2Party</title>
+    <link rel="icon" href="/logo-cat.svg" />
+    <link rel="stylesheet" href="./page.css?v=2" />
   </head>
   <body>
+    <a class="skip" href="#content">Skip to content</a>
     <header>
-      <a href="/" aria-label="p2party home">
-        <img
-          src="/logo-cat-tight.svg"
-          alt=""
-          width="36"
-          height="36"
-        />p2party</a
-      >
+      <div class="bar">
+        <a class="brand" href="/" aria-label="p2party home"
+          ><img
+            src="/logo-cat-tight.svg"
+            alt=""
+            width="32"
+            height="32"
+          />p2party</a
+        >
+        <nav aria-label="Main navigation">
+          <a href="/protocol/">Protocol</a><a href="/roadmap/">Roadmap</a
+          ><a href="/whitepaper/">Whitepaper</a><a href="/explorer/">Explorer</a
+          ><a href="/rooms/">Rooms</a>
+        </nav>
+        <details id="account">
+          <summary>Account <span aria-hidden="true">▾</span></summary>
+          <div class="account-options">
+            <strong>Testnet wallet</strong><a href="/wallet/">Open wallet</a
+            ><a href="/wallet/#receive">Receive P2PARTY</a
+            ><a href="/wallet/#balance">Check balance</a>
+            <strong class="room-label">Room identity</strong>
+            <a href="/rooms/#restore-room-identity">Restore chat identity</a>
+          </div>
+        </details>
+      </div>
     </header>
-    <main>
-      <h1>Check for payments</h1>
+    <main id="content">
+      <a class="back" href="/wallet/">← Wallet</a>
+      <h1>Public ledger history</h1>
       <p>
-        This window reads the public Testnet 1 history. Your wallet checks it on
-        your device to find payments.
+        Download the Testnet 1 ledger as a JSON file. You can import it in your
+        wallet to check your balance offline.
       </p>
-      <p role="status" id="status">Checking Testnet 1…</p>
-      <button id="retry" hidden>Try again</button>
-      <a id="download" download="p2party-testnet1-snapshot.json" hidden
-        >Download public history</a
-      >
-      <p><a class="back-link" href="/wallet/">Wallet help</a></p>
+      <section aria-label="Download history">
+        <p role="status" id="status">Checking Testnet 1…</p>
+        <button id="retry" hidden>Try again</button>
+        <a id="download" download="p2party-testnet1-snapshot.json" hidden
+          >Download public history</a
+        >
+        <noscript
+          >Enable JavaScript to check and download the public ledger.</noscript
+        >
+      </section>
     </main>
-    <script type="module" src="./page.mjs"></script>
+    <footer>
+      <div class="bar">
+        <span>© 2026 p2party</span>
+        <nav aria-label="More from p2party">
+          <a href="/blog/">Field notes</a>
+          <a href="/session-lab/">Crypto lab</a>
+          <a href="/privacy-policy/">Privacy</a>
+          <a href="/terms-of-service/">Terms</a>
+          <a href="https://github.com/p2party/p2party.com">Website source</a>
+        </nav>
+      </div>
+    </footer>
+    <script type="module" src="./page.mjs?v=2"></script>
   </body>
 </html>

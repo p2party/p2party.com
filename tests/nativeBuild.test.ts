@@ -138,7 +138,7 @@ describe("native Content-Security-Policy", () => {
     // The web gets the policy from the CDN as a header, with frame-ancestors.
     expect(await nativeMetaTags("production")).toEqual([]);
     expect(JSON.parse(read("../package.json")).scripts["build:native"]).toBe(
-      "vite build --mode native",
+      "npm run build:wallet && vite build --mode native",
     );
   });
 });

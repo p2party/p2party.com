@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
+import { walletDocumentHref } from "../lib/walletRestore";
 import remarkGfm from "remark-gfm";
 
 import { Link } from "../components/link";
@@ -21,18 +22,15 @@ const BlogPostPage = () => {
 
   if (!post)
     return (
-      <main className='relative mx-auto max-w-3xl px-5 py-24 sm:px-8'>
-        <p className='font-mono text-sm text-orange-700 dark:text-orange-400'>
-          404 / no such field note
-        </p>
-        <h1 className='mt-4 text-4xl font-black tracking-tight'>
-          This packet never arrived.
-        </h1>
-        <Link
-          href='/blog'
-          className='mt-8 inline-block rounded font-mono text-sm underline decoration-orange-500 decoration-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500'
-        >
-          return to the series
+      <main className='site-reading'>
+        <header className='site-reading-header'>
+          <h1 className='site-title'>Field note not found</h1>
+          <p className='site-intro'>
+            Browse the series to find the article you need.
+          </p>
+        </header>
+        <Link href='/blog' className='ex-text-button'>
+          ← All field notes
         </Link>
       </main>
     );
@@ -43,38 +41,22 @@ const BlogPostPage = () => {
 
   return (
     <main className='site-reading'>
-      <header className='grid gap-8 pt-14 pb-10 lg:grid-cols-[1fr_15rem] lg:pt-20'>
-        <div>
-          <Link
-            href='/blog'
-            className='rounded font-mono text-xs font-bold text-orange-700 uppercase hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:text-orange-400'
-          >
-            ← Field notes / {String(post.order).padStart(2, "0")}
-          </Link>
-          <h1 className='site-title mt-5 max-w-4xl'>{post.title}</h1>
-          <p className='mt-6 max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-300'>
-            {post.description}
-          </p>
-        </div>
-        <dl className='h-fit border-l-4 border-orange-500 pl-4 font-mono text-xs leading-6 text-zinc-500 dark:text-zinc-400'>
-          <dt className='text-zinc-900 dark:text-zinc-100'>author</dt>
-          <dd>{post.author ?? blogSeries.author.name}</dd>
-          <dt className='mt-2 text-zinc-900 dark:text-zinc-100'>date</dt>
-          <dd>
-            <time dateTime={post.date}>{post.date}</time>
-          </dd>
-          <dt className='mt-2 text-zinc-900 dark:text-zinc-100'>references</dt>
-          <dd>
-            {post.commitAnchors.length > 0
-              ? `${post.commitAnchors.length} historical development IDs`
-              : "Release sources and recorded measurements"}
-          </dd>
-        </dl>
+      <header className='site-reading-header'>
+        <Link href='/blog' className='site-back'>
+          ← Field notes
+        </Link>
+        <h1 className='site-title'>{post.title}</h1>
+        <p className='site-intro'>{post.description}</p>
+        <p className='site-meta'>
+          {post.author ?? blogSeries.author.name} ·{" "}
+          <time dateTime={post.date}>{post.date}</time>
+        </p>
       </header>
 
-      <div className='grid gap-10 border-t border-zinc-900/20 pt-10 lg:grid-cols-[minmax(0,46rem)_1fr] dark:border-white/20'>
-        <article className='site-paper blog-prose min-w-0'>
+      <div className='site-reading-grid'>
+        <article className='site-paper site-article-column blog-prose'>
           <ReactMarkdown
+            urlTransform={(url) => walletDocumentHref(defaultUrlTransform(url))}
             remarkPlugins={[remarkGfm]}
             components={{
               a: ({ href = "", children, ...props }) => {
@@ -118,68 +100,49 @@ const BlogPostPage = () => {
           </ReactMarkdown>
         </article>
 
-        <aside className='lg:order-last'>
-          <div className='sticky top-6 border border-zinc-900/20 bg-white/70 p-5 font-mono text-xs leading-6 backdrop-blur dark:border-white/20 dark:bg-black/40'>
-            <p className='font-bold text-zinc-900 dark:text-zinc-100'>
-              {post.commitAnchors.length > 0
-                ? "historical development IDs"
-                : "release references"}
-            </p>
-            {post.commitAnchors.length > 0 && (
-              <>
-                <ul className='mt-3 grid grid-cols-2 gap-x-4 lg:grid-cols-1'>
-                  {post.commitAnchors.map((commit) => (
-                    <li key={commit}>
-                      <code>{commit}</code>
-                    </li>
-                  ))}
-                </ul>
-                <p className='mt-3 text-zinc-500 dark:text-zinc-400'>
-                  These identify the original development history. The public
-                  release sources are linked below; they are not substitutes for
-                  the historical commits.
-                </p>
-              </>
-            )}
-            <ul className='mt-3'>
-              <li>
-                <a
-                  href={`https://github.com/p2party/p2party-js/tree/v${sdkVersion}`}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='rounded text-orange-700 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-orange-400'
-                >
-                  SDK {sdkVersion} source ↗
-                </a>
-              </li>
-              <li>
-                <a
-                  href='/privacy-policy'
-                  className='rounded text-orange-700 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-orange-400'
-                >
-                  Service privacy policy
-                </a>
-              </li>
-            </ul>
-            <p className='mt-5 border-t border-zinc-900/15 pt-4 text-zinc-500 dark:border-white/15 dark:text-zinc-400'>
-              Shipped, gated, and research claims stay separate throughout this
-              series.
-            </p>
-          </div>
+        <aside className='site-contents'>
+          <h2>
+            {post.commitAnchors.length > 0
+              ? "Historical development IDs"
+              : "Release references"}
+          </h2>
+          {post.commitAnchors.length > 0 && (
+            <>
+              <ul className='site-reference-ids'>
+                {post.commitAnchors.map((commit) => (
+                  <li key={commit}>
+                    <code>{commit}</code>
+                  </li>
+                ))}
+              </ul>
+              <p className='site-reference-note'>
+                These IDs refer to the original development history. The links
+                below point to the public release sources.
+              </p>
+            </>
+          )}
+          <ul className='mt-3'>
+            <li>
+              <a
+                href={`https://github.com/p2party/p2party-js/tree/v${sdkVersion}`}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                SDK {sdkVersion} source ↗
+              </a>
+            </li>
+            <li>
+              <a href='/privacy-policy'>Service privacy policy</a>
+            </li>
+          </ul>
         </aside>
       </div>
 
-      <nav
-        aria-label='Series pagination'
-        className='mt-16 grid gap-4 border-t border-zinc-900/20 pt-8 sm:grid-cols-2 dark:border-white/20'
-      >
+      <nav aria-label='Series pagination' className='site-pagination'>
         {previous ? (
-          <Link
-            href={previous.href}
-            className='site-paper p-5 text-sm hover:border-orange-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:border-white/20'
-          >
+          <Link href={previous.href} className='site-paper'>
             <span className='block font-mono text-xs text-zinc-500 dark:text-zinc-400'>
-              ← previous
+              ← Previous field note
             </span>
             <span className='mt-2 block font-bold'>{previous.title}</span>
           </Link>
@@ -187,12 +150,9 @@ const BlogPostPage = () => {
           <span />
         )}
         {next ? (
-          <Link
-            href={next.href}
-            className='site-paper p-5 text-right text-sm hover:border-orange-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:border-white/20'
-          >
+          <Link href={next.href} className='site-paper'>
             <span className='block font-mono text-xs text-zinc-500 dark:text-zinc-400'>
-              next →
+              Next field note →
             </span>
             <span className='mt-2 block font-bold'>{next.title}</span>
           </Link>
