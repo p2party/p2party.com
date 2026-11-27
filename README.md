@@ -44,8 +44,8 @@ in the separate library repository.
 | [p2party-js](https://github.com/p2party/p2party-js)         | Handshake, ratchet, WebRTC mesh, transfers, and local storage     |
 | [p2party-server](https://github.com/p2party/p2party-server) | Signaling service, using Bun and PostgreSQL                       |
 
-P2Party Testnet 1 is awaiting public activation. Its genesis defines 128
-units without monetary value, and its protocol uses one validator to order
+P2Party Testnet 1 is live at the JSON-RPC endpoint on the signaling host.
+Its genesis defines 128 units without monetary value and one validator orders
 native post-quantum transfers. Using rooms requires neither a wallet nor a test unit.
 [Testnet guide and client examples](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md) · [Native library](https://github.com/ondemos/libdemos)
 
