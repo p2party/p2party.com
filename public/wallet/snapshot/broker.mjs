@@ -52,7 +52,7 @@ async function rpc(calls, signal, fetcher) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requested),
-    signal,
+    signal: AbortSignal.any([signal, AbortSignal.timeout(30000)]),
     cache: "no-store",
     credentials: "omit",
     redirect: "error",
@@ -115,10 +115,7 @@ async function checkReceipt(r, height) {
     throw Error("Receipt and signed bytes disagree.");
   return wire;
 }
-export async function readPublicSnapshot({
-  fetcher = fetch,
-  signal = AbortSignal.timeout(30000),
-} = {}) {
+async function trustedStart(fetcher, signal) {
   const response = await fetcher(
     new URL("./checkpoint.json", import.meta.url),
     {
@@ -154,62 +151,242 @@ export async function readPublicSnapshot({
     !/^0x(?:0|[1-9a-f][0-9a-f]{0,15})$/.test(head.height)
   )
     throw Error("Unexpected testnet history.");
-  const target = BigInt(head.height);
-  if (target < from || target - from > 256n)
+  if (BigInt(head.height) < from)
+    throw Error("The validator is behind the trusted checkpoint.");
+  return { snapshot, spent, headHeight: head.height, anchorId: anchor.id };
+}
+
+function checkSignal(signal) {
+  signal.throwIfAborted();
+}
+
+async function completeSnapshot(start, { fetcher, signal, deliverPage }) {
+  const { snapshot, spent, headHeight } = start;
+  const target = BigInt(headHeight);
+  const utxos = new Map(snapshot.units.map((unit) => [unit.id, unit]));
+  const all = [...spent, ...snapshot.units];
+  const ids = new Set(all.map((unit) => unit.id)),
+    owners = new Set(all.map((unit) => unit.commitment));
+  let current = BigInt(snapshot.height);
+  while (current < target) {
+    const afterHeight = quantity(current);
+    const receipts = [];
+    // Four maximum-size replies fit one bounded RPC body. Never hold more
+    // than 32 wires while waiting for the signer to verify this page.
+    while (receipts.length < 32 && current < target) {
+      checkSignal(signal);
+      const heights = [];
+      while (heights.length < 4 && current < target) heights.push(++current);
+      const batch = await rpc(
+        heights.map((h) => ["demos_getTransferByHeight", [quantity(h)]]),
+        signal,
+        fetcher,
+      );
+      for (const [i, receipt] of batch.entries()) {
+        const wire = await checkReceipt(receipt, heights[i]),
+          source = utxos.get(receipt.inputId);
+        const expiry = new DataView(wire.buffer).getBigUint64(106);
+        const dest = "0x" + hex(wire.subarray(116, 180));
+        if (
+          !source ||
+          source.suite !== wire[114] ||
+          BigInt(source.weight) !==
+            new DataView(wire.buffer).getBigUint64(98) ||
+          (expiry !== 0n && heights[i] > expiry) ||
+          ids.has(receipt.outputId) ||
+          owners.has(dest)
+        )
+          throw Error("Inconsistent public output set.");
+        ids.add(receipt.outputId);
+        owners.add(dest);
+        utxos.delete(receipt.inputId);
+        utxos.set(receipt.outputId, {
+          id: receipt.outputId,
+          weight: source.weight,
+          suite: wire[115],
+          commitment: dest,
+        });
+        receipts.push(receipt.wire);
+        if (
+          start.headMoveId &&
+          heights[i] === target &&
+          receipt.id !== start.headMoveId
+        )
+          throw Error("The pinned public head changed during replay.");
+      }
+    }
+    checkSignal(signal);
+    await deliverPage(afterHeight, receipts, quantity(current));
+  }
+  checkSignal(signal);
+  return {
+    ...snapshot,
+    height: headHeight,
+    units: [...utxos.values()].sort((a, b) => (a.id < b.id ? -1 : 1)),
+  };
+}
+
+export async function readPublicSnapshot({
+  fetcher = fetch,
+  signal = AbortSignal.timeout(30000),
+} = {}) {
+  const start = await trustedStart(fetcher, signal);
+  if (BigInt(start.headHeight) - BigInt(start.snapshot.height) > 256n)
     throw Error("This release needs a newer verified starting checkpoint.");
-  const utxos = new Map(snapshot.units.map((u) => [u.id, u]));
-  const all = [...spent, ...snapshot.units],
-    ids = new Set(all.map((u) => u.id)),
-    owners = new Set(all.map((u) => u.commitment));
   const receipts = [];
   let wireBytes = 0;
-  for (let next = from + 1n; next <= target;) {
-    const heights = [];
-    while (heights.length < 4 && next <= target) heights.push(next++);
-    const batch = await rpc(
-      heights.map((h) => ["demos_getTransferByHeight", [quantity(h)]]),
-      signal,
-      fetcher,
-    );
-    for (const [i, r] of batch.entries()) {
-      const wire = await checkReceipt(r, heights[i]),
-        source = utxos.get(r.inputId);
-      wireBytes += r.wire.length;
-      if (wireBytes > 8 * 1024 * 1024)
-        throw Error("Public history exceeds this release's refresh limit.");
-      const view = new DataView(wire.buffer),
-        dest = "0x" + hex(wire.subarray(116, 180));
-      if (
-        !source ||
-        source.suite !== wire[114] ||
-        BigInt(source.weight) !== view.getBigUint64(98) ||
-        ids.has(r.outputId) ||
-        owners.has(dest)
-      )
-        throw Error("Inconsistent public output set.");
-      ids.add(r.outputId);
-      owners.add(dest);
-      utxos.delete(r.inputId);
-      utxos.set(r.outputId, {
-        id: r.outputId,
-        weight: source.weight,
-        suite: wire[115],
-        commitment: dest,
-      });
-      receipts.push(r.wire);
-    }
-  }
+  const snapshot = await completeSnapshot(start, {
+    fetcher,
+    signal,
+    deliverPage: (_after, page) => {
+      for (const wire of page) {
+        wireBytes += wire.length;
+        if (wireBytes > 8 * 1024 * 1024)
+          throw Error("Public history exceeds this release's refresh limit.");
+        receipts.push(wire);
+      }
+    },
+  });
   return {
     type: "p2party.wallet.snapshot.v1",
     chainId: chain,
     genesisHash: genesis,
-    fromHeight: snapshot.height,
-    headHeight: head.height,
+    fromHeight: start.snapshot.height,
+    headHeight: start.headHeight,
     receipts,
-    snapshot: {
-      ...snapshot,
-      height: head.height,
-      units: [...utxos.values()].sort((a, b) => (a.id < b.id ? -1 : 1)),
-    },
+    snapshot,
   };
+}
+
+// The start snapshot comes from the release-pinned file and the RPC checkpoint
+// check above. The signer independently verifies every native signature.
+export async function streamPinnedHistory(
+  start,
+  { fetcher, signal, nonce, sendAndWait },
+) {
+  const { snapshot, headHeight, anchorId } = start;
+  const target = BigInt(headHeight);
+  let headMoveId = anchorId;
+  if (headHeight !== snapshot.height) {
+    const [tip] = await rpc(
+      [["demos_getTransferByHeight", [headHeight]]],
+      signal,
+      fetcher,
+    );
+    await checkReceipt(tip, target);
+    headMoveId = tip.id;
+  }
+  const fromHeight = snapshot.height;
+  checkSignal(signal);
+  await sendAndWait(
+    {
+      type: "p2party.wallet.catchup.start.v1",
+      nonce,
+      chainId: chain,
+      genesisHash: genesis,
+      fromHeight,
+      headHeight,
+      headMoveId,
+    },
+    fromHeight,
+  );
+  const result = await completeSnapshot(
+    { ...start, headMoveId },
+    {
+      fetcher,
+      signal,
+      deliverPage: async (afterHeight, receipts, height) => {
+        await sendAndWait(
+          {
+            type: "p2party.wallet.catchup.page.v1",
+            nonce,
+            afterHeight,
+            receipts,
+          },
+          height,
+        );
+      },
+    },
+  );
+  // Fresh additions after the original head are for a later sync. Re-check
+  // both ends of the selected range before releasing its completed snapshot.
+  const calls = [
+    ["demos_getHead", []],
+    ["eth_chainId", []],
+    ["demos_getTransferByHeight", [fromHeight]],
+  ];
+  if (headHeight !== fromHeight)
+    calls.push(["demos_getTransferByHeight", [headHeight]]);
+  const [head, network, anchor, last] = await rpc(calls, signal, fetcher);
+  await checkReceipt(anchor, BigInt(fromHeight));
+  if (headHeight !== fromHeight) await checkReceipt(last, target);
+  if (
+    network !== "0x50325054" ||
+    head?.chainId !== chain ||
+    typeof head.height !== "string" ||
+    !/^0x(?:0|[1-9a-f][0-9a-f]{0,15})$/.test(head.height) ||
+    BigInt(head.height) < target ||
+    anchor.id !== anchorId ||
+    (last ?? anchor).id !== headMoveId
+  )
+    throw Error("The pinned public history changed during replay.");
+  checkSignal(signal);
+  return { type: "p2party.wallet.catchup.done.v1", nonce, snapshot: result };
+}
+
+export async function readPublicCatchup({
+  fetcher = fetch,
+  signal,
+  nonce,
+  sendAndWait,
+}) {
+  const start = await trustedStart(fetcher, signal);
+  return streamPinnedHistory(start, { fetcher, signal, nonce, sendAndWait });
+}
+
+export function awaitVerifiedPage(
+  peer,
+  message,
+  height,
+  signal,
+  events = window,
+) {
+  signal.throwIfAborted();
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => finish(false), 45000);
+    function finish(ok) {
+      clearTimeout(timeout);
+      events.removeEventListener("message", receive);
+      signal.removeEventListener("abort", cancel);
+      if (ok) resolve();
+      else reject(Error("The wallet did not confirm this public page."));
+    }
+    function cancel() {
+      finish(false);
+    }
+    function receive(event) {
+      const data = event.data;
+      if (
+        event.source === peer &&
+        event.origin === signerOrigin &&
+        data &&
+        typeof data === "object" &&
+        Object.keys(data).length === 3 &&
+        Object.hasOwn(data, "type") &&
+        Object.hasOwn(data, "nonce") &&
+        Object.hasOwn(data, "height") &&
+        data.type === "p2party.wallet.catchup.ack.v1" &&
+        data.nonce === message.nonce &&
+        data.height === height
+      )
+        finish(true);
+    }
+    events.addEventListener("message", receive);
+    signal.addEventListener("abort", cancel, { once: true });
+    try {
+      peer.postMessage(message, signerOrigin);
+    } catch {
+      finish(false);
+    }
+  });
 }

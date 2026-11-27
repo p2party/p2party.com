@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { EyeSlashIcon, WalletIcon } from "@heroicons/react/20/solid";
 import { useNavigate } from "react-router";
 import { Link } from "./link";
-import { WALLET_RESTORE_URL } from "../lib/walletRestore";
+import { WALLET_RECEIVE_URL, WALLET_RESTORE_URL } from "../lib/walletRestore";
 import {
   type PublicWalletTotal,
   readBalanceOffer,
@@ -37,30 +37,41 @@ export function WalletNav({ current }: { current: boolean }) {
           </small>
         )}
       </Link>
-      {balance && (
-        <details className='site-balance-details'>
-          <summary aria-label='Balance details'>
-            <span aria-hidden='true'>▾</span>
-          </summary>
-          <div className='site-balance-menu'>
-            <strong>{balance.amount} test P2PARTY</strong>
-            <p>Testnet 1 · As of height {balance.height}</p>
-            <button
-              className='ex-text-button'
-              type='button'
-              onClick={() => {
-                if (!saveSharedWalletBalance(null))
-                  setError(
-                    "This browser could not clear the saved balance. Close this tab.",
-                  );
-              }}
-            >
-              Hide and forget balance
-            </button>
-            {error && <p role='status'>{error}</p>}
-          </div>
-        </details>
-      )}
+      <details className='site-balance-details'>
+        <summary aria-label={balance ? "Balance details" : "Wallet actions"}>
+          <span aria-hidden='true'>▾</span>
+        </summary>
+        <div className='site-balance-menu'>
+          <a
+            className='ex-text-button block'
+            href={WALLET_RECEIVE_URL}
+            referrerPolicy='no-referrer'
+          >
+            Receive P2PARTY
+          </a>
+          {balance && (
+            <>
+              <strong className='mt-1 block'>
+                {balance.amount} test P2PARTY
+              </strong>
+              <p>Testnet 1 · As of height {balance.height}</p>
+              <button
+                className='ex-text-button'
+                type='button'
+                onClick={() => {
+                  if (!saveSharedWalletBalance(null))
+                    setError(
+                      "This browser could not clear the saved balance. Close this tab.",
+                    );
+                }}
+              >
+                Hide and forget balance
+              </button>
+              {error && <p role='status'>{error}</p>}
+            </>
+          )}
+        </div>
+      </details>
     </div>
   );
 }
@@ -97,6 +108,17 @@ export function RoomWalletNav({ compact = false }: { compact?: boolean }) {
           </small>
         </span>
       </a>
+      {!compact && (
+        <a
+          href={WALLET_RECEIVE_URL}
+          target='_blank'
+          rel='noopener noreferrer'
+          className='ml-auto px-1 text-sm font-semibold underline underline-offset-2'
+          aria-label='Receive P2PARTY in a new tab'
+        >
+          Receive
+        </a>
+      )}
       {balance && (
         <button
           className='p-2'

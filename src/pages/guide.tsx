@@ -3,7 +3,7 @@ import { useLocation } from "react-router";
 import { BalanceShareRequest } from "../components/SharedWalletBalance";
 import ReactMarkdown from "react-markdown";
 
-import { WALLET_RESTORE_URL } from "../lib/walletRestore";
+import { WALLET_RECEIVE_URL, WALLET_RESTORE_URL } from "../lib/walletRestore";
 import { WalletBalance } from "../components/WalletBalance";
 import wallet from "../content/wallet.md?raw";
 import guides from "../content/guides.json";
@@ -64,6 +64,13 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
               referrerPolicy='no-referrer'
             >
               Restore a wallet
+            </a>
+            <a
+              className='ex-text-button'
+              href={WALLET_RECEIVE_URL}
+              referrerPolicy='no-referrer'
+            >
+              Receive P2PARTY
             </a>
             <a className='ex-text-button' href='#check-a-public-balance'>
               Watch a balance

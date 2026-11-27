@@ -1,3 +1,16 @@
+## Receive a payment
+
+**Your wallet can be offline when a payer sends you a unit.** First create a fresh public receive request and save the matching private material. Testnet 1 uses valueless whole units. Make one request per unit.
+
+1. Open **Receive P2PARTY**. Choose **Create a wallet** for a new wallet, or restore your existing encrypted file using its separate recovery code. In an open wallet choose **Create a receive request**. [Open the receive screen](https://p2party.github.io/p2party-server/restore/#receive)
+2. Download the updated encrypted wallet file and keep its recovery code separately. Reopen the file with the matching code to confirm the backup. Only then can you copy the public request, download it or show its QR code. A backup made before this request cannot restore it.
+3. Give the payer the **public request**. The copyable request, download and QR all identify the network, genesis, one-unit weight, signing suite and full 64-byte receive commitment. Keep the wallet file and recovery code private. The payer checks the full destination before signing and submitting the transfer. You can close your browser, go offline or change devices while the validator records it.
+4. When you return, restore the backup containing that request and choose **Sync with validator**. The wallet checks the public Testnet 1 history from its pinned checkpoint and matches your commitments on your device. Use the **verified height** shown with the result. At that height a request can be awaiting a payment, received and unspent, or received and later spent. An unspent unit contributes to the total. [Follow the illustrated payment walkthrough](/protocol#walkthrough)
+
+If the history is unavailable, fails verification or is older than the payer’s receipt, keep the payment unconfirmed. Retry sync when connectivity returns and compare the payer’s receipt with the full commitment. A stale zero does not establish that the transfer failed. If the payer has already spent an input, confirm its recorded destination before asking them to send again.
+
+The request can be shared without exposing other requests in your wallet. A payer or anyone with the request can follow its public ledger activity; transfers and amounts are public. A watch link carries only the shorter read handle and can show that commitment’s balance. [Check a public balance](#check-a-public-balance)
+
 ## Move spending access
 
 Choose **Restore a wallet**, select or drop your encrypted wallet file, or paste its contents. Paste the recovery code you saved separately and choose **Restore wallet**. Your keys are opened in this browser. To unlock with just the code on your next visit, choose **Remember encrypted wallet on this device**. The restore page runs on P2Party’s HTTPS project site and can also be opened as a downloaded offline file. [Open wallet restore](https://p2party.github.io/p2party-server/restore/) · [Source and offline-file checksum](https://github.com/p2party/p2party-server/tree/8d0c855489c72ed25c377825d314ee8babbaf489/clients/evm/portable-wallet/browser)
@@ -8,7 +21,7 @@ Choose **Restore a wallet**, select or drop your encrypted wallet file, or paste
 
 To pay from a restored wallet, open the offline payment form, paste a public transfer request and review the input, amount, destination and expiry. Approve to download the signed transaction for separate submission. The restore page never broadcasts a transfer.
 
-## Start a local wallet
+## Use the desktop companion
 
 In the server source containing the companion, run the following commands from the repository root. Open the loopback address printed in your own terminal.
 
@@ -20,12 +33,6 @@ node clients/evm/portable-wallet/serve.mjs
 Choose **Create a new wallet** and select your signing suite. Download the encrypted file and save the recovery code elsewhere, for example in a password manager. Choose **Check my backup** and reopen that file with your saved code. The companion then shows the full public receive commitment and its shorter balance handle. Keep the wallet process running while you use it. After adding another request, confirm an updated backup before giving the commitment to a payer.
 
 Existing command-line wallets keep a private `key.pk8` and `nonce` in each receive directory. On the restore page, open **Import an older command-line wallet**, choose those two files and paste the expected full public commitment. Save the resulting encrypted backup and its separate new code, then reopen them in the restore form. This converts one receive folder at a time. The desktop companion’s `import-legacy.mjs` command can combine several folders into one kit. To make a payment from a restored kit, review the full destination, unit value and expiry in the companion’s `sign-offline.mjs` command. It exports a signed transfer that the command-line client can submit. Retain your signed file and move ID until settlement. [Existing wallet instructions](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md) · [Earlier command-line restore test](/blog/restoring-a-p2party-wallet)
-
-## Receive a payment
-
-Give the payer **Testnet 1**, the signing suite and the **full 64-byte commitment** for a checked receive request. Each commitment can receive one whole unit once. For two units, create two requests. After payment, check the output ID, weight and full commitment.
-
-To see the balance for one commitment on another browser, enter its public 20-byte handle below and choose **Watch in another browser**. Scan the QR code or copy the link. On the receiving browser, **Check balance** asks the public validator for that handle’s balance. Anyone holding the link can read the same balance. Spending requires the local wallet.
 
 ## Choosing a spending suite
 

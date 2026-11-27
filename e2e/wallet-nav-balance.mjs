@@ -9,6 +9,7 @@ import { chromium } from "playwright";
 const web = "https://p2party.com";
 const signer = "https://p2party.github.io";
 const href = web + "/wallet/#show-balance";
+const receiveUrl = signer + "/p2party-server/restore/#receive";
 const storage = "p2party.testnet1.shared-balance.v1";
 const root = resolve("dist");
 const browser = await chromium.launch();
@@ -61,6 +62,26 @@ try {
     }
   });
   await context.routeWebSocket("**/*", (socket) => socket.close());
+  const visitor = await context.newPage();
+  for (const route of ["/", "/wallet/"]) {
+    await visitor.goto(web + route, { waitUntil: "networkidle" });
+    const primary = visitor.getByRole("link", {
+      name: "Receive P2PARTY",
+      exact: true,
+    });
+    assert.equal(await primary.getAttribute("href"), receiveUrl);
+    assert.equal(await primary.getAttribute("referrerpolicy"), "no-referrer");
+    const box = await primary.boundingBox();
+    assert(box && box.y >= 0 && box.y + box.height <= 667);
+    await visitor.getByLabel("Wallet actions").click();
+    const action = visitor
+      .getByRole("navigation", { name: "Site navigation" })
+      .getByRole("link", { name: "Receive P2PARTY", exact: true });
+    assert.equal(await action.getAttribute("href"), receiveUrl);
+    await action.click();
+    await visitor.waitForURL(receiveUrl);
+  }
+  await visitor.close();
   const signerPage = await context.newPage();
   await signerPage.goto(signer + "/p2party-server/restore/");
   const start = async () => {
@@ -240,6 +261,14 @@ try {
   await edge.getByRole("button", { name: "Cancel", exact: true }).click();
   await edge.getByRole("button", { name: "Open navigation" }).click();
   const drawer = edge.getByRole("dialog");
+  const receiveFromRoom = drawer.getByRole("link", {
+    name: "Receive P2PARTY in a new tab",
+  });
+  assert.equal(await receiveFromRoom.getAttribute("href"), receiveUrl);
+  assert.equal(
+    await receiveFromRoom.getAttribute("rel"),
+    "noopener noreferrer",
+  );
   const roomGuide = edge.waitForEvent("popup");
   await drawer.getByRole("link", { name: "Open wallet in a new tab" }).click();
   await (

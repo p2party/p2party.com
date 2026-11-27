@@ -13,6 +13,6 @@
   },
   "wallet": {
     "title": "P2PARTY wallet",
-    "description": "Restore spending access with an encrypted wallet file and its recovery code, or open a watch link to check one testnet balance."
+    "description": "Create a request to receive test P2PARTY while your wallet is offline, restore spending access on another device, or watch a public balance."
   }
 }

@@ -1,7 +1,61 @@
-import { readPublicSnapshot, signerOrigin } from "./broker.mjs";
+import {
+  awaitVerifiedPage,
+  readPublicCatchup,
+  readPublicSnapshot,
+  signerOrigin,
+} from "./broker.mjs";
 const status = document.getElementById("status"),
   retry = document.getElementById("retry"),
   download = document.getElementById("download");
+const catchup = location.hash === "#catch-up";
+
+async function catchUp() {
+  const peer = window.opener;
+  if (!peer || peer.closed) {
+    status.textContent = "Open Sync with validator inside your wallet.";
+    return;
+  }
+  const controller = new AbortController();
+  const nonce = Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  const cancel = () => controller.abort();
+  window.addEventListener("pagehide", cancel, { once: true });
+  const poll = setInterval(() => {
+    if (peer.closed) cancel();
+  }, 500);
+  try {
+    const done = await readPublicCatchup({
+      signal: controller.signal,
+      nonce,
+      sendAndWait: async (message, height) => {
+        status.textContent =
+          "Checking public history at height " + BigInt(height) + ".";
+        await awaitVerifiedPage(peer, message, height, controller.signal);
+      },
+    });
+    peer.postMessage(done, signerOrigin);
+    status.textContent =
+      "Public history sent through height " +
+      BigInt(done.snapshot.height) +
+      ".";
+  } catch {
+    if (!controller.signal.aborted) {
+      status.textContent =
+        "Public history could not be confirmed. Start another sync in your wallet.";
+      try {
+        peer.postMessage(
+          { type: "p2party.wallet.catchup.error.v1", nonce },
+          signerOrigin,
+        );
+      } catch {}
+    }
+  } finally {
+    clearInterval(poll);
+    window.removeEventListener("pagehide", cancel);
+    controller.abort();
+  }
+}
 async function refresh() {
   retry.hidden = true;
   download.hidden = true;
@@ -34,4 +88,5 @@ async function refresh() {
   }
 }
 retry.addEventListener("click", refresh);
-refresh();
+if (catchup) void catchUp();
+else void refresh();
