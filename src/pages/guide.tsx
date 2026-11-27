@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 
+import { WALLET_RESTORE_URL } from "../lib/walletRestore";
 import { WalletBalance } from "../components/WalletBalance";
 import wallet from "../content/wallet.md?raw";
 import guides from "../content/guides.json";
@@ -48,8 +49,12 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
         </p>
         {page === "wallet" && (
           <div className='mt-4 flex flex-wrap items-center gap-4'>
-            <a className='ex-button' href='#move-spending-access'>
-              Move spending access
+            <a
+              className='ex-button'
+              href={WALLET_RESTORE_URL}
+              referrerPolicy='no-referrer'
+            >
+              Restore a wallet
             </a>
             <a className='ex-text-button' href='#check-a-public-balance'>
               Watch a balance

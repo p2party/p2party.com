@@ -13,6 +13,6 @@
   },
   "wallet": {
     "title": "P2PARTY wallet",
-    "description": "Take spending access to another browser with the local wallet companion, or open a watch-only link to check a testnet balance."
+    "description": "Restore spending access with an encrypted wallet file and its recovery code, or open a watch link to check one testnet balance."
   }
 }

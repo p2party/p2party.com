@@ -1,5 +1,11 @@
 # Web client changelog
 
+## November 27, 2026 — Relay pricing, holder privacy and bonded voting
+
+- Put **Restore a wallet** in the first view of the homepage and wallet guide. The browser accepts a dropped file or pasted backup and unlocks spending with its separate recovery code.
+- Publish the cap and route selection rules, per-hop refusal measurements, replacement-route settlement, and the evidence still needed before mainnet.
+- Document four-process stake-weighted voting, recovery and challenge-based wallet checkpoints, and distinguish the public amount on one receive request from holdings matched locally across a wallet. [Whitepaper](src/content/whitepaper.md)
+
 ## Unreleased
 
 - The wallet guide walks through restoring spending access in the local companion with a file and a separately saved recovery code. A watch-only QR or link opens one public handle in a second browser and lets its holder choose when to query the validator.

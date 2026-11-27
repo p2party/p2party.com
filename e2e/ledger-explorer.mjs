@@ -99,6 +99,12 @@ try {
   await page
     .getByRole("heading", { name: "P2PARTY wallet", exact: true })
     .waitFor();
+  assert.equal(
+    await page
+      .getByRole("link", { name: "Restore a wallet", exact: true })
+      .getAttribute("href"),
+    "https://p2party.github.io/p2party-server/restore/",
+  );
   await page
     .getByLabel("Check a Testnet 1 balance")
     .fill("0x" + "a".repeat(128));

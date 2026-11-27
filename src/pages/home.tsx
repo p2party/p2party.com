@@ -2,6 +2,7 @@
 
 import { useEffect, useState, lazy, Suspense } from "react";
 
+import { WALLET_RESTORE_URL } from "../lib/walletRestore";
 import { Button } from "../components/button";
 import { Link } from "../components/link";
 import HeroDemo from "../components/custom/HeroDemo";
@@ -178,12 +179,12 @@ const results = [
   },
   {
     title: "Paying a route through several volunteers",
-    body: "In local browser tests, a payer chose two or three relays and capped the price. Each volunteer earned one test P2PARTY for a delivered record. Retrying the payments did not pay anyone twice.",
+    body: "The local payer can find a route under a total cap. Two- and three-hop routes recovered after a volunteer dropped out and each successful volunteer received one test P2PARTY.",
     href: "/whitepaper",
   },
   {
-    title: "A wallet proof checked against three validator signatures",
-    body: "On one machine, four validator identities agreed on an order for native transfers. Three signed the resulting ledger roots. A wallet verified an unspent unit and rejected a proof from an older checkpoint.",
+    title: "Four stake-backed processes agreed on two native spends",
+    body: "Four local processes derived voting power from bonded units. A validator retrieved the same ledger state after disconnection. Public Testnet 1 still uses one operator.",
     href: "/roadmap",
   },
 ];
@@ -259,6 +260,16 @@ const HomePage = () => {
               Fights Back
             </span>
           </h1>
+          <p className='mt-4 text-sm text-zinc-700 dark:text-zinc-300'>
+            Already have a P2PARTY wallet?{" "}
+            <a
+              href={WALLET_RESTORE_URL}
+              referrerPolicy='no-referrer'
+              className='ex-text-button'
+            >
+              Restore a wallet
+            </a>
+          </p>
         </div>
         {/* Visual: a looping demonstration of one message on the wire */}
         <div className='flex justify-center md:col-start-2 md:row-span-2 md:row-start-1 md:justify-end md:self-center'>
