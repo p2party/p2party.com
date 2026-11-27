@@ -108,13 +108,11 @@ const contentTypeForKey = (key) => {
 };
 
 const cacheControlForKey = (key) => {
-  // Every .html is an entrypoint, not just the root one. Prerendering emits
-  // blog/index.html, privacy-policy/index.html and nine more; each references
-  // content-hashed assets, so caching the HTML pins visitors to the old asset
-  // names and a deploy goes unnoticed until the cache expires.
+  // Page entrypoints and crawler discovery files can change on each release.
   if (
     key.endsWith(".html") ||
-    entrypointKeys.has(key) ||
+    key === "robots.txt" ||
+    key === "sitemap.xml" ||
     key.startsWith(".well-known/")
   )
     return "no-cache, no-store, must-revalidate";

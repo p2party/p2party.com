@@ -40,6 +40,8 @@ const runUpload = (prune: boolean): UploadResult => {
       const wasm = Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]);
       const files = {
         "index.html": Buffer.from("<!doctype html><title>Offline upload fixture</title>"),
+        "robots.txt": Buffer.from("User-agent: *"),
+        "sitemap.xml": Buffer.from("<urlset/>"),
         "assets/client.js": Buffer.from("globalThis.fixture = true;"),
         "downloads/testnet-1/wallet.tgz": gzipSync("wallet fixture"),
         "downloads/testnet-1/wallet.tgz.sha256": Buffer.from("checksum fixture"),
@@ -73,7 +75,7 @@ const runUpload = (prune: boolean): UploadResult => {
           }
           if (command instanceof ListObjectsV2Command) {
             listCalls++;
-            return { Contents: [...Object.keys(files), "assets/older-client.js", "obsolete.txt", "robots.txt"].map(Key => ({ Key })) };
+            return { Contents: [...Object.keys(files), "assets/older-client.js", "obsolete.txt", "apple-developer-merchantid-domain-association"].map(Key => ({ Key })) };
           }
           if (command instanceof DeleteObjectsCommand) {
             deletedKeys.push(...input.Delete.Objects.map(({Key}) => Key));
@@ -163,6 +165,11 @@ describe("self-hosted WASM upload", () => {
     expect(result.puts.at(-1)?.cacheControl).toBe(
       "no-cache, no-store, must-revalidate",
     );
+    for (const key of ["robots.txt", "sitemap.xml"]) {
+      expect(result.puts.find((asset) => asset.key === key)?.cacheControl).toBe(
+        "no-cache, no-store, must-revalidate",
+      );
+    }
     expect(result.listCalls).toBe(0);
     expect(result.deletedKeys).toEqual([]);
   });

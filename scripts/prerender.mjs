@@ -19,6 +19,7 @@
 // ============================================================================
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
+import { renderRobots } from "./renderRobots.mjs";
 
 const DIST = "dist";
 const ORIGIN = "https://p2party.com";
@@ -263,17 +264,7 @@ for (const route of ROUTES) {
 // so they cannot drift from what is actually crawlable.
 await writeFile(
   join(DIST, "robots.txt"),
-  [
-    "User-agent: *",
-    "Allow: /",
-    "# Rooms are addressed by a secret capability; there is nothing to index.",
-    "Disallow: /rooms",
-    "Disallow: /r",
-    "Allow: /roadmap",
-    "",
-    `Sitemap: ${ORIGIN}/sitemap.xml`,
-    "",
-  ].join("\n"),
+  renderRobots(PRIVATE_ROUTES, ORIGIN),
   "utf8",
 );
 

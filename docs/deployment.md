@@ -75,6 +75,17 @@ curl -sS -L -D - -o /dev/null https://p2party.com/r
 
 ## Verify a deployment
 
+The uploader sets `Cache-Control: no-cache, no-store, must-revalidate` on
+`robots.txt` and `sitemap.xml`. Check their ordinary public URLs after a release.
+A previous cache entry can keep its old lifetime until expiry or an edge purge.
+The crawler rules cover the exact `/r` and `/rooms` paths, their query strings
+and descendants. Other paths beginning with `/r` remain crawlable.
+
+```bash
+curl -fsS -D - https://p2party.com/robots.txt
+curl -fsS -D - https://p2party.com/sitemap.xml
+```
+
 For the SDK 0.15.1 rollout, upgrade signaling first. Verify its health response
 before releasing the frontend. After the frontend deploys, compare the served
 WASM with the copy approved in the release checkout:
