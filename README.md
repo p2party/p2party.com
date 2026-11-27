@@ -89,7 +89,8 @@ recovery bounds for mobile or wide-area networks.
 
 ## SDK artifacts
 
-This checkout uses the locally built SDK `file:vendor/p2party-0.15.0.tgz`.
+This checkout uses the SDK release archive `file:vendor/p2party-0.15.0.tgz`
+from the `p2party-js` Linux CI build.
 For local room tests, set **Settings → Signaling Server URL** to the WebSocket
 URL of your signaling v5 server. The September production release used v4.
 The app loads
@@ -102,7 +103,8 @@ its release provenance is checked at build time rather than by browser SRI.
 its WASM provenance, and the byte-identical public WASM. It prints the artifact
 and WASM SHA-256 values. CI runs it before installing dependencies.
 
-To adopt a new SDK, build an immutable release archive in `p2party-js`, copy it
+To adopt a new SDK, download the validated release archive from the matching
+`p2party-js` CI run and verify its SHA-256 against the build log. Copy it
 into `vendor/`, update the `file:` dependency through npm, copy its packed WASM
 into the matching `public/vendor/p2party-<version>/` directory, and update
 `SELF_HOSTED_WASM_PATH`. Review the tarball, lockfile, source path, and public
