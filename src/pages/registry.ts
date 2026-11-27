@@ -20,6 +20,7 @@ export interface RoutePages {
   TOS: ComponentType;
   Privacy: ComponentType;
   SessionLab: ComponentType;
+  Guide: ComponentType<{ page: "protocol" | "roadmap" }>;
   Blog: ComponentType;
   BlogPost: ComponentType;
   ChatLayout: ComponentType;
@@ -37,6 +38,7 @@ export const loaders: {
   TOS: () => import("./tos"),
   Privacy: () => import("./privacy"),
   SessionLab: () => import("./session-lab"),
+  Guide: () => import("./guide"),
   Blog: () => import("./blog"),
   BlogPost: () => import("./blog-post"),
   ChatLayout: () => import("../components/custom/ChatLayout"),
@@ -68,6 +70,7 @@ export const pagesForPath = (rawPathname: string): PageKey[] => {
     rawPathname.length > 1 ? rawPathname.replace(/\/+$/u, "") : rawPathname;
   if (pathname === "/" || pathname === "") return ["Home"];
   if (pathname.startsWith("/blog/")) return ["BlogPost"];
+  if (pathname === "/protocol" || pathname === "/roadmap") return ["Guide"];
   if (pathname === "/blog") return ["Blog"];
   if (pathname === "/privacy-policy") return ["Privacy"];
   if (pathname === "/terms-of-service") return ["TOS"];

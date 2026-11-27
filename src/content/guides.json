@@ -1,0 +1,10 @@
+{
+  "protocol": {
+    "title": "Protocol",
+    "description": "How a room connects, how peers encrypt and recover messages, and how the signaling host validates native testnet transfers."
+  },
+  "roadmap": {
+    "title": "Roadmap",
+    "description": "What you can use today, what the local timing and ledger tests measured, and what it will take to run an independently verified testnet."
+  }
+}

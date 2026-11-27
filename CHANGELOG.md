@@ -1,5 +1,10 @@
 # Web client changelog
 
+## November 27, 2026 — Public protocol and roadmap
+
+- Link the landing page and field notes to the [protocol guide](https://p2party.com/protocol) and [roadmap](https://p2party.com/roadmap). Both pages are prerendered and indexed.
+- Surface the direct and relayed file checks, public testnet receipts and local two-store timing results on the landing page. The roadmap records the locally verified receipt proofs and signed checkpoints alongside the milestones for an independent operator and wallet state proofs.
+
 ## November 27, 2026 — SDK 0.15.1 and signaling 0.2.2
 
 - Repair missing peer connections after signaling returns. Room history loads without duplicate entries, and internal completed requests release their tracking records. The SDK was exercised with 20,000 stored messages.

@@ -19,6 +19,8 @@ by one public validator. A second validator has been exercised on separate local
 PostgreSQL databases. [Release notes](src/content/blog/10-room-history-and-purge.md) ·
 [Changelog](CHANGELOG.md) · [Signaling health](https://signaling.p2party.com/health)
 
+The public [protocol guide](https://p2party.com/protocol) explains the room handshake, metadata visibility and native testnet RPC. The [roadmap](https://p2party.com/roadmap) records measured results from the local two-store timing study and signed receipt-history proofs, and tracks the separately administered replica and wallet state proofs.
+
 ## What works
 
 - Text and file transfers with authenticated receipts and selective retry.
@@ -38,11 +40,11 @@ PostgreSQL databases. [Release notes](src/content/blog/10-room-history-and-purge
 The client integrates the SDK; cryptographic and transport implementation lives
 in the separate library repository.
 
-| Repository                                                  | Responsibility                                                    |
-| ----------------------------------------------------------- | ----------------------------------------------------------------- |
-| **p2party.com**                                             | UI, invitations, browser integration, static build, native shells |
-| [p2party-js](https://github.com/p2party/p2party-js)         | Handshake, ratchet, WebRTC mesh, transfers, and local storage     |
-| [p2party-server](https://github.com/p2party/p2party-server) | Signaling service, using Bun and PostgreSQL                       |
+| Repository                                                                | Responsibility                                                    |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [p2party.com-source](https://github.com/p2party/p2party.com-source)       | UI, invitations, browser integration, static build, native shells |
+| [p2party-js](https://github.com/p2party/p2party-js)                       | Handshake, ratchet, WebRTC mesh, transfers, and local storage     |
+| [p2party-server-source](https://github.com/p2party/p2party-server-source) | Signaling service, using Bun and PostgreSQL                       |
 
 P2Party Testnet 1 is live at the JSON-RPC endpoint on the signaling host.
 Its genesis defines 128 units without monetary value and one validator orders
@@ -50,7 +52,7 @@ native post-quantum transfers. Using rooms requires neither a wallet nor a test 
 The first grant funded one unit. Ethers spent it with ML-DSA-65 at height 2
 and viem spent the same unit with SLH-DSA-SHA2-192s at height 3. Both clients
 verified historical balances and recovered their original receipts on retry.
-[Testnet guide and client examples](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md) · [Native library](https://github.com/ondemos/libdemos)
+[Testnet guide and client examples](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md) · [Native library](https://github.com/p2party/libdemos)
 
 ## Run locally
 

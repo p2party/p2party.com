@@ -114,9 +114,6 @@ const steps = [
   },
 ];
 
-// Two lists that have to be read together. The left one is only credible
-// because the right one exists, and the right one is only publishable because
-// the project's own rule is that an untested guarantee does not get printed.
 const shipped = [
   {
     title: "Rooms with a PIN",
@@ -152,30 +149,26 @@ const shipped = [
   },
 ];
 
-const boundaries = [
+const results = [
   {
-    title: "The signaling operator sees who is in the room",
-    body: "With signaling v5, your browser sends a hash of the invitation capability. The server can link that identifier to member keys and connection times. Purging tells you which room leaves were acknowledged. The public service expires offline memberships after 90 days without a login. Separate one-store and two-store blind-rendezvous prototypes run locally, but this site's room flow still uses ordinary signaling. The experiments have not established relationship privacy.",
+    title: "Messages and files over direct and relayed connections",
+    body: "On the public service, two fresh pairs of browsers each exchanged a message and a 32 KiB file. The receivers reopened the stored message and checked every file byte. One pair connected directly, the other through a forced TURN relay.",
+    href: "/blog/rooms-after-signaling-v5",
   },
   {
-    title: "Abuse limits do not count people",
-    body: "The server limits connections, messages and room membership, and requires proof of an identity key before saving it. Proof of work with optional passkeys is a separate research prototype. Neither rate limits nor passkeys establish that different keys belong to different people.",
+    title: "Room recovery after a disconnect",
+    body: "Three local browsers exchanged messages and recovered after a wrong PIN. Separate file tests recovered a missing chunk in a 16 MiB transfer and resumed a 64 MiB transfer after the sender reloaded.",
+    href: "/blog/rooms-after-signaling-v5",
   },
   {
-    title: "Cover traffic is timing cover",
-    body: "The fixed rhythm has been measured over a loopback connection, not over a real network and not against a published traffic-analysis attack. Until it has been, we call it timing cover and not resistance.",
+    title: "A native testnet transfer through ethers and viem",
+    body: "The signaling host also validates P2Party Testnet 1. Public receipts record an ethers transfer signed with ML-DSA-65 and a viem transfer signed with SLH-DSA-SHA2-192s. Both moved the same valueless unit. One public operator orders transfers.",
+    href: "/protocol",
   },
   {
-    title: "Room privacy on a real network",
-    body: "Three browsers have exchanged messages and recovered after a wrong PIN on loopback. Whether an observer can distinguish payload traffic from cover in a larger room still needs testing across real networks.",
-  },
-  {
-    title: "Nobody independent has audited this",
-    body: "The protocol has had no third-party cryptographic review. The source and the threat model are public so that it can be checked; that is not the same as having been checked.",
-  },
-  {
-    title: "Your identity is only as recoverable as you made it",
-    body: "An identity created from a recovery phrase can be rebuilt in another browser from those words. An identity created without one cannot, because the phrase is run one way into the key and there is nothing to hand back after the fact. Clear site data on an identity that has no phrase and it is gone for good.",
+    title: "A faster rendezvous under delayed reads",
+    body: "In a local two-browser timing study, reordering when browsers published to the stores saved about eight seconds when reads had an added 800 ms delay. Ordinary local reads showed no whole-window saving.",
+    href: "/roadmap",
   },
 ];
 
@@ -300,24 +293,21 @@ const HomePage = () => {
                   : ""}
               </Button>
             </div>
-            <div className='-mx-3 flex w-[calc(100%+1.5rem)] items-center justify-between gap-1 sm:gap-0'>
-              <Link
-                href='/blog'
-                className='inline-flex items-center justify-center gap-1.5 rounded-none px-3 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 sm:px-5 dark:text-zinc-400 dark:hover:text-orange-300'
-              >
-                Protocol
-              </Link>
-              <span
-                aria-hidden
-                className='text-zinc-300 sm:hidden dark:text-zinc-700'
-              >
-                ·
-              </span>
+            <div className='-mx-2 flex flex-wrap items-center justify-center gap-x-2 font-mono text-sm md:justify-start'>
+              {["Protocol", "Roadmap"].map((label) => (
+                <Link
+                  key={label}
+                  href={`/${label.toLowerCase()}`}
+                  className='rounded px-2 py-2.5 font-semibold text-zinc-600 hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-orange-300'
+                >
+                  {label}
+                </Link>
+              ))}
               <Link
                 href='https://github.com/p2party/p2party-js'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='inline-flex items-center justify-center gap-1.5 rounded-none px-3 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 sm:px-5 dark:text-zinc-400 dark:hover:text-white'
+                className='inline-flex items-center justify-center gap-1.5 rounded-none px-2 py-2.5 font-mono text-sm font-semibold whitespace-nowrap text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-white'
               >
                 <svg className='size-4' fill='currentColor' viewBox='0 0 24 24'>
                   <path
@@ -326,7 +316,7 @@ const HomePage = () => {
                     clipRule='evenodd'
                   />
                 </svg>
-                View on GitHub
+                SDK source
               </Link>
             </div>
           </div>
@@ -370,10 +360,9 @@ const HomePage = () => {
           &nbsp;Cryptography Works
         </h2>
         <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          Encryption hides what you said. It does not hide that a 4 MB file
-          moved at 21:07. p2party works on that second layer: uniform cells,
-          padding to full, and an optional fixed sending rhythm. How much that
-          buys is a measurement, not a slogan — the boundaries are below.
+          Every cell on the wire is the same size. Its timing and the number of
+          cells are still visible. A room can choose a fixed sending rhythm to
+          change what an observer sees.
         </p>
 
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
@@ -395,14 +384,15 @@ const HomePage = () => {
           ))}
         </div>
       </div>
-      {/* What it does today, and what it does not */}
+      {/* Release features and measured outcomes */}
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
           What It Does&nbsp;
           <span className='text-orange-600 dark:text-orange-500'>Today</span>
         </h2>
         <p className='mx-auto mb-8 max-w-2xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          Running SDK 0.15.1 with signaling server 0.2.2 (protocol 5).{" "}
+          This site runs SDK 0.15.1 and signaling server 0.2.2. Rooms use
+          signaling v5 to find peers and peer protocol v4 to encrypt messages.{" "}
           <Link
             href='/blog/room-history-and-purge'
             className='text-orange-700 underline underline-offset-4 dark:text-orange-400'
@@ -412,15 +402,21 @@ const HomePage = () => {
           .
         </p>
         <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          Everything on the left is in the code you can read. Everything on the
-          right is a thing p2party does not do, said out loud, because a
-          guarantee nobody has tested is not a guarantee.
+          The signaling service can see room membership and connection times.
+          Independent review and wider network measurements remain open.{" "}
+          <Link
+            href='/roadmap'
+            className='text-orange-700 underline underline-offset-4 dark:text-orange-400'
+          >
+            Read the roadmap
+          </Link>
+          .
         </p>
 
         <div className='grid gap-6 lg:grid-cols-2'>
           <div>
             <h3 className='mb-3 font-mono text-xs font-bold tracking-[0.18em] text-orange-700 uppercase dark:text-orange-400'>
-              Shipped
+              Available in rooms
             </h3>
             <ul className='space-y-3'>
               {shipped.map((item) => (
@@ -441,16 +437,21 @@ const HomePage = () => {
 
           <div>
             <h3 className='mb-3 font-mono text-xs font-bold tracking-[0.18em] text-zinc-500 uppercase dark:text-zinc-400'>
-              Not claimed
+              Verified outcomes
             </h3>
             <ul className='space-y-3'>
-              {boundaries.map((item) => (
+              {results.map((item) => (
                 <li
                   key={item.title}
-                  className='border-2 border-dashed border-zinc-400 bg-zinc-50 p-4 dark:border-zinc-600 dark:bg-black'
+                  className='border-2 border-zinc-400 bg-zinc-50 p-4 dark:border-zinc-600 dark:bg-black'
                 >
                   <h4 className='font-mono text-sm font-bold text-zinc-950 dark:text-white'>
-                    {item.title}
+                    <Link
+                      href={item.href}
+                      className='underline decoration-orange-500 underline-offset-4'
+                    >
+                      {item.title}
+                    </Link>
                   </h4>
                   <p className='mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
                     {item.body}
@@ -493,13 +494,12 @@ const HomePage = () => {
               </svg>
             </div>
             <h3 className='mb-2 font-mono text-base font-bold text-zinc-950 dark:text-white'>
-              Signaling Server
+              Signaling &amp; Testnet RPC
             </h3>
             <p className='text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-              A lightweight WebSocket relay that introduces peers to one
-              another. It never sees or forwards your messages. It does keep a
-              row for each identity key and for which room hashes it belongs to,
-              which is how a peer stays reachable across server processes.
+              Introduces peers by room hash and helps them reconnect. The same
+              host runs the RPC and validator for P2Party Testnet 1. Messages
+              and files travel separately over WebRTC.
             </p>
           </div>
 
@@ -571,20 +571,27 @@ const HomePage = () => {
             Terms
           </Link>
           <span className='text-zinc-300 dark:text-zinc-700'>·</span>
-          <Link
-            href='/blog'
-            className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
-          >
-            Protocol
-          </Link>
+          {[
+            ["Protocol", "/protocol"],
+            ["Roadmap", "/roadmap"],
+            ["Field notes", "/blog"],
+          ].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className='rounded text-[13px] text-zinc-500 hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
+            >
+              {label}
+            </Link>
+          ))}
           <span className='text-zinc-300 dark:text-zinc-700'>·</span>
           <Link
-            href='https://github.com/p2party'
+            href='https://github.com/p2party/p2party.com-source'
             target='_blank'
             rel='noopener noreferrer'
             className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
           >
-            GitHub
+            Website source
           </Link>
         </div>
         <p className='mt-1.5 text-[13px] text-zinc-500 dark:text-zinc-400'>

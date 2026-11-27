@@ -6,11 +6,11 @@
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/p2party/p2party.com.git"
+    "url": "git+https://github.com/p2party/p2party.com-source.git"
   },
   "homepage": "https://p2party.com",
   "bugs": {
-    "url": "https://github.com/p2party/p2party.com/issues"
+    "url": "https://github.com/p2party/p2party.com-source/issues"
   },
   "packageManager": "npm@12.2.3",
   "engines": {

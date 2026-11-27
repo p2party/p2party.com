@@ -19,6 +19,7 @@ export const AppRoutes = ({ pages }: { pages: RoutePages }) => {
     TOS,
     Privacy,
     SessionLab,
+    Guide,
     Blog,
     BlogPost,
     ChatLayout,
@@ -59,6 +60,17 @@ export const AppRoutes = ({ pages }: { pages: RoutePages }) => {
           </Suspense>
         }
       />
+      {(["protocol", "roadmap"] as const).map((page) => (
+        <Route
+          key={page}
+          path={`/${page}`}
+          element={
+            <Suspense>
+              <Guide page={page} />
+            </Suspense>
+          }
+        />
+      ))}
       <Route
         path='/blog'
         element={

@@ -59,7 +59,7 @@ const BlogPostPage = () => {
               href='/blog'
               className='rounded font-mono text-xs font-bold text-orange-700 uppercase hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:text-orange-400'
             >
-              ← Road to protocol-v3 / {String(post.order).padStart(2, "0")}
+              ← Field notes / {String(post.order).padStart(2, "0")}
             </Link>
             <h1 className='mt-5 max-w-4xl text-4xl leading-[1.02] font-black tracking-[-0.05em] text-balance sm:text-6xl'>
               {post.title}

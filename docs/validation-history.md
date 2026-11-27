@@ -7,7 +7,7 @@ The reproducible runners remain in `e2e/`; see [Browser testing](browser-testing
 
 ## Public web release on November 27, 2026
 
-The web app served SDK 0.15.0 with protocol-5 signaling. The canonical Linux SDK archive has SHA-256 `d2eb1fbc40a585da0144413a0da9bbf5b17a03536cd5f982e0c20d429078353b`. Rebuilding the site with those exact archive bytes reproduced the same 100-file distribution deployed before this article was added. [Website CI](https://github.com/p2party/p2party.com/actions/runs/45984358051) · [SDK CI](https://github.com/p2party/p2party-js/actions/runs/45984544053)
+The web app served SDK 0.15.0 with protocol-5 signaling. The canonical Linux SDK archive has SHA-256 `d2eb1fbc40a585da0144413a0da9bbf5b17a03536cd5f982e0c20d429078353b`. Rebuilding the site with those exact archive bytes reproduced the same 100-file distribution deployed before this article was added. Website CI run `45984358051` · [SDK CI](https://github.com/p2party/p2party-js/actions/runs/45984544053)
 
 | Environment                                      | Exercise                                                                          | Observation                                                                                                                                                                                                             |
 | ------------------------------------------------ | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

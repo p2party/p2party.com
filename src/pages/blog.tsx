@@ -1,6 +1,6 @@
 import { BlogChrome } from "../components/blog/BlogChrome";
 import { Link } from "../components/link";
-import { blogPosts, blogSeries } from "../content/blog";
+import { blogPosts } from "../content/blog";
 
 const BlogPage = () => (
   <BlogChrome>
@@ -11,36 +11,44 @@ const BlogPage = () => (
             {blogPosts.length} protocol and research reports
           </p>
           <h1 className='max-w-3xl text-4xl leading-[0.98] font-black tracking-[-0.055em] text-balance sm:text-6xl'>
-            {blogSeries.title}
+            Field notes
           </h1>
           <p className='mt-6 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300'>
-            {blogSeries.description}
+            Release reports and experiments from the first fixed-size cells to
+            the current browser protocol and public testnet.
           </p>
         </div>
 
         <aside
-          aria-label='Series status'
+          aria-label='Current documentation'
           className='shadow-brutal border border-zinc-900 bg-zinc-950 p-5 font-mono text-xs leading-6 text-zinc-300 dark:border-zinc-700'
         >
-          <p className='text-orange-400'>$ ./threat-model --honest</p>
-          <p className='mt-3'>
-            shipped <span className='text-emerald-400'>≠</span> researched
+          <p className='mb-2 font-bold text-orange-400'>
+            Current documentation
           </p>
-          <p>
-            fixed cells <span className='text-emerald-400'>≠</span> anonymity
-          </p>
-          <p>
-            green tests <span className='text-emerald-400'>≠</span> proof
-          </p>
-          <p>
-            “free” <span className='text-emerald-400'>≠</span> zero cost
-          </p>
-          <p className='mt-3 text-zinc-500'>exit 0 only after measurements</p>
+          <Link
+            href='/protocol'
+            className='block underline underline-offset-4 hover:text-white'
+          >
+            Protocol guide
+          </Link>
+          <Link
+            href='/roadmap'
+            className='block underline underline-offset-4 hover:text-white'
+          >
+            Roadmap and measured results
+          </Link>
+          <Link
+            href='/blog/room-history-and-purge'
+            className='block underline underline-offset-4 hover:text-white'
+          >
+            Latest web release · SDK 0.15.1
+          </Link>
         </aside>
       </section>
 
       <ol className='border-t border-zinc-900/20 dark:border-white/20'>
-        {blogPosts.map((post) => (
+        {blogPosts.toReversed().map((post) => (
           <li
             key={post.slug}
             className='group grid gap-4 border-b border-zinc-900/20 py-8 sm:grid-cols-[5rem_1fr_auto] sm:items-start dark:border-white/20'

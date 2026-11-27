@@ -31,7 +31,13 @@ const manifest = JSON.parse(
 // page inherited the landing page's, so eleven URLs advertised themselves as
 // the same document -- the classic way to get your own pages treated as
 // duplicates of each other.
+const guides = JSON.parse(await readFile("src/content/guides.json", "utf8"));
 const STATIC_ROUTES = [
+  ...Object.entries(guides).map(([slug, { title, description }]) => ({
+    path: `/${slug}`,
+    title: `${title} · p2party`,
+    description,
+  })),
   {
     path: "/",
     description:
@@ -263,6 +269,7 @@ await writeFile(
     "# Rooms are addressed by a secret capability; there is nothing to index.",
     "Disallow: /rooms",
     "Disallow: /r",
+    "Allow: /roadmap",
     "",
     `Sitemap: ${ORIGIN}/sitemap.xml`,
     "",

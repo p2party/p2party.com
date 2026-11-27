@@ -23,27 +23,36 @@ export const BlogChrome = ({ children }: { children: ReactNode }) => (
 
     <header className='relative border-b border-zinc-900/15 bg-[#fffdf5]/90 backdrop-blur dark:border-white/15 dark:bg-[#080604]/90'>
       <nav
-        aria-label='Blog navigation'
+        aria-label='Site navigation'
         className='mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8'
       >
         <Link
           href='/'
           className='rounded font-mono text-sm font-black tracking-[-0.04em] text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:text-white'
         >
-          p2party<span className='text-orange-600'>://</span>field-notes
+          p2party<span className='text-orange-600'>://</span>
         </Link>
-        <div className='flex items-center gap-4 font-mono text-xs'>
+        <div className='flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs'>
+          {["Protocol", "Roadmap"].map((label) => (
+            <Link
+              key={label}
+              href={`/${label.toLowerCase()}`}
+              className='rounded text-zinc-600 hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:text-zinc-300 dark:hover:text-orange-300'
+            >
+              {label}
+            </Link>
+          ))}
           <Link
             href='/blog'
             className='rounded text-zinc-600 hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:text-zinc-300 dark:hover:text-orange-300'
           >
-            index
+            Field notes
           </Link>
           <Link
             href='/session-lab'
             className='rounded text-zinc-600 hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:text-zinc-300 dark:hover:text-orange-300'
           >
-            crypto lab
+            Crypto lab
           </Link>
           <Link
             href='https://github.com/p2party/p2party-js'
@@ -60,7 +69,6 @@ export const BlogChrome = ({ children }: { children: ReactNode }) => (
     {children}
 
     <footer className='relative mx-auto mt-20 flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-zinc-900/15 px-5 py-8 font-mono text-xs text-zinc-500 sm:px-8 dark:border-white/15 dark:text-zinc-400'>
-      <span>Written in public. Claims carry receipts.</span>
       <Link
         href='/'
         className='rounded hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500 dark:hover:text-orange-300'
