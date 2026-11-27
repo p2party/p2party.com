@@ -19,6 +19,8 @@ const routes = [
   "/privacy-policy/",
   "/terms-of-service/",
   "/session-lab/",
+  "/protocol/",
+  "/roadmap/",
   "/blog/",
   ...manifest.posts.map((post) => post.href + "/"),
   "/rooms/",
@@ -87,8 +89,40 @@ try {
       // No click: creating production signaling state is outside this fixture.
     }
     if (pathname === "/") {
-      await page.locator('a[href="/blog"]').first().click();
-      await page.waitForURL("**/blog*");
+      for (const [label, path] of [
+        ["Protocol", "/protocol"],
+        ["Roadmap", "/roadmap"],
+      ]) {
+        await page
+          .getByRole("link", { name: label, exact: true })
+          .first()
+          .click();
+        await page.waitForURL(new URL(path, app).href);
+        await page
+          .getByRole("heading", { level: 1, name: label, exact: true })
+          .waitFor();
+        await page.goBack();
+        await page.waitForURL(new URL("/", app).href);
+      }
+      await page
+        .getByRole("link", { name: "Field notes", exact: true })
+        .click();
+      await page.waitForURL(new URL("/blog", app).href);
+      await page
+        .getByRole("heading", {
+          level: 1,
+          name: "Field notes",
+          exact: true,
+        })
+        .waitFor();
+      const article = manifest.posts[0];
+      await page
+        .getByRole("link", { name: article.title, exact: true })
+        .click();
+      await page.waitForURL(new URL(article.href, app).href);
+      await page
+        .getByRole("heading", { level: 1, name: article.title, exact: true })
+        .waitFor();
     }
     await page.waitForTimeout(100);
     report.violations.push(
