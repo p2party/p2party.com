@@ -21,6 +21,8 @@ PostgreSQL databases. [Release notes](src/content/blog/10-room-history-and-purge
 
 The [wallet guide](https://p2party.com/wallet) explains receiving, spending and restoring a testnet wallet. A watch-only QR or link carries one public read handle between browsers. Balance lookup contacts the validator when requested. The homepage and wallet guide link directly to the standalone browser restore. It opens an encrypted backup with its separate recovery code and can run offline. The desktop companion also supports legacy imports and local portfolio totals. The [P2PARTY ledger explorer](https://p2party.com/explorer) reads native testnet receipts by height or move ID. The [mainnet status page](https://p2party.com/explorer/mainnet) records its prelaunch status.
 
+The [interactive walkthrough](https://p2party.com/protocol#walkthrough) illustrates encrypted rooms, the public ledger, the commitment tree from Figure 1, offline receipt discovery and the local stake-weighted consensus experiment.
+
 The public [protocol guide](https://p2party.com/protocol) explains the room handshake, metadata visibility and native testnet RPC. The [roadmap](https://p2party.com/roadmap) records measured results from the local two-store timing study and signed receipt-history proofs, and tracks work toward separately administered validators.
 
 The [whitepaper](https://p2party.com/whitepaper) gives a worked purchase through two volunteer relays, specifies what a wallet checks against its receiving commitment and explains the local four-validator ordering experiment.

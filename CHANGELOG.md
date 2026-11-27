@@ -5,6 +5,10 @@
 - The landing page, wallet menu, rooms sidebar and guide link directly to the separate wallet’s receive screen. The guide covers fresh, backup-confirmed requests, sending while the recipient is offline, and checking inclusion at a verified height after restore.
 - Validator sync streams a common public history in bounded pages. The signer confirms each page and keeps its previous observation if the endpoint fails or the selected public head changes. The earlier single-response endpoint remains available.
 
+## November 27, 2026 — Animated protocol walkthrough
+
+- The protocol guide now lets readers play or step through a peer handshake, native spend, commitment tree, local consensus vote and offline payment. Each illustration identifies its source and deployment status.
+
 ## November 27, 2026 — Wallet balances in navigation
 
 - The restored wallet totals its unspent Testnet 1 units locally. Each displayed total has a ledger height. Visitors can refresh using the same public history as everyone else.

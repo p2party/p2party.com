@@ -4,6 +4,7 @@ import { BalanceShareRequest } from "../components/SharedWalletBalance";
 import ReactMarkdown from "react-markdown";
 
 import { WALLET_RECEIVE_URL, WALLET_RESTORE_URL } from "../lib/walletRestore";
+import { ProtocolWalkthrough } from "../components/protocol-walkthrough/Walkthrough";
 import { WalletBalance } from "../components/WalletBalance";
 import wallet from "../content/wallet.md?raw";
 import guides from "../content/guides.json";
@@ -42,6 +43,11 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
   if (page === "wallet") headings.push("Check a public balance");
   const contents = (
     <ul>
+      {page === "protocol" && (
+        <li>
+          <a href='#walkthrough'>Walk through the protocol</a>
+        </li>
+      )}
       {headings.map((heading) => (
         <li key={heading}>
           <a href={`#${anchor(heading)}`}>{heading}</a>
@@ -101,6 +107,7 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
             This balance was not saved.
           </p>
         )}
+      {page === "protocol" && <ProtocolWalkthrough />}
       <div className='site-reading-grid'>
         <nav aria-label='On this page' className='site-contents'>
           <details className='site-mobile-contents'>
