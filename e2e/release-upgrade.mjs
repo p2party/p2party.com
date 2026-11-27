@@ -191,8 +191,13 @@ try {
     "missing v5 leave notification",
   );
   await receiver.evaluate(
-    async ({ invite, root, roomId }) => {
+    async ({ invite, root, roomId, size }) => {
       const p = window.p2party;
+      const storage = await navigator.storage.getDirectory();
+      const files = await storage.getDirectoryHandle("p2party-reassembled");
+      const received = await (await files.getFileHandle(root)).getFile();
+      if (received.size !== size)
+        throw new Error("expected complete OPFS file");
       await p.purgeRoom(invite);
       if (
         (await p.getAllExistingRooms()).some(
@@ -201,13 +206,15 @@ try {
         )
       )
         throw new Error("purged room persisted");
-      const storage = await navigator.storage.getDirectory();
-      for await (const entry of storage.values())
-        if (entry.kind === "directory")
-          for await (const child of entry.values())
-            if (child.name === root) throw new Error("purged file persisted");
+      try {
+        await files.getFileHandle(root);
+      } catch (error) {
+        if (error.name === "NotFoundError") return;
+        throw error;
+      }
+      throw new Error("purged file persisted");
     },
-    { invite, root, roomId },
+    { invite, root, roomId, size },
   );
   console.log("Remote departure, room purge and disk cleanup verified");
 } finally {
