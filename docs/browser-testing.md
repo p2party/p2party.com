@@ -12,7 +12,11 @@ CSP, and makes no signaling connections.
 
 Use disposable signaling state on dedicated local ports. Explicitly set a local
 `SIGNALING_URL`; the older runners otherwise inherit the app's server default.
-Do not run against production or a developer's regular database.
+Do not run against production or a developer's regular database. For
+the loopback transfer and mesh tests, set `STUN_URL` to a local STUN listener.
+The release run used `stun:127.0.0.1:15940` with coturn in STUN-only mode.
+This gives each browser a usable ICE candidate on machines that suppress
+local host candidates.
 
 | Runner                       | Coverage                                                                                                                                                  |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |

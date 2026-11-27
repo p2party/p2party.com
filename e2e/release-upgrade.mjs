@@ -10,6 +10,8 @@ for (const url of [app, signaling])
     ["127.0.0.1", "localhost"].includes(url.hostname) &&
       Number(url.port) > 5000,
   );
+const stun = process.env.STUN_URL;
+if (stun) assert(/^stun:(127\.0\.0\.1|localhost|\[::1\]):\d+$/.test(stun));
 const capability = randomBytes(32);
 const invite = capability.toString("hex");
 const roomUrl = new URL("/r#v1." + capability.toString("base64url"), app).href;
@@ -21,8 +23,12 @@ try {
     [true, false].map(async (isSender) => {
       const ctx = await browser.newContext();
       await ctx.addInitScript(
-        ({ url, isSender }) => {
+        ({ url, isSender, stun }) => {
           localStorage.setItem("signalingServerUrl", JSON.stringify(url));
+          localStorage.setItem(
+            "stunServerUrls",
+            JSON.stringify(stun ? [stun] : []),
+          );
           if (!isSender || sessionStorage.getItem("resume")) return;
           let seen = 0;
           const send = RTCDataChannel.prototype.send;
@@ -41,7 +47,7 @@ try {
             return send.call(this, data);
           };
         },
-        { url: signaling.href, isSender },
+        { url: signaling.href, isSender, stun },
       );
       const page = await ctx.newPage();
       if (!isSender)

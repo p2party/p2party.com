@@ -26,10 +26,18 @@ const log = (...a) =>
 async function setupContext(browser, tag) {
   const context = await browser.newContext();
   if (SIGNALING)
-    await context.addInitScript((url) => {
-      // usehooks-ts JSON-serializes its localStorage values.
-      localStorage.setItem("signalingServerUrl", JSON.stringify(url));
-    }, SIGNALING);
+    await context.addInitScript(
+      ({ url, stun }) => {
+        // usehooks-ts JSON-serializes its localStorage values.
+        localStorage.setItem("signalingServerUrl", JSON.stringify(url));
+        if (["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
+          localStorage.setItem(
+            "stunServerUrls",
+            JSON.stringify(stun ? [stun] : []),
+          );
+      },
+      { url: SIGNALING, stun: process.env.STUN_URL },
+    );
   // Instrument the WebRTC data channel so we can PROVE the transfer went over
   // WebRTC and not the WS-relay fallback: the relay path never calls
   // RTCDataChannel.send, so a 64KiB-frame send here is proof of the real path.
@@ -190,22 +198,20 @@ const roomState = (url) => {
       const s = await waitFor(
         page,
         (url) => {
-          const st = ((r) => r)(
-            (function () {
-              const P = window.p2party;
-              if (!P || !P.store) return null;
-              const rooms = P.roomSelector(P.store.getState()) || [];
-              const r = rooms.find((x) => x.url === url);
-              if (!r || !r.id) return null;
-              return r.peers && r.peers.length > 0
-                ? { id: r.id, peers: r.peers.length }
-                : null;
-            })(),
+          const p = window.p2party;
+          const room = p
+            ?.roomSelector(p.store.getState())
+            .find((r) => r.url === url);
+          if (!room?.id) return null;
+          const peers = room.peers.filter(
+            (peer) =>
+              room.handshakeStatusByPeer?.[peer.peerId]?.status ===
+              "authenticated",
           );
-          return st;
+          return peers.length ? { id: room.id, peers: peers.length } : null;
         },
         roomUrl,
-        { label: `${tag} sees a peer`, timeout: 60000 },
+        { label: `${tag} authenticates a peer`, timeout: 90000 },
       );
       log(`${tag} connected:`, JSON.stringify(s));
     }
