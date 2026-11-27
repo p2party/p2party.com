@@ -8,6 +8,7 @@ import post06 from "./06-borrowing-from-spqr.md?raw";
 import post07 from "./07-an-open-channel-is-not-a-live-peer.md?raw";
 import post08 from "./08-after-the-desync-fixes.md?raw";
 import post09 from "./09-rooms-after-signaling-v5.md?raw";
+import post10 from "./10-room-history-and-purge.md?raw";
 
 const markdownByFile = new Map<string, string>([
   ["01-the-64-kib-lie.md", post01],
@@ -19,6 +20,7 @@ const markdownByFile = new Map<string, string>([
   ["07-an-open-channel-is-not-a-live-peer.md", post07],
   ["08-after-the-desync-fixes.md", post08],
   ["09-rooms-after-signaling-v5.md", post09],
+  ["10-room-history-and-purge.md", post10],
 ]);
 
 const stripFrontmatter = (markdown: string): string => {

@@ -10,13 +10,13 @@ security audit. The signaling service sees room membership and timing;
 server-blind rendezvous and Sybil resistance are not shipped guarantees.
 Read the [security policy](SECURITY.md) before relying on it for sensitive use.
 
-The November 27 web release uses SDK **0.15.0** and signaling protocol **5**.
-Peer encryption continues to use protocol **4**. Contacts and blocks follow
-authenticated identity keys across routing changes. Existing messages stay
-readable, and interrupted file cleanup can retry after a browser restart.
-Two fresh browser pairs verified persisted text and byte-compared a 32 KiB
-file on the public service, once on a direct ICE path and once through TURN.
-[Release notes and test results](src/content/blog/09-rooms-after-signaling-v5.md) ·
+The web client uses SDK **0.15.1** and signaling server **0.2.2** (protocol **5**).
+Peer encryption uses protocol **4**. The browser re-establishes missing peer connections after signaling returns and
+keeps live session keys in memory. Identity and full-device purges report rooms
+whose leave the server did not acknowledge. The public server expires offline
+memberships after 90 days without authentication. P2Party Testnet 1 remains operated
+by one public validator. A second validator has been exercised on separate local
+PostgreSQL databases. [Release notes](src/content/blog/10-room-history-and-purge.md) ·
 [Changelog](CHANGELOG.md) · [Signaling health](https://signaling.p2party.com/health)
 
 ## What works
@@ -98,12 +98,13 @@ recovery bounds for mobile or wide-area networks.
 
 ## SDK artifacts
 
-This checkout uses the SDK release archive `file:vendor/p2party-0.15.0.tgz`
-from the `p2party-js` Linux CI build.
+This checkout uses the SDK release archive `file:vendor/p2party-0.15.1.tgz`
+from the [SDK Linux CI build for `bf3b368`](https://github.com/p2party/p2party-js/actions/runs/46002256982).
+The Linux `.tgz` SHA-256 is `b77c696e852da526772af7327d09cfea2d6444df2b5da967a2046aead98a88c5`. Its decompressed tar stream matches the local release byte for byte (SHA-256 `db8e4fa181053dd114041cc8a4996903ade88e0614c78beb734ebfcfec5688b0`).
 For local room tests, set **Settings → Signaling Server URL** to the WebSocket
 URL of your signaling v5 server.
 The app loads
-`public/vendor/p2party-0.15.0/libcrypto.wasm` through `src/protocol/wasm.ts`.
+`public/vendor/p2party-0.15.1/libcrypto.wasm` through `src/protocol/wasm.ts`.
 The normal SDK loader verifies the WASM against its built-in SRI pin.
 The experimental `/session-lab` entry receives fetched WASM bytes directly;
 its release provenance is checked at build time rather than by browser SRI.

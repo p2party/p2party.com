@@ -136,7 +136,7 @@ const shipped = [
   },
   {
     title: "Sleep, move, come back",
-    body: "Stale transports are replaced and authenticated again. Rooms reconnect after reload or a signaling restart, and a second tab using the same identity can take over without opening competing sockets. A wrong PIN stays visibly failed until you explicitly retry. These flows were checked with real WebRTC in local Chromium runs; recovery time depends on the browser and network.",
+    body: "When signaling returns, missing peer connections are repaired individually while healthy connections stay open. Rooms reconnect after reload or a signaling restart, and a second tab using the same identity can take over without opening competing sockets. A wrong PIN stays visibly failed until you explicitly retry. These flows were checked with real WebRTC in local Chromium runs; recovery time depends on the browser and network.",
   },
   {
     title: "Transfers you can recover or cancel",
@@ -144,7 +144,7 @@ const shipped = [
   },
   {
     title: "An identity you can carry to another browser",
-    body: "Create one from a 24-word recovery phrase and it can be rebuilt from those words, and the password you chose for them if you set one. The app shows the phrase at creation and does not retain it. Identity keys still live in browser storage, so a compromised browser can access them. An identity made without a phrase stays in the browser that made it.",
+    body: "Create one from a 24-word recovery phrase and it can be rebuilt from those words, and the password you chose for them if you set one. The app shows the phrase at creation and does not retain it. The browser stores the identity key and keeps live session keys in memory. A compromised browser can access them. An identity made without a phrase stays in the browser that made it.",
   },
   {
     title: "A send that fails, says so",
@@ -155,7 +155,7 @@ const shipped = [
 const boundaries = [
   {
     title: "The signaling operator sees who is in the room",
-    body: "With signaling v5, your browser sends a hash of the invitation capability. The server can link that room identifier to its members’ identity keys and connection times. Separate one-store and two-store blind-rendezvous prototypes run locally, but this site's room flow still uses ordinary signaling. The experiments have not established relationship privacy.",
+    body: "With signaling v5, your browser sends a hash of the invitation capability. The server can link that identifier to member keys and connection times. Purging tells you which room leaves were acknowledged. The public service expires offline memberships after 90 days without a login. Separate one-store and two-store blind-rendezvous prototypes run locally, but this site's room flow still uses ordinary signaling. The experiments have not established relationship privacy.",
   },
   {
     title: "Abuse limits do not count people",
@@ -402,12 +402,12 @@ const HomePage = () => {
           <span className='text-orange-600 dark:text-orange-500'>Today</span>
         </h2>
         <p className='mx-auto mb-8 max-w-2xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          Running SDK 0.15.0 with signaling v5.{" "}
+          Running SDK 0.15.1 with signaling server 0.2.2 (protocol 5).{" "}
           <Link
-            href='/blog/rooms-after-signaling-v5'
+            href='/blog/room-history-and-purge'
             className='text-orange-700 underline underline-offset-4 dark:text-orange-400'
           >
-            What changed for your contacts, history and files
+            What happens when you reconnect or purge a room
           </Link>
           .
         </p>

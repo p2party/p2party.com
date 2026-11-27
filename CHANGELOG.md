@@ -1,5 +1,12 @@
 # Web client changelog
 
+## November 27, 2026 — SDK 0.15.1 and signaling 0.2.2
+
+- Repair missing peer connections after signaling returns. Room history loads without duplicate entries, and internal completed requests release their tracking records. The SDK was exercised with 20,000 stored messages.
+- Move the contacts-only preference off legacy localStorage keys containing the room capability. Relay-only mode filters host and server-reflexive addresses. Browser storage v24 discards old ratchet records and keeps the identity, messages and room settings.
+- Report unacknowledged room leaves after identity or full-device purge. The production signaling service applies 90-day offline retention. SDK regression tests cover leftover timers and test-order dependencies.
+- A second validator reproduced transfers and balances in a local two-database test. The public valueless testnet remains single-operator. [Release article](src/content/blog/10-room-history-and-purge.md) · [Public testnet](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md)
+
 ## November 27, 2026
 
 - The public web client uses SDK 0.15.0 and signaling protocol 5. Room peers continue to encrypt with protocol 4. Self-hosters should upgrade signaling before updating clients.

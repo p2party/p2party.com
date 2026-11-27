@@ -138,6 +138,17 @@
       "date": "2026-11-27",
       "sdkVersion": "0.15.0",
       "commitAnchors": []
+    },
+    {
+      "order": 10,
+      "slug": "room-history-and-purge",
+      "href": "/blog/room-history-and-purge",
+      "file": "10-room-history-and-purge.md",
+      "title": "What happens to a room when you reconnect or purge",
+      "description": "How the browser recovers a peer connection, where it keeps session keys, and how to tell whether the signaling server acknowledged a leave.",
+      "date": "2026-11-27",
+      "sdkVersion": "0.15.1",
+      "commitAnchors": []
     }
   ]
 }
