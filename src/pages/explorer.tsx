@@ -179,11 +179,8 @@ function ReceiptData({ receipt }: { receipt: ExplorerReceipt }) {
         <dd>
           <code>{receipt.outputId}</code>
         </dd>
-        <dt>Native weight</dt>
-        <dd>
-          {format(receipt.weight)} test{" "}
-          {receipt.weight === 1n ? "unit" : "units"}
-        </dd>
+        <dt>Testnet amount</dt>
+        <dd>{format(receipt.weight)} P2PARTY</dd>
         <dt>Spending signature suite</dt>
         <dd>{receipt.spendSuite}</dd>
         <dt>Receiving signature suite</dt>
@@ -272,7 +269,7 @@ function ReceiptList({ data, from }: { data: ExplorerOverview; from: string }) {
         <div>
           <dt>Genesis allocation</dt>
           <dd>
-            128 <small>test units</small>
+            128 <small>P2PARTY</small>
           </dd>
         </div>
       </dl>
@@ -293,7 +290,7 @@ function ReceiptList({ data, from }: { data: ExplorerOverview; from: string }) {
                   <small>{r.spendSuite}</small>
                 </span>
                 <span className='ex-weight'>
-                  {format(r.weight)} {r.weight === 1n ? "unit" : "units"}
+                  {format(r.weight)} P2PARTY
                 </span>
                 <span aria-hidden='true'>→</span>
               </Link>
