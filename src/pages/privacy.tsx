@@ -26,7 +26,7 @@ const PrivacyPage = () => {
           Privacy Policy
         </h1>
         <p className='mb-8 text-sm text-zinc-400 dark:text-zinc-500'>
-          Effective date: 17 October 2024 &middot; Last updated: 9 September
+          Effective date: 17 October 2024 &middot; Last updated: 27 November
           2026
         </p>
 
@@ -100,11 +100,10 @@ const PrivacyPage = () => {
             <strong>One row per room:</strong> the room identifier and the
             identities that belong to it. With signaling v5, your browser
             computes the identifier by hashing the invitation capability with
-            SHA-512. It sends that identifier whenever you join or leave.
-            Membership is removed when you leave the room from inside the app;
-            closing the tab or losing the network does not remove it. Empty
-            rooms not updated for 24 hours become eligible for bounded cleanup;
-            occupied rooms, including offline membership, remain.
+            SHA-512. It sends that identifier whenever you join or leave. An
+            acknowledged room leave removes that membership. Closing the tab can
+            leave you listed. The server also expires inactive identities and
+            their memberships as described in section 7.
           </li>
           <li>
             <strong>Short-lived routing rows:</strong> a signal addressed to a
@@ -281,10 +280,20 @@ const PrivacyPage = () => {
           <li>
             <strong>Signaling database rows:</strong> the identity row and the
             room-hash membership described in section 3.1 outlive a disconnect.
-            Membership is removed when you leave a room from inside the app.
-            Empty rooms not updated for 24 hours are removed in batches of at
-            most 1,000 per minute. Identity rows and occupied rooms are
-            retained.
+            An acknowledged leave removes that room membership. The public
+            server expires offline identities and their memberships after 90
+            days without authentication. When the identity table is full,
+            eligible offline identities can be reclaimed sooner, with a
+            ten-minute reconnect window. You can authenticate again with the
+            same key and rejoin using the invitation. Empty rooms become
+            eligible for cleanup after 24 hours without an update.
+          </li>
+          <li>
+            <strong>Optional public testnet:</strong> if you submit a native
+            transfer to P2Party Testnet 1, its signed transfer and receipt
+            become part of the public ledger history. Anyone can read and copy
+            those records. Leaving a room or purging a device has no effect on
+            that history. Chatting and exchanging files do not require a wallet.
           </li>
           <li>
             <strong>STUN data:</strong> not stored at all (stateless protocol).
