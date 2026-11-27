@@ -27,11 +27,7 @@ set up in the repository.
   access through the Nearby devices dialog. Denial leaves internet routes
   available. A message in the room opens Android settings to change the
   permission. Returning from settings refreshes the message. Older Android
-  versions enter rooms without this prompt. Before distributing an Android
-  build, verify grant, denial, revocation and regrant on Android 17. Check
-  direct delivery between two peers on one Wi-Fi network after grant and
-  public TURN delivery after denial. Check the keyboard with the composer
-  focused and the status-bar colors in both themes.
+  versions enter rooms without this prompt.
   [Android local-network permission](https://developer.android.com/privacy-and-security/local-network-permission)
 
   The plugins compile with a Java 21 toolchain. Gradle does not find Homebrew's
@@ -258,7 +254,38 @@ with its own bridge; no Cordova plugin is installed. On iOS, `CDVConfigParser`
 does not read `<access>`. `capacitor.config.ts` therefore sets an empty list,
 and the generated file has no `<access>` element.
 
-## Last verified: 2026-11-26
+## Android device verification
+
+1. Start an Android 17 client on the same Wi-Fi as a second peer. Record the
+   OS and WebView versions. On first room entry, grant Nearby devices access,
+   exchange a message and check the selected ICE pair in WebRTC statistics.
+   Verify that the successful route used local candidates.
+2. On a fresh installation, deny permission. Confirm the room shows
+   **Manage app permissions** and can exchange a message over a reachable TURN
+   relay. Check that the selected ICE candidate is a relay. Re-enter the room
+   and check the app respects the earlier denial.
+3. Grant access in Android settings and return to the room. The notice should
+   disappear. Revoke access, re-enter and verify the notice and relay path
+   again. On Android 16 or earlier the app should open a room without a
+   local-network permission dialog.
+4. Open and close the keyboard with the room PIN or composer focused. The
+   viewport should recover its previous height. Check the light and dark
+   status-bar backgrounds and clock contrast with a supported WebView.
+
+## Last verified on 2026-11-27
+
+- A clean Gradle 9.9.2 and AGP 9.5.3 build produced a debug APK and unsigned
+  release APK on SDK Platform 37.0 with JDK 21. The packaged manifest has
+  minimum API 29, target API 37, and `ACCESS_LOCAL_NETWORK`. Both builds
+  passed again offline through the generated wrapper.
+- The previous and upgraded APKs ran sequentially on an Android 16 emulator
+  with WebView 133.0.6943.137. In both runs the real keyboard reduced the PIN
+  screen's visual viewport from 775.2 to 467.0 CSS pixels and closing it
+  restored 775.2. Light and dark status-bar colors and glyph contrast matched.
+  The Android 17 dialog and peer routes above still require verification.
+- The iOS dependency lockfile passed `pod install --deployment` after removing
+  the community safe-area plugin. The native iOS observations below were made
+  with the earlier bundle on 2026-11-26.
 
 - **Earlier Android build.** Gradle 9.5.1, AGP 8.13.2, compile and target
   SDK 36, and JDK 21.0.13 passed `./gradlew clean assembleDebug` with a

@@ -1,8 +1,8 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
 interface LocalNetworkPlugin {
-  beginRoom(): Promise<{ allowed: boolean }>;
-  currentAccess(): Promise<{ allowed: boolean }>;
+  beginRoom(): Promise<{ denied: boolean }>;
+  currentAccess(): Promise<{ denied: boolean }>;
   openSettings(): Promise<void>;
 }
 
@@ -15,9 +15,9 @@ export function createLocalNetworkAccess(
   let denied = false;
   let inFlight: Promise<void> | undefined;
   const listeners = new Set<() => void>();
-  const report = ({ allowed }: { allowed: boolean }) => {
-    if (denied === !allowed) return;
-    denied = !allowed;
+  const report = ({ denied: newValue }: { denied: boolean }) => {
+    if (denied === newValue) return;
+    denied = newValue;
     for (const listener of listeners) listener();
   };
 

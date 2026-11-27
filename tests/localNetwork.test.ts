@@ -7,9 +7,9 @@ const bridge = (allowed: boolean) => {
   return {
     beginRoom: async () => {
       calls++;
-      return { allowed };
+      return { denied: !allowed };
     },
-    currentAccess: async () => ({ allowed }),
+    currentAccess: async () => ({ denied: calls > 0 && !allowed }),
     openSettings: async () => {
       settings++;
     },
@@ -38,6 +38,8 @@ test("overlapping joins share one native request; a denial permits connection an
   const access = createLocalNetworkAccess(() => "android", native);
   const states: boolean[] = [];
   const done = access.subscribe(() => states.push(access.denied()));
+  await access.refresh();
+  expect(access.denied()).toBe(false);
   await Promise.all([access.beginRoom(), access.beginRoom()]);
   expect(native.calls()).toBe(1);
   expect(states).toEqual([true]);
