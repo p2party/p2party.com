@@ -289,9 +289,7 @@ function ReceiptList({ data, from }: { data: ExplorerOverview; from: string }) {
                   <code>{short(r.id)}</code>
                   <small>{r.spendSuite}</small>
                 </span>
-                <span className='ex-weight'>
-                  {format(r.weight)} P2PARTY
-                </span>
+                <span className='ex-weight'>{format(r.weight)} P2PARTY</span>
                 <span aria-hidden='true'>→</span>
               </Link>
             </li>
