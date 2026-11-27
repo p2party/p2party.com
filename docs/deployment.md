@@ -75,17 +75,17 @@ curl -sS -L -D - -o /dev/null https://p2party.com/r
 
 ## Verify a deployment
 
-For the September 2026 deployment, check the server version and the self-hosted cryptography artifact:
+For the SDK 0.15.0 rollout, upgrade signaling first. Verify its health response
+before releasing the frontend. After the frontend deploys, compare the served
+WASM with the copy approved in the release checkout:
 
 ```bash
-curl -fsS https://signaling.p2party.com/health
-curl -fsS --compressed https://p2party.com/vendor/p2party-0.14.10/libcrypto.wasm | shasum -a 256
+curl -fsS https://signaling.p2party.com/health | jq -e '.status == "ok" and .version == "0.2.0" and .protocolVersion == 5'
+npm run provenance:check
+curl -fsS --compressed https://p2party.com/vendor/p2party-0.15.0/libcrypto.wasm | cmp - public/vendor/p2party-0.15.0/libcrypto.wasm
 ```
 
-For this release the server reports version `0.1.4`, protocol `4`, and status
-`ok`. The decoded WASM SHA-256 is
-`7fc91b615f6ca7f7f61497b784c8e75102751cdc84251bcadcd688aaa17c4d76`.
-Its response should use `application/wasm`, gzip encoding, and immutable caching.
+The WASM response should use `application/wasm`, gzip encoding, and immutable caching.
 The HTML entrypoint should remain uncached so a newly deployed page can select
 the current content-addressed assets.
 

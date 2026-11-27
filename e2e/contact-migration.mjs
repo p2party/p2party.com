@@ -188,7 +188,7 @@ try {
     { timeout: 45000 },
   );
   console.log(
-    "PASS RC.0 SDK wrote v22 rows; RC.1 migrated and kept keys, refused ID-only lookup; known-only join re-bound the old contact after a real handshake. A block committed at the proof boundary refused the authenticated edge.",
+    "PASS RC.0 SDK wrote v22 rows; the installed SDK migrated and kept keys, refused ID-only lookup; known-only join re-bound the old contact after a real handshake. A block committed at the proof boundary refused the authenticated edge.",
   );
 } finally {
   await browser.close();

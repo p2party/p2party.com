@@ -89,11 +89,11 @@ recovery bounds for mobile or wide-area networks.
 
 ## SDK artifacts
 
-This checkout uses the unpublished SDK candidate `file:vendor/p2party-0.15.0-rc.1.tgz`.
+This checkout uses the locally built SDK `file:vendor/p2party-0.15.0.tgz`.
 For local room tests, set **Settings → Signaling Server URL** to the WebSocket
 URL of your signaling v5 server. The September production release used v4.
 The app loads
-`public/vendor/p2party-0.15.0-rc.1/libcrypto.wasm` through `src/protocol/wasm.ts`.
+`public/vendor/p2party-0.15.0/libcrypto.wasm` through `src/protocol/wasm.ts`.
 The normal SDK loader verifies the WASM against its built-in SRI pin.
 The experimental `/session-lab` entry receives fetched WASM bytes directly;
 its release provenance is checked at build time rather than by browser SRI.
@@ -207,7 +207,7 @@ after any change to that policy or to the SDK version. See
 The iOS app requires iOS or iPadOS 27.0 and the Android app Android 10; see
 [Supported browsers and devices](#supported-browsers-and-devices).
 
-The candidate SDK accepts the iOS app's `capacitor://localhost` WASM source
+The SDK accepts the iOS app's `capacitor://localhost` WASM source
 and verifies the fetched bytes against its integrity pin. The native WebKit
 check in `e2e/native-csp-webkit.swift` exercises this path on macOS.
 
