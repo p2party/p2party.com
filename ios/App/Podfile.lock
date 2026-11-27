@@ -3,8 +3,6 @@ PODS:
     - CapacitorCordova
   - CapacitorApp (8.1.2):
     - Capacitor
-  - CapacitorCommunitySafeArea (8.0.1):
-    - Capacitor
   - CapacitorCordova (8.6.3)
   - CapacitorFilesystem (8.1.5):
     - Capacitor
@@ -20,7 +18,6 @@ PODS:
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
-  - "CapacitorCommunitySafeArea (from `../../node_modules/@capacitor-community/safe-area`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
   - "CapacitorScreenOrientation (from `../../node_modules/@capacitor/screen-orientation`)"
@@ -36,8 +33,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorApp:
     :path: "../../node_modules/@capacitor/app"
-  CapacitorCommunitySafeArea:
-    :path: "../../node_modules/@capacitor-community/safe-area"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorFilesystem:
@@ -52,7 +47,6 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Capacitor: 25815a259c80262559f9948d4e0f9513e242cea2
   CapacitorApp: 7b7e43debe505bc61beedb83796aa1368c86078b
-  CapacitorCommunitySafeArea: 91738f4ae7f47d2d94e06e429e16fb73cd8fdc48
   CapacitorCordova: f626648e769cb79faff38be441cc1b658665985a
   CapacitorFilesystem: e3bc7123acb1554df1b7b099fa5847064b9e1bd4
   CapacitorScreenOrientation: 0ccb98cbbfbb1dce509da837a3e35848128417ce
@@ -60,6 +54,6 @@ SPEC CHECKSUMS:
   CapawesomeTeamCapacitorFileOpener: 6d2f6d5d5bd5dd879436f0acf335726a12c75217
   IONFilesystemLib: 306469e4c563f61de82d7bca2bbfed9e64d1b2d2
 
-PODFILE CHECKSUM: 636c545b667acea16a3267ba5126b009e299c291
+PODFILE CHECKSUM: a64a9707759858a1f5651d52f048a11b3cb2c906
 
 COCOAPODS: 1.17.0

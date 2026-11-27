@@ -1,6 +1,7 @@
-import { useEffect, useRef, FC, lazy } from "react";
+import { useEffect, useRef, useSyncExternalStore, FC, lazy } from "react";
 import { Outlet } from "react-router";
 
+import { localNetwork } from "../../protocol/localNetwork";
 import { SidebarLayout } from "../sidebar-layout";
 
 import { useConnectDialog } from "../../hooks/useConnectDialog";
@@ -27,6 +28,19 @@ const ChatLayout: FC<PropsWithChildren> = () => {
     roomUrl,
     roomInviteError,
   } = useRoom({ subscribeToMessages: false });
+  const localNetworkDenied = useSyncExternalStore(
+    localNetwork.subscribe,
+    localNetwork.denied,
+    () => false,
+  );
+  useEffect(() => {
+    const readOnReturn = () => {
+      if (document.visibilityState === "visible")
+        void localNetwork.refresh().catch(console.error);
+    };
+    document.addEventListener("visibilitychange", readOnReturn);
+    return () => document.removeEventListener("visibilitychange", readOnReturn);
+  }, []);
   const isConnected = signalingServerConnectionState.isConnected;
   const isEstablishingConnection =
     signalingServerConnectionState.isEstablishingConnection;
@@ -102,6 +116,20 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       navbar={<NavBar roomUrl={roomUrl ?? ""} />}
       sidebar={<SideBar />}
     >
+      {localNetworkDenied && (
+        <aside role='status' className='p-3 text-sm'>
+          Nearby devices permission is off. Peers on this Wi-Fi may be
+          unreachable. Internet connections remain available.{" "}
+          <button
+            className='underline'
+            onClick={() =>
+              void localNetwork.openSettings().catch(console.error)
+            }
+          >
+            Manage app permissions
+          </button>
+        </aside>
+      )}
       {roomInviteError.length > 0 ? (
         <main className='flex min-h-0 flex-1 items-center justify-center p-6'>
           <div

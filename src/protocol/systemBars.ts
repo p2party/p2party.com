@@ -1,6 +1,6 @@
-import { SystemBarsStyle } from "@capacitor-community/safe-area";
+import { SystemBarsStyle } from "@capacitor/core";
 
-import type { SafeAreaPlugin } from "@capacitor-community/safe-area";
+import type { SystemBars } from "@capacitor/core";
 import type { StatusBarPlugin } from "@capacitor/status-bar";
 
 /**
@@ -13,7 +13,7 @@ export const SYSTEM_BAR_BACKGROUND = {
 } as const;
 
 export interface SystemBarPlugins {
-  safeArea: Pick<SafeAreaPlugin, "setSystemBarsStyle">;
+  systemBars: Pick<typeof SystemBars, "setStyle">;
   statusBar: Pick<StatusBarPlugin, "setBackgroundColor">;
 }
 
@@ -21,14 +21,14 @@ export interface SystemBarPlugins {
  * Style the native status bar for the page's theme. Called at start-up and
  * whenever the theme changes.
  *
- * SafeArea is the only place that sets the glyph style: light glyphs on the
+ * SystemBars is the only place that sets the glyph style: light glyphs on the
  * dark theme, dark glyphs on the light one, on both platforms. On Android it
  * also paints the window behind the bars in the same colour. On iOS the web
  * view sits below the status bar (`StatusBar.overlaysWebView: false` in
  * capacitor.config.ts, so content never scrolls under the clock or the
  * Dynamic Island), and the StatusBar plugin fills the bar with a view of its
  * own, black unless told otherwise; that view gets the page's background.
- * StatusBar's own style is never set: on iOS it would compete with SafeArea's,
+ * StatusBar's own style is never set: on iOS it would compete with SystemBars',
  * and on Android 14 and earlier setBackgroundColor would also pick a style.
  */
 export const applySystemBarTheme = async (
@@ -37,7 +37,7 @@ export const applySystemBarTheme = async (
   plugins: SystemBarPlugins,
 ): Promise<void> => {
   if (platform === "web") return;
-  await plugins.safeArea.setSystemBarsStyle({
+  await plugins.systemBars.setStyle({
     style: isDarkMode ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
   });
   if (platform === "ios")

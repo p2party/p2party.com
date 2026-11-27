@@ -1,10 +1,9 @@
 import { useEffect } from "react";
 import { BrowserRouter } from "react-router";
 
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, SystemBars } from "@capacitor/core";
 import { StatusBar } from "@capacitor/status-bar";
 // import { ScreenOrientation } from "@capacitor/screen-orientation";
-import { SafeArea } from "@capacitor-community/safe-area";
 
 import { useDarkMode } from "usehooks-ts";
 import { UniversalLinkProvider } from "./hooks/useUniversalLink";
@@ -40,7 +39,7 @@ const App = ({ pages = lazyPages }: { pages?: RoutePages }) => {
   // is open.
   useEffect(() => {
     applySystemBarTheme(Capacitor.getPlatform(), isDarkMode, {
-      safeArea: SafeArea,
+      systemBars: SystemBars,
       statusBar: StatusBar,
     }).catch((error: unknown) => {
       console.error("Could not style the status bar", error);

@@ -3,6 +3,7 @@ import { shallowEqual, useSelector } from "react-redux";
 import { useLocalStorage } from "usehooks-ts";
 
 import p2party from "../protocol/sdk";
+import { localNetwork } from "../protocol/localNetwork";
 
 import {
   createRecoverableIdentity,
@@ -156,6 +157,7 @@ export const useRoom = ({
     async (roomUrl: string) => {
       if (roomInviteError.length > 0) throw new Error(roomInviteError);
       const canonicalRoomUrl = p2party.normalizeRoomCapability(roomUrl);
+      await localNetwork.beginRoom();
       const rtcConfig: RTCConfiguration = {
         iceServers: stunServerUrls.length > 0 ? [{ urls: stunServerUrls }] : [],
         iceTransportPolicy: "all" as RTCIceTransportPolicy,

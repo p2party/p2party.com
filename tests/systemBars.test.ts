@@ -23,11 +23,11 @@ const recordingPlugins = () => {
   const glyphCalls: Array<{ plugin: string; glyphs: Glyphs }> = [];
   const backgrounds: string[] = [];
   const plugins = {
-    safeArea: {
-      setSystemBarsStyle: async ({ style }: { style: string }) => {
-        // SafeAreaPlugin: DARK -> .lightContent, LIGHT -> .darkContent.
+    systemBars: {
+      setStyle: async ({ style }: { style: string }) => {
+        // SystemBarsPlugin: DARK -> .lightContent, LIGHT -> .darkContent.
         glyphCalls.push({
-          plugin: "SafeArea",
+          plugin: "SystemBars",
           glyphs: style === "DARK" ? "light glyphs" : "dark glyphs",
         });
       },
@@ -64,8 +64,8 @@ describe("status bar theme", () => {
       const { plugins, glyphCalls, backgrounds } = recordingPlugins();
       await applySystemBarTheme(platform, isDarkMode, plugins);
       // One caller decides the glyphs, so nothing later can contradict it.
-      expect(glyphCalls).toEqual([{ plugin: "SafeArea", glyphs }]);
-      // iOS draws the bar's background itself; on Android SafeArea paints the
+      expect(glyphCalls).toEqual([{ plugin: "SystemBars", glyphs }]);
+      // iOS draws the bar's background itself; on Android SystemBars paints the
       // window behind the bars, and StatusBar.setBackgroundColor would pick a
       // style of its own on Android 14 and earlier.
       expect(backgrounds).toEqual([...background]);
@@ -77,7 +77,7 @@ describe("status bar theme", () => {
     await applySystemBarTheme("ios", false, plugins);
     await applySystemBarTheme("ios", true, plugins);
     expect(glyphCalls.at(-1)).toEqual({
-      plugin: "SafeArea",
+      plugin: "SystemBars",
       glyphs: "light glyphs",
     });
     expect(backgrounds.at(-1)).toBe(SYSTEM_BAR_BACKGROUND.dark);
@@ -109,7 +109,7 @@ describe("status bar theme", () => {
       "applySystemBarTheme(Capacitor.getPlatform(), isDarkMode",
     );
     expect(app).not.toMatch(/StatusBar\.setStyle\(/);
-    expect(app).not.toMatch(/SafeArea\.setSystemBarsStyle\(/);
+    expect(app).not.toMatch(/SystemBars\.setStyle\(/);
     expect(app).not.toMatch(/StatusBar\.setBackgroundColor\(/);
   });
 
@@ -119,6 +119,6 @@ describe("status bar theme", () => {
     // A style here would be applied natively at load and could contradict the
     // one applySystemBarTheme asks for.
     expect(plugins.StatusBar?.style).toBeUndefined();
-    expect(plugins.SafeArea?.statusBarStyle).toBeUndefined();
+    expect(plugins.SystemBars?.style).toBeUndefined();
   });
 });
