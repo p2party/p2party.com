@@ -20,7 +20,7 @@ const noopSubscribe = () => () => {};
 const format = (n: bigint | number) => n.toLocaleString("en-US");
 const short = (id: string) => `${id.slice(0, 10)}…${id.slice(-8)}`;
 const receiptPath = (query: string) =>
-  `/explorer/testnet?receipt=${encodeURIComponent(query)}`;
+  `/explorer/testnet/?receipt=${encodeURIComponent(query)}`;
 const message = (error: unknown) =>
   error instanceof Error
     ? error.message
@@ -113,7 +113,7 @@ function ReceiptSearch({
   return (
     <form
       className='ex-search'
-      action='/explorer/testnet'
+      action='/explorer/testnet/'
       method='get'
       onSubmit={(event) => {
         event.preventDefault();
@@ -313,7 +313,7 @@ function ReceiptList({ data, from }: { data: ExplorerOverview; from: string }) {
           {data.olderThan !== null && (
             <Link
               className='ex-text-button'
-              href={`/explorer/testnet?from=${data.olderThan}`}
+              href={`/explorer/testnet/?from=${data.olderThan}`}
             >
               Older receipts →
             </Link>

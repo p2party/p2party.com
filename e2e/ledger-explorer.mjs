@@ -58,7 +58,10 @@ try {
   await page.getByRole("button", { name: "Look up" }).click();
   await page.getByRole("heading", { name: "Receipt not found" }).waitFor();
   assert.equal(new URL(page.url()).searchParams.get("receipt"), "1");
-  await page.goto(origin.origin + "/explorer/testnet?receipt=0");
+  assert.equal(new URL(page.url()).pathname, "/explorer/testnet/");
+  await page.reload({ waitUntil: "networkidle" });
+  assert.equal(new URL(page.url()).searchParams.get("receipt"), "1");
+  await page.goto(origin.origin + "/explorer/testnet/?receipt=0");
   await page.getByRole("heading", { name: "Genesis · height 0" }).waitFor();
   await page.getByRole("link", { name: "All transfers" }).click();
   await page
