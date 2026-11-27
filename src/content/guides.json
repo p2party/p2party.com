@@ -13,6 +13,6 @@
   },
   "wallet": {
     "title": "P2PARTY wallet",
-    "description": "To spend or restore a testnet unit, bring its signing key and matching receive nonce. To receive a unit, share a fresh public payment descriptor."
+    "description": "Take spending access to another browser with the local wallet companion, or open a watch-only link to check a testnet balance."
   }
 }

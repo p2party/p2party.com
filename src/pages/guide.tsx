@@ -46,6 +46,16 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
         <p className='mt-4 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300'>
           {description}
         </p>
+        {page === "wallet" && (
+          <div className='mt-4 flex flex-wrap items-center gap-4'>
+            <a className='ex-button' href='#move-spending-access'>
+              Move spending access
+            </a>
+            <a className='ex-text-button' href='#check-a-public-balance'>
+              Watch a balance
+            </a>
+          </div>
+        )}
         <p className='mt-4 font-mono text-xs text-zinc-600 dark:text-zinc-400'>
           Updated <time dateTime='2026-11-27'>27 November 2026</time>
         </p>

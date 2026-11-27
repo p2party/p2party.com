@@ -1,5 +1,9 @@
 # Web client changelog
 
+## Unreleased
+
+- The wallet guide walks through restoring spending access in the local companion with a file and a separately saved recovery code. A watch-only QR or link opens one public handle in a second browser and lets its holder choose when to query the validator.
+
 ## November 27, 2026 — Site navigation and ledger research
 
 - Public pages now share the landing and room UI’s cat mark, typography, square borders and orange accents. The protocol, roadmap and whitepaper include section links. The explorer retains receipt lookup, permanent links and the prelaunch mainnet view.

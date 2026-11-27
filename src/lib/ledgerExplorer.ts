@@ -197,12 +197,17 @@ function checkedHead(value: unknown, network: unknown) {
   return quantity(current.height);
 }
 
+export function publicReadHandle(value: string) {
+  const address = value.trim();
+  return /^0x[0-9a-fA-F]{40}$/u.test(address) ? address.toLowerCase() : null;
+}
+
 export async function lookupTestnetBalance(
   handle: string,
   signal?: AbortSignal,
 ) {
-  const address = handle.trim();
-  if (!/^0x[0-9a-fA-F]{40}$/u.test(address)) {
+  const address = publicReadHandle(handle);
+  if (!address) {
     throw new Error(
       "Enter a public read handle beginning with 0x followed by 40 hexadecimal digits.",
     );
@@ -210,7 +215,7 @@ export async function lookupTestnetBalance(
   const [tip, network] = await read(identityCalls, signal);
   const height = checkedHead(tip, network);
   const [value] = await read(
-    [["eth_getBalance", [address.toLowerCase(), heightHex(height)]]],
+    [["eth_getBalance", [address, heightHex(height)]]],
     signal,
   );
   return { balance: quantity(value, (1n << 64n) - 1n), height };

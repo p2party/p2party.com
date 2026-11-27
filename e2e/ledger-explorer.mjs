@@ -14,7 +14,7 @@ try {
   page.on("pageerror", (err) => errors.push(err.message));
   const methods = [];
   let unavailable = false;
-  await context.route("https://signaling.p2party.com/rpc", async (route) => {
+  const rpcFixture = async (route) => {
     if (unavailable) return route.fulfill({ status: 503, body: "Unavailable" });
     const calls = route.request().postDataJSON();
     const result = calls.map(({ id, method, params }) => {
@@ -50,7 +50,8 @@ try {
       };
     });
     await route.fulfill({ json: result });
-  });
+  };
+  await context.route("https://signaling.p2party.com/rpc", rpcFixture);
   await page.goto(origin.origin + "/explorer");
   await page.getByRole("heading", { name: "Ledger explorer" }).waitFor();
   await page
@@ -117,9 +118,60 @@ try {
     .getByText("1 test P2PARTY at height 0.", { exact: true })
     .waitFor();
   assert.deepEqual(methods, ["demos_getHead", "eth_chainId", "eth_getBalance"]);
+  await page
+    .getByRole("form", { name: "Testnet balance lookup" })
+    .getByText("Watch in another browser", { exact: true })
+    .click();
+  await page
+    .getByRole("img", { name: "Watch-only link for this public handle" })
+    .waitFor();
+  const url = new URL(
+    await page.getByRole("link", { name: /#watch=/ }).getAttribute("href"),
+  );
+  const handle = "0x5ea5736cc5cd0e175c415c4dd31f67f71b34e872";
+  assert.equal(url.origin, "https://p2party.com");
+  assert.equal(url.hash, "#watch=" + handle);
+  assert.equal(url.search, "");
+  const secondContext = await browser.newContext({
+    viewport: { width: 360, height: 780 },
+  });
+  await secondContext.route("https://signaling.p2party.com/rpc", rpcFixture);
+  const secondPage = await secondContext.newPage();
+  secondPage.on("pageerror", (error) => errors.push(error.message));
+  methods.length = 0;
+  await secondPage.goto(origin.origin + url.pathname + url.hash, {
+    waitUntil: "networkidle",
+  });
+  assert.equal(
+    await secondPage.getByLabel("Check a Testnet 1 balance").inputValue(),
+    handle,
+  );
+  assert.deepEqual(methods, []);
+  assert(
+    await secondPage.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  );
+  await secondPage
+    .getByRole("button", { name: "Check balance", exact: true })
+    .click();
+  await secondPage
+    .getByText("1 test P2PARTY at height 0.", { exact: true })
+    .waitFor();
+  assert.deepEqual(methods, ["demos_getHead", "eth_chainId", "eth_getBalance"]);
+  methods.length = 0;
+  await secondPage.goto(origin.origin + url.pathname + "#watch=invalid", {
+    waitUntil: "networkidle",
+  });
+  assert.equal(
+    await secondPage.getByLabel("Check a Testnet 1 balance").inputValue(),
+    "",
+  );
+  assert.deepEqual(methods, []);
+  await secondContext.close();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS explorer navigation, mainnet isolation, genesis, missing receipt, retry, mobile width and read-only wallet balance",
+    "PASS explorer navigation, mainnet isolation, genesis, missing receipt, retry, mobile width and watch-only QR/link handoff across isolated browser profiles",
   );
 } finally {
   await browser.close();

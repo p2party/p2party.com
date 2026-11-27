@@ -19,7 +19,7 @@ by one public validator. A second validator has been exercised on separate local
 PostgreSQL databases. [Release notes](src/content/blog/10-room-history-and-purge.md) ·
 [Changelog](CHANGELOG.md) · [Signaling health](https://signaling.p2party.com/health)
 
-The [wallet guide](https://p2party.com/wallet) explains receiving, spending and restoring a testnet wallet. Visitors can check one public read handle without connecting a wallet. The [P2PARTY ledger explorer](https://p2party.com/explorer) reads native testnet receipts by height or move ID. The [mainnet status page](https://p2party.com/explorer/mainnet) records its prelaunch status.
+The [wallet guide](https://p2party.com/wallet) explains receiving, spending and restoring a testnet wallet. A watch-only QR or link carries one public read handle between browsers. Balance lookup contacts the validator when requested. The local companion restores spending access with an encrypted backup and a separate recovery code. The [P2PARTY ledger explorer](https://p2party.com/explorer) reads native testnet receipts by height or move ID. The [mainnet status page](https://p2party.com/explorer/mainnet) records its prelaunch status.
 
 The public [protocol guide](https://p2party.com/protocol) explains the room handshake, metadata visibility and native testnet RPC. The [roadmap](https://p2party.com/roadmap) records measured results from the local two-store timing study and signed receipt-history proofs, and tracks work toward separately administered validators.
 
