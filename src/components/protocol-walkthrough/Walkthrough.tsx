@@ -1,7 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { stories } from "./stories";
 import { FlowMap } from "./FlowMap";
-import "./walkthrough.css";
 
 const subscribe = (fn: () => void) => {
   window.addEventListener("hashchange", fn);

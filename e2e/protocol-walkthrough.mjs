@@ -12,6 +12,19 @@ const cases = [
   ["Offline payments", "Recognize the payment locally"],
 ];
 try {
+  const staticPage = await browser.newPage({ javaScriptEnabled: false });
+  await staticPage.goto(origin + "/protocol/", { waitUntil: "networkidle" });
+  const staticPanel = staticPage.locator("#walkthrough");
+  await staticPanel.waitFor();
+  assert(
+    await staticPanel.evaluate(
+      (node) =>
+        Number.parseFloat(getComputedStyle(node).marginBlockEnd) >= 24 &&
+        getComputedStyle(node.querySelector("h2")).fontWeight === "850",
+    ),
+    "The prerendered illustration must be styled before hydration.",
+  );
+  await staticPage.close();
   for (const mobile of [false, true]) {
     const page = await browser.newPage({
       viewport: mobile

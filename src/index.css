@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./pages/site.css";
+@import "./components/protocol-walkthrough/walkthrough.css";
 @import "./pages/explorer.css";
 
 @theme {
