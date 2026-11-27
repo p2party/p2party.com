@@ -31,7 +31,7 @@ const runUpload = (prune: boolean): UploadResult => {
       `
       import { mock } from "bun:test";
       import { createHash } from "node:crypto";
-      import { gunzipSync } from "node:zlib";
+      import { gzipSync, gunzipSync } from "node:zlib";
       import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
       import { tmpdir } from "node:os";
       import { dirname, join } from "node:path";
@@ -41,6 +41,8 @@ const runUpload = (prune: boolean): UploadResult => {
       const files = {
         "index.html": Buffer.from("<!doctype html><title>Offline upload fixture</title>"),
         "assets/client.js": Buffer.from("globalThis.fixture = true;"),
+        "downloads/testnet-1/wallet.tgz": gzipSync("wallet fixture"),
+        "downloads/testnet-1/wallet.tgz.sha256": Buffer.from("checksum fixture"),
         [wasmKey]: wasm,
         ".well-known/apple-app-site-association": Buffer.from(JSON.stringify({
           applinks: { details: [{ appID: "Y4UAPYWG26.com.p2party.app", paths: ["/r"] }] },
@@ -147,6 +149,12 @@ describe("self-hosted WASM upload", () => {
       sriMatches: true,
     });
     expect(result.localWasmUnchanged).toBe(true);
+    expect(
+      result.puts.find((asset) => asset.key.endsWith(".tgz"))?.contentType,
+    ).toBe("application/gzip");
+    expect(
+      result.puts.find((asset) => asset.key.endsWith(".sha256"))?.contentType,
+    ).toBe("text/plain");
     expect(result.puts.at(-1)?.key).toBe("index.html");
     for (const asset of result.puts.filter((asset) => asset.key !== wasmKey)) {
       expect(asset.contentEncoding).toBeUndefined();

@@ -166,8 +166,8 @@ const boundaries = [
     body: "The fixed rhythm has been measured over a loopback connection, not over a real network and not against a published traffic-analysis attack. Until it has been, we call it timing cover and not resistance.",
   },
   {
-    title: "Written, not yet demonstrated",
-    body: "Two more things are implemented and believed correct but have never been shown working end to end: the PIN wait escalating under repeated wrong guesses, and packet traces staying indistinguishable in rooms bigger than two. Until a harness proves them, they are code and not claims.",
+    title: "Room privacy on a real network",
+    body: "Three browsers have exchanged messages and recovered after a wrong PIN on loopback. Whether an observer can distinguish payload traffic from cover in a larger room still needs testing across real networks.",
   },
   {
     title: "Nobody independent has audited this",
@@ -402,12 +402,12 @@ const HomePage = () => {
           <span className='text-orange-600 dark:text-orange-500'>Today</span>
         </h2>
         <p className='mx-auto mb-8 max-w-2xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          Read about the September release in the{" "}
+          Running SDK 0.15.0 with signaling v5.{" "}
           <Link
-            href='/blog/after-the-desync-fixes'
+            href='/blog/rooms-after-signaling-v5'
             className='text-orange-700 underline underline-offset-4 dark:text-orange-400'
           >
-            release update and blind-rendezvous research plan
+            What changed for your contacts, history and files
           </Link>
           .
         </p>

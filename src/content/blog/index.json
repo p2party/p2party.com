@@ -127,6 +127,17 @@
       "description": "What SDK 0.14.10 and server 0.1.4 ship, what the one-server experiments show, and the privacy and efficiency work still ahead.",
       "date": "2026-09-09",
       "commitAnchors": []
+    },
+    {
+      "order": 9,
+      "slug": "rooms-after-signaling-v5",
+      "href": "/blog/rooms-after-signaling-v5",
+      "file": "09-rooms-after-signaling-v5.md",
+      "title": "Your contacts and files after signaling v5",
+      "description": "What changes when you reopen a room, what two browsers verified on the public service, and the next device and privacy checks.",
+      "date": "2026-11-27",
+      "sdkVersion": "0.15.0",
+      "commitAnchors": []
     }
   ]
 }

@@ -45,6 +45,7 @@ const BlogPostPage = () => {
 
   const previous = blogPosts[post.order - 2];
   const next = blogPosts[post.order];
+  const sdkVersion = post.sdkVersion ?? "0.14.10";
 
   return (
     <BlogChrome>
@@ -157,12 +158,12 @@ const BlogPostPage = () => {
               <ul className='mt-3'>
                 <li>
                   <a
-                    href='https://github.com/p2party/p2party-js/tree/v0.14.10'
+                    href={`https://github.com/p2party/p2party-js/tree/v${sdkVersion}`}
                     target='_blank'
                     rel='noopener noreferrer'
                     className='rounded text-orange-700 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-orange-400'
                   >
-                    SDK 0.14.10 source ↗
+                    SDK {sdkVersion} source ↗
                   </a>
                 </li>
                 <li>

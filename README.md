@@ -10,13 +10,14 @@ security audit. The signaling service sees room membership and timing;
 server-blind rendezvous and Sybil resistance are not shipped guarantees.
 Read the [security policy](SECURITY.md) before relying on it for sensitive use.
 
-The September 2026 web release uses SDK **0.14.10** and signaling server
-**0.1.4** (protocol v4). It includes the desynchronization fixes, durable transfer
-retry/cancel flows, bounded server admission, dependency cleanup, and smaller
-SDK artifacts. Read the [release and research update](src/content/blog/08-after-the-desync-fixes.md)
-for what was validated and the work toward one-server blind rendezvous,
-private invitation retrieval, and proof of work with optional passkeys. Those
-research experiments are separate from the deployed room flow.
+The November 27 web release uses SDK **0.15.0** and signaling protocol **5**.
+Peer encryption continues to use protocol **4**. Contacts and blocks follow
+authenticated identity keys across routing changes. Existing messages stay
+readable, and interrupted file cleanup can retry after a browser restart.
+Two fresh browser pairs verified persisted text and byte-compared a 32 KiB
+file on the public service, once on a direct ICE path and once through TURN.
+[Release notes and test results](src/content/blog/09-rooms-after-signaling-v5.md) ·
+[Changelog](CHANGELOG.md) · [Signaling health](https://signaling.p2party.com/health)
 
 ## What works
 
@@ -42,6 +43,11 @@ in the separate library repository.
 | **p2party.com**                                             | UI, invitations, browser integration, static build, native shells |
 | [p2party-js](https://github.com/p2party/p2party-js)         | Handshake, ratchet, WebRTC mesh, transfers, and local storage     |
 | [p2party-server](https://github.com/p2party/p2party-server) | Signaling service, using Bun and PostgreSQL                       |
+
+P2Party Testnet 1 is awaiting public activation. Its genesis defines 128
+units without monetary value, and its protocol uses one validator to order
+native post-quantum transfers. Using rooms requires neither a wallet nor a test unit.
+[Testnet guide and client examples](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md) · [Native library](https://github.com/ondemos/libdemos)
 
 ## Run locally
 
@@ -92,7 +98,7 @@ recovery bounds for mobile or wide-area networks.
 This checkout uses the SDK release archive `file:vendor/p2party-0.15.0.tgz`
 from the `p2party-js` Linux CI build.
 For local room tests, set **Settings → Signaling Server URL** to the WebSocket
-URL of your signaling v5 server. The September production release used v4.
+URL of your signaling v5 server.
 The app loads
 `public/vendor/p2party-0.15.0/libcrypto.wasm` through `src/protocol/wasm.ts`.
 The normal SDK loader verifies the WASM against its built-in SRI pin.
@@ -191,12 +197,12 @@ at all.
 
 ## Android and iOS
 
-`android/` and `ios/` are Capacitor 8 projects. On 2026-11-26 an Android debug
-build (`./gradlew assembleDebug` with JDK 21) and an unsigned iOS simulator
-build (`xcodebuild`, Xcode 27.2) succeeded, and both apps launched and showed
-their home page, the Android app on an emulator and the iOS app on the iOS 27.0
-simulator. Neither app has been run on a device, and a mobile release still
-needs signing and device validation.
+`android/` and `ios/` are Capacitor 8 projects. On November 27, the Android
+debug and unsigned release APKs built for API 37. Keyboard resizing and status
+bar behavior were checked on an Android 16 emulator. Android 17 permission
+grant and denial, LAN access, and TURN fallback still need device testing.
+An earlier iOS 27 simulator build launched with Xcode 27.2. Native publication
+still needs signing and physical-device validation. [Native build record](docs/native-builds.md)
 
 Build the app's web client with `npm run build:native`, which adds the app's
 Content-Security-Policy, then copy it into the projects with

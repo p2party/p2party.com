@@ -5,6 +5,19 @@ SDK package, browser, native build, or production network. Raw browser reports
 under `logs/` are local and ignored because captures can contain sensitive data.
 The reproducible runners remain in `e2e/`; see [Browser testing](browser-testing.md).
 
+## Public web release on November 27, 2026
+
+The web app served SDK 0.15.0 with protocol-5 signaling. The canonical Linux SDK archive has SHA-256 `d2eb1fbc40a585da0144413a0da9bbf5b17a03536cd5f982e0c20d429078353b`. Rebuilding the site with those exact archive bytes reproduced the same 100-file distribution deployed before this article was added. [Website CI](https://github.com/p2party/p2party.com/actions/runs/45984358051) · [SDK CI](https://github.com/p2party/p2party-js/actions/runs/45984544053)
+
+| Environment                                      | Exercise                                                                          | Observation                                                                                                                                                                                                             |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public site, two fresh Chromium profiles         | Exchange a short random message and a 32 KiB file with ordinary ICE               | Both browsers selected a direct host/server-reflexive candidate pair. The receiver read the text back from storage and byte-compared the disk-backed file.                                                              |
+| Public site, two further fresh Chromium profiles | Repeat text and 32 KiB file verification with relay-only ICE on both peers        | Both browsers reported relay/relay candidates and verified the same delivery checks.                                                                                                                                    |
+| Local release harness                            | Drop a chunk during a 16 MiB receive and interrupt a 64 MiB send                  | The receiver verified the received bytes after reload. The 64 MiB resume also preserved the sender's identity key.                                                                                                      |
+| Android native shell                             | Build for API 37, then exercise keyboard and status bar on an Android 16 emulator | Debug and unsigned release APKs built. Opening and dismissing the real keyboard changed the PIN viewport from 775.2 to 467.0 CSS pixels and back to 775.2. Android 17 permission and physical-device tests remain open. |
+
+[Local browser report](https://github.com/p2party/p2party-js/blob/v0.15.0/docs/e2e/release-0.15.0.md) · [Native build record](native-builds.md)
+
 ## Mobile viewport and chat scroll regression — 2026-09-09
 
 The pre-change chat fixture failed 40 of 104 Chromium checks. Async message
