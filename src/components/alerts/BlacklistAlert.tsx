@@ -46,22 +46,11 @@ const BlacklistAlert: FC<BlacklistAlertProps> = ({ isOpen, setIsOpen }) => {
     getBlacklisted();
   }, [isOpen, setBlacklistedPeers]);
 
-  const handleRemovePeerFromBlacklist = async (
-    peerId?: string,
-    peerPublicKey?: string,
-  ) => {
-    const blacklistedIndex = blacklistedPeers.findIndex(
-      (b) => b.peerId === peerId,
+  const handleRemovePeerFromBlacklist = async (publicKey: string) => {
+    await p2party.removePeerFromBlacklist(publicKey);
+    setBlacklistedPeers((previous) =>
+      previous.filter((entry) => entry.peerPublicKey !== publicKey),
     );
-
-    if (blacklistedIndex > -1) {
-      await p2party.removePeerFromBlacklist(peerId, peerPublicKey);
-      // Splicing the state array in place keeps the same reference, so React
-      // bails out of the re-render and the row appears undeletable.
-      setBlacklistedPeers((previous) =>
-        previous.filter((entry) => entry.peerId !== peerId),
-      );
-    }
   };
 
   return (
@@ -86,15 +75,12 @@ const BlacklistAlert: FC<BlacklistAlertProps> = ({ isOpen, setIsOpen }) => {
           </TableHead>
           <TableBody>
             {blacklistedPeers.map((peer) => (
-              <TableRow key={peer.peerId}>
+              <TableRow key={peer.peerPublicKey}>
                 <TableCell>
                   <Button
                     plain
                     onClick={async () =>
-                      await handleRemovePeerFromBlacklist(
-                        peer.peerId,
-                        peer.peerPublicKey,
-                      )
+                      await handleRemovePeerFromBlacklist(peer.peerPublicKey)
                     }
                   >
                     <XMarkIcon />

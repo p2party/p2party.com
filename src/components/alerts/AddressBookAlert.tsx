@@ -44,22 +44,11 @@ const AddressBookAlert: FC<AddressBookAlertProps> = ({ isOpen, setIsOpen }) => {
     getAddressBook();
   }, [isOpen, setAddressBookPeers]);
 
-  const handleRemovePeerFromAddressBook = async (
-    peerId?: string,
-    peerPublicKey?: string,
-  ) => {
-    const addressBookIndex = addressBookPeers.findIndex(
-      (b) => b.peerId === peerId,
+  const handleRemovePeerFromAddressBook = async (publicKey: string) => {
+    await p2party.deletePeerFromAddressBook(publicKey);
+    setAddressBookPeers((previous) =>
+      previous.filter((entry) => entry.peerPublicKey !== publicKey),
     );
-
-    if (addressBookIndex > -1) {
-      // Signature is (username?, peerId?, peerPublicKey?): the username slot
-      // must stay empty or the delete silently matches nothing.
-      await p2party.deletePeerFromAddressBook(undefined, peerId, peerPublicKey);
-      setAddressBookPeers((previous) =>
-        previous.filter((entry) => entry.peerId !== peerId),
-      );
-    }
   };
 
   return (
@@ -83,15 +72,12 @@ const AddressBookAlert: FC<AddressBookAlertProps> = ({ isOpen, setIsOpen }) => {
           </TableHead>
           <TableBody>
             {addressBookPeers.map((peer) => (
-              <TableRow key={peer.peerId}>
+              <TableRow key={peer.peerPublicKey}>
                 <TableCell>
                   <Button
                     plain
                     onClick={async () =>
-                      await handleRemovePeerFromAddressBook(
-                        peer.peerId,
-                        peer.peerPublicKey,
-                      )
+                      await handleRemovePeerFromAddressBook(peer.peerPublicKey)
                     }
                   >
                     <XMarkIcon />

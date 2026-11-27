@@ -1,3 +1,4 @@
+import { isLocalMessage } from "../../protocol/messageIdentity";
 import { useState, useEffect, memo } from "react";
 import { useSelector } from "react-redux";
 import p2party from "../../protocol/sdk";
@@ -53,10 +54,8 @@ const MessageItem: FC<MessageItemProps> = ({
   transfer,
   onCancelTransfer,
 }) => {
-  // Narrow subscription: only peerId (from keyPair, which changes rarely) — NOT
-  // the whole rooms array. readMessage is a stable module fn. This keeps a
-  // per-chunk progress tick from re-rendering every message row.
-  const peerId = useSelector(p2party.keyPairSelector).peerId;
+  const localPublicKey = useSelector(p2party.keyPairSelector).publicKey;
+  const own = isLocalMessage(message, localPublicKey);
 
   const [state, setState] = useState<{
     msg: string;
@@ -102,7 +101,7 @@ const MessageItem: FC<MessageItemProps> = ({
         const nextMsg = typeof m.message === "string" ? m.message : "";
 
         if (
-          message.fromPeerId === peerId &&
+          own &&
           message.totalChunks > 0 &&
           message.chunksCreated < message.totalChunks
         ) {
@@ -118,7 +117,7 @@ const MessageItem: FC<MessageItemProps> = ({
             msgExtension: m.extension,
             msgPercentage: percentage,
           }));
-        } else if (message.fromPeerId === peerId) {
+        } else if (own) {
           // savedSize is receive-side accounting: it counts chunks written to
           // this device's store. A sender never stores its own message, so it
           // stays 0 forever and this row read "Sent 0%" on a transfer the
@@ -169,13 +168,12 @@ const MessageItem: FC<MessageItemProps> = ({
     };
   }, [
     message.merkleRootHex,
-    message.fromPeerId,
     message.sha512Hex,
     message.savedSize,
     message.totalSize,
     message.chunksCreated,
     message.totalChunks,
-    peerId,
+    own,
   ]);
 
   // Real outbound progress, polled while this device's send is in flight.
@@ -206,7 +204,6 @@ const MessageItem: FC<MessageItemProps> = ({
     };
   }, [inFlight, transferId, roomId]);
 
-  const own = message.fromPeerId === peerId;
   const isFile = msgCategory !== p2party.MessageCategory.Text;
   const receiving = !own && msgPercentage < 100;
   // Real payload bytes the slowest peer has confirmed. Acks are real chunks

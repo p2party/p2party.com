@@ -1,3 +1,4 @@
+import { isLocalMessage } from "../../protocol/messageIdentity";
 import { useState } from "react";
 
 import { Capacitor } from "@capacitor/core";
@@ -67,10 +68,8 @@ const MessageDropdown = ({
   subtitle,
   sendProgress,
 }: MessageDropdownProps) => {
-  // Narrow subscription: peerId only (readMessage/cancelMessage/deleteMessage
-  // are stable module functions), so a dropdown row doesn't re-render on every
-  // store change.
-  const peerId = useSelector(p2party.keyPairSelector).peerId;
+  const localPublicKey = useSelector(p2party.keyPairSelector).publicKey;
+  const own = isLocalMessage(message, localPublicKey);
   const url = peerMessageUrl(msg) ?? "";
 
   // Materialize the file only on user action (not on render). For a big file
@@ -194,7 +193,6 @@ const MessageDropdown = ({
     }
   };
 
-  const own = message.fromPeerId === peerId;
   const isFile = msgCategory !== p2party.MessageCategory.Text;
 
   // A file is a card rather than a bubble -- it carries a badge, a size and a
@@ -216,7 +214,7 @@ const MessageDropdown = ({
         >
           {msgCategory === p2party.MessageCategory.Text && url.length === 0 && (
             <Text
-              className={`text-left tracking-wide wrap-break-word whitespace-pre-line ${message.fromPeerId === peerId ? "font-medium text-white" : "font-normal text-zinc-950 dark:text-white"} text-pretty wrap-break-word text-clip hyphens-auto antialiased select-text`}
+              className={`text-left tracking-wide wrap-break-word whitespace-pre-line ${own ? "font-medium text-white" : "font-normal text-zinc-950 dark:text-white"} text-pretty wrap-break-word text-clip hyphens-auto antialiased select-text`}
             >
               {msg as string}
             </Text>
@@ -245,7 +243,7 @@ const MessageDropdown = ({
         </DropdownButton>
         <DropdownMenu
           className='min-w-64'
-          anchor={message.fromPeerId !== peerId ? "bottom start" : "bottom end"}
+          anchor={!own ? "bottom start" : "bottom end"}
         >
           {msgPercentage === 100 &&
             msgCategory === p2party.MessageCategory.Text &&
@@ -311,7 +309,7 @@ const MessageDropdown = ({
             </DropdownItem>
           )}
 
-          {/* {message.fromPeerId !== peerId && (
+          {/* {!own && (
         <DropdownItem>
           <NoSymbolIcon />
           Prevent
