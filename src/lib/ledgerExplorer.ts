@@ -31,6 +31,7 @@ export interface ExplorerOverview {
 }
 
 type Method =
+  | "eth_getBalance"
   | "demos_getHead"
   | "eth_chainId"
   | "demos_getTransfer"
@@ -45,14 +46,14 @@ function record(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function quantity(value: unknown): bigint {
+function quantity(value: unknown, maximum = MAX_HEIGHT): bigint {
   if (
     typeof value !== "string" ||
     !/^0x(?:0|[1-9a-f][0-9a-f]{0,15})$/u.test(value)
   )
     throw invalidResponse();
   const n = BigInt(value);
-  if (n > MAX_HEIGHT) throw invalidResponse();
+  if (n > maximum) throw invalidResponse();
   return n;
 }
 
@@ -194,6 +195,25 @@ function checkedHead(value: unknown, network: unknown) {
       "The RPC returned a different network from P2Party Testnet 1.",
     );
   return quantity(current.height);
+}
+
+export async function lookupTestnetBalance(
+  handle: string,
+  signal?: AbortSignal,
+) {
+  const address = handle.trim();
+  if (!/^0x[0-9a-fA-F]{40}$/u.test(address)) {
+    throw new Error(
+      "Enter a public read handle beginning with 0x followed by 40 hexadecimal digits.",
+    );
+  }
+  const [tip, network] = await read(identityCalls, signal);
+  const height = checkedHead(tip, network);
+  const [value] = await read(
+    [["eth_getBalance", [address.toLowerCase(), heightHex(height)]]],
+    signal,
+  );
+  return { balance: quantity(value, (1n << 64n) - 1n), height };
 }
 
 export async function loadExplorerOverview(

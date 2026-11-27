@@ -10,6 +10,10 @@ import post08 from "./08-after-the-desync-fixes.md?raw";
 import post09 from "./09-rooms-after-signaling-v5.md?raw";
 import post10 from "./10-room-history-and-purge.md?raw";
 
+import post11 from "./11-ai-math-and-p2party-keys.md?raw";
+
+import post12 from "./12-restoring-a-p2party-wallet.md?raw";
+
 const markdownByFile = new Map<string, string>([
   ["01-the-64-kib-lie.md", post01],
   ["02-green-tests-are-not-a-security-proof.md", post02],
@@ -21,6 +25,8 @@ const markdownByFile = new Map<string, string>([
   ["08-after-the-desync-fixes.md", post08],
   ["09-rooms-after-signaling-v5.md", post09],
   ["10-room-history-and-purge.md", post10],
+  ["11-ai-math-and-p2party-keys.md", post11],
+  ["12-restoring-a-p2party-wallet.md", post12],
 ]);
 
 const stripFrontmatter = (markdown: string): string => {
@@ -37,6 +43,7 @@ export interface BlogPost {
   description: string;
   date: string;
   commitAnchors: string[];
+  author?: string;
   sdkVersion?: string;
   markdown: string;
 }

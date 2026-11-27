@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./pages/site.css";
 @import "./pages/explorer.css";
 
 @theme {
@@ -77,6 +78,7 @@
 
 @layer components {
   .blog-prose {
+    overflow-wrap: anywhere;
     color: color-mix(in srgb, currentColor 78%, transparent);
     font-size: 1.0625rem;
     line-height: 1.85;
@@ -185,10 +187,10 @@
     max-width: 100%;
     overflow-x: auto;
     border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-    background: #11100e;
+    background: var(--color-zinc-950);
     padding: 1rem;
     color: #e7e5e4;
-    box-shadow: 5px 5px 0 #f97316;
+    box-shadow: var(--shadow-brutal-sm);
   }
 
   .blog-prose pre code {

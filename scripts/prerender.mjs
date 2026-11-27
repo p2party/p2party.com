@@ -244,7 +244,9 @@ for (const route of ROUTES) {
       headline: meta.article.title,
       description: meta.article.description,
       datePublished: meta.article.date,
-      author: { "@type": "Person", name: manifest.series.author.name },
+      author: meta.article.author
+        ? { "@type": "Organization", name: meta.article.author }
+        : { "@type": "Person", name: manifest.series.author.name },
       mainEntityOfPage: canonical,
       url: canonical,
     };

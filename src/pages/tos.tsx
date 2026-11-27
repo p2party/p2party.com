@@ -20,13 +20,11 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 
 const TOSPage = () => {
   return (
-    <div className='flex min-h-screen w-full justify-center bg-white px-6 py-16 dark:bg-black'>
-      <article className='w-full max-w-3xl'>
-        <h1 className='mb-2 text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl dark:text-white'>
-          Terms of Service
-        </h1>
+    <main className='site-legal'>
+      <article className='site-paper'>
+        <h1 className='site-title mb-2'>Terms of Service</h1>
         <p className='mb-8 text-sm text-zinc-400 dark:text-zinc-500'>
-          Effective date: 17 October 2024 &middot; Last updated: 2 September
+          Effective date: 17 October 2024 &middot; Last updated: 27 November
           2026
         </p>
 
@@ -50,8 +48,8 @@ const TOSPage = () => {
           platform that enables real-time text messaging and file sharing over
           WebRTC data channels. Peers discover each other through a lightweight
           signaling server; NAT traversal is assisted by STUN and TURN servers.
-          All servers are hosted in the European Union on Hetzner Online GmbH
-          infrastructure.
+          Hetzner Online GmbH hosts the signaling, STUN and TURN services in the
+          European Union. Cloudflare and Amazon S3 deliver the static website.
         </Para>
         <Para>
           The Service does not require user registration, accounts, email
@@ -384,7 +382,7 @@ const TOSPage = () => {
           </Link>
         </div>
       </article>
-    </div>
+    </main>
   );
 };
 

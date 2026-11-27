@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   loadExplorerOverview,
   lookupExplorerReceipt,
+  lookupTestnetBalance,
   TESTNET_CHAIN_ID,
   TESTNET_RPC,
 } from "../src/lib/ledgerExplorer";
@@ -162,5 +163,41 @@ describe("public testnet explorer reads", () => {
     });
     for (mode = 0; mode < 5; mode++)
       await expect(loadExplorerOverview()).rejects.toThrow();
+  });
+});
+
+describe("watch-only wallet balance", () => {
+  const handle = "0x" + "ab".repeat(20);
+  test("pins the height and both chain identities before sending a normalized handle", async () => {
+    const calls: Requested[] = [];
+    mockRpc((call) => {
+      calls.push(call);
+      return call.method === "eth_getBalance"
+        ? "0x8000000000000000"
+        : normal(call);
+    });
+    expect(await lookupTestnetBalance(handle.replaceAll("ab", "AB"))).toEqual({
+      height: BigInt(tip),
+      balance: 1n << 63n,
+    });
+    expect(calls.map((call) => call.method)).toEqual([
+      "demos_getHead",
+      "eth_chainId",
+      "eth_getBalance",
+    ]);
+    expect(calls[2].params).toEqual([handle, "0x" + tip.toString(16)]);
+  });
+  test("rejects other inputs before making a request and withholds the handle on the wrong chain", async () => {
+    const requests = mockRpc((call) =>
+      call.method === "eth_chainId" ? "0x1" : normal(call),
+    );
+    await expect(lookupTestnetBalance("0x" + "ab".repeat(32))).rejects.toThrow(
+      "public read handle",
+    );
+    expect(requests).not.toHaveBeenCalled();
+    await expect(lookupTestnetBalance(handle)).rejects.toThrow(
+      "different network",
+    );
+    expect(requests).toHaveBeenCalledTimes(1);
   });
 });

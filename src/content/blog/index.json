@@ -149,6 +149,30 @@
       "date": "2026-11-27",
       "sdkVersion": "0.15.1",
       "commitAnchors": []
+    },
+    {
+      "order": 11,
+      "slug": "ai-math-and-p2party-keys",
+      "href": "/blog/ai-math-and-p2party-keys",
+      "file": "11-ai-math-and-p2party-keys.md",
+      "title": "Do the new discrete-log and lattice papers change P2Party’s security?",
+      "description": "A November 2026 review of what the papers establish and which assumptions protect rooms, relay receipts and wallet signatures.",
+      "date": "2026-11-27",
+      "author": "P2Party",
+      "sdkVersion": "0.15.1",
+      "commitAnchors": []
+    },
+    {
+      "order": 12,
+      "slug": "restoring-a-p2party-wallet",
+      "href": "/blog/restoring-a-p2party-wallet",
+      "file": "12-restoring-a-p2party-wallet.md",
+      "title": "We restored a wallet from its key and receive nonces",
+      "description": "A clean-device test with both public signing suites, plus what to save, what to share and what a relay purchase should show.",
+      "date": "2026-11-27",
+      "author": "P2Party",
+      "sdkVersion": "0.15.1",
+      "commitAnchors": []
     }
   ]
 }

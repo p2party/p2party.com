@@ -1,6 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { BlogChrome } from "../components/blog/BlogChrome";
 import { Link } from "../components/link";
 import networks from "../content/explorer.json";
 import {
@@ -25,16 +24,6 @@ const message = (error: unknown) =>
   error instanceof Error
     ? error.message
     : "The validator could not be reached.";
-
-function Coin() {
-  return (
-    <div className='ex-coin-field' aria-hidden='true'>
-      <div className='ex-coin'>
-        <img src='/logo-cat.svg' alt='' />
-      </div>
-    </div>
-  );
-}
 
 function NetworkDirectory() {
   return (
@@ -443,7 +432,10 @@ function Testnet() {
         </dl>
         <p>
           One validator orders testnet transfers. Its receipt records acceptance
-          by that validator.
+          by that validator.{" "}
+          <Link className='ex-text-button' href='/wallet'>
+            Check a public wallet balance
+          </Link>
         </p>
       </details>
     </>
@@ -460,68 +452,72 @@ export default function Explorer({ page }: { page: Page }) {
     };
   }, [meta]);
   return (
-    <BlogChrome>
-      <main className='ex-shell' id='blog-content'>
-        <header className='ex-header'>
-          <div className='ex-hero-copy'>
-            <p className='ex-crumb'>
-              <Link href='/'>p2party</Link>
-              <span aria-hidden='true'>/</span>
-              {page === "overview" ? (
-                "Explorer"
-              ) : (
-                <Link href='/explorer'>Explorer</Link>
-              )}
-              {page !== "overview" && (
-                <>
-                  <span aria-hidden='true'>/</span>
-                  {page === "testnet" ? "Testnet 1" : "Mainnet"}
-                </>
-              )}
-            </p>
-            <h1>
-              {page === "overview"
-                ? "Ledger explorer"
-                : page === "testnet"
-                  ? "Testnet 1"
-                  : "Mainnet"}
-            </h1>
-            <p className='ex-intro'>
-              {page === "overview"
-                ? "Explore the P2PARTY networks and follow native transfers from one unit to the next."
-                : page === "testnet"
-                  ? "Read native P2PARTY transfers from the public validator. Testnet units have no monetary value."
-                  : "Launch status and public network data for P2PARTY."}
-            </p>
-          </div>
-          <Coin />
-        </header>
-        <nav className='ex-nav' aria-label='Explorer networks'>
-          {(Object.keys(networks) as Page[]).map((k) => (
-            <Link
-              key={k}
-              href={networks[k].path}
-              aria-current={k === page ? "page" : undefined}
-            >
-              {k === "overview"
-                ? "Networks"
-                : k === "testnet"
-                  ? "Testnet 1"
-                  : "Mainnet"}
-            </Link>
-          ))}
-        </nav>
-        {page === "overview" ? (
-          <>
-            <NetworkDirectory />
-            <ReceiptSearch query='' label='Find a Testnet 1 receipt' />
-          </>
-        ) : page === "testnet" ? (
-          <Testnet />
-        ) : (
-          <Mainnet />
-        )}
-      </main>
-    </BlogChrome>
+    <main className='ex-shell'>
+      <header className='ex-header'>
+        <div className='ex-hero-copy'>
+          <p className='ex-crumb'>
+            <Link href='/'>p2party</Link>
+            <span aria-hidden='true'>/</span>
+            {page === "overview" ? (
+              "Explorer"
+            ) : (
+              <Link href='/explorer'>Explorer</Link>
+            )}
+            {page !== "overview" && (
+              <>
+                <span aria-hidden='true'>/</span>
+                {page === "testnet" ? "Testnet 1" : "Mainnet"}
+              </>
+            )}
+          </p>
+          <h1 className='site-title'>
+            {page === "overview"
+              ? "Ledger explorer"
+              : page === "testnet"
+                ? "Testnet 1"
+                : "Mainnet"}
+          </h1>
+          <p className='ex-intro'>
+            {page === "overview"
+              ? "Explore the P2PARTY networks and follow native transfers from one unit to the next."
+              : page === "testnet"
+                ? "Read native P2PARTY transfers from the public validator. Testnet units have no monetary value."
+                : "Launch status and public network data for P2PARTY."}
+          </p>
+        </div>
+        <img
+          className='ex-mark'
+          src='/logo-cat.svg'
+          width='116'
+          height='116'
+          alt=''
+        />
+      </header>
+      <nav className='ex-nav' aria-label='Explorer networks'>
+        {(Object.keys(networks) as Page[]).map((k) => (
+          <Link
+            key={k}
+            href={networks[k].path}
+            aria-current={k === page ? "page" : undefined}
+          >
+            {k === "overview"
+              ? "Networks"
+              : k === "testnet"
+                ? "Testnet 1"
+                : "Mainnet"}
+          </Link>
+        ))}
+      </nav>
+      {page === "overview" ? (
+        <>
+          <NetworkDirectory />
+          <ReceiptSearch query='' label='Find a Testnet 1 receipt' />
+        </>
+      ) : page === "testnet" ? (
+        <Testnet />
+      ) : (
+        <Mainnet />
+      )}
+    </main>
   );
 }

@@ -12,7 +12,6 @@ import {
 import { loadSessionWasmBinary } from "../protocol/wasm";
 
 import { Button } from "../components/button";
-import { Link } from "../components/link";
 
 const makeLink = () => {
   const queued: Uint8Array[] = [];
@@ -195,24 +194,8 @@ const SessionLabPage = () => {
   };
 
   return (
-    <main className='relative isolate min-h-screen overflow-hidden bg-white px-5 py-10 text-zinc-950 sm:px-8 dark:bg-black dark:text-white'>
-      <div
-        className='pointer-events-none absolute inset-0 text-orange-500 opacity-[0.08] dark:opacity-[0.05]'
-        style={{
-          backgroundImage:
-            "radial-gradient(currentColor 1px, transparent 1.5px)",
-          backgroundSize: "24px 24px",
-        }}
-        aria-hidden
-      />
-      <div className='relative mx-auto max-w-5xl'>
-        <Link
-          href='/'
-          className='font-mono text-sm text-orange-700 underline decoration-dotted underline-offset-4 dark:text-orange-300'
-        >
-          ← p2party.com
-        </Link>
-
+    <main className='relative mx-auto max-w-5xl px-5 py-10 sm:px-8'>
+      <div>
         <div className='shadow-brutal mt-6 border-2 border-zinc-950 bg-zinc-50 p-5 sm:p-8 dark:border-zinc-200 dark:bg-zinc-950'>
           <p className='font-mono text-xs font-bold tracking-[0.2em] text-orange-700 uppercase dark:text-orange-300'>
             protocol-v4 / standalone lab

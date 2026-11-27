@@ -19,9 +19,13 @@ by one public validator. A second validator has been exercised on separate local
 PostgreSQL databases. [Release notes](src/content/blog/10-room-history-and-purge.md) ·
 [Changelog](CHANGELOG.md) · [Signaling health](https://signaling.p2party.com/health)
 
-The [P2PARTY ledger explorer](https://p2party.com/explorer) reads native testnet receipts by height or move ID. The [mainnet status page](https://p2party.com/explorer/mainnet) records its prelaunch status.
+The [wallet guide](https://p2party.com/wallet) explains receiving, spending and restoring a testnet wallet. Visitors can check one public read handle without connecting a wallet. The [P2PARTY ledger explorer](https://p2party.com/explorer) reads native testnet receipts by height or move ID. The [mainnet status page](https://p2party.com/explorer/mainnet) records its prelaunch status.
 
-The public [protocol guide](https://p2party.com/protocol) explains the room handshake, metadata visibility and native testnet RPC. The [roadmap](https://p2party.com/roadmap) records measured results from the local two-store timing study and signed receipt-history proofs, and tracks the separately administered replica and wallet state proofs.
+The public [protocol guide](https://p2party.com/protocol) explains the room handshake, metadata visibility and native testnet RPC. The [roadmap](https://p2party.com/roadmap) records measured results from the local two-store timing study and signed receipt-history proofs, and tracks work toward separately administered validators.
+
+The [whitepaper](https://p2party.com/whitepaper) gives a worked purchase through two volunteer relays, specifies what a wallet checks against its receiving commitment and explains the local four-validator ordering experiment.
+
+Two field notes cover the [November discrete-log and structured-LWE results](https://p2party.com/blog/ai-math-and-p2party-keys) and [an offline restore with both public wallet suites](https://p2party.com/blog/restoring-a-p2party-wallet).
 
 ## What works
 
@@ -151,7 +155,7 @@ version does not inherit a previous version's browser test result.
 ## Deploy
 
 The web build is static HTML and assets under `dist/`. Deploy with an HTTPS
-origin that serves the prerendered routes. For the included S3-compatible
+origin that serves the prerendered routes. The currently configured Cloudflare-to-S3 website endpoint supports HTTP only. Origin authentication is an open infrastructure item. For the included S3-compatible
 uploader, fill in a local `.env` using the names in `.env.example`, then run:
 
 ```bash

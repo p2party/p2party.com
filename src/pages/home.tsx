@@ -26,7 +26,7 @@ const features = [
         <path d='M9 12h6' />
       </svg>
     ),
-    title: "Post-Quantum Handshake",
+    title: "Hybrid Key Exchange",
     desc: "Every pair of browsers runs an interactive 3DH plus a room-fixed ML-KEM-512/768/1024 exchange, mixes both into one key, and hands it to a per-peer Double Ratchet. Ed25519 identities cross-sign each side's X25519 key, and three chained confirmation flights bind the transcript. Messages never touch the signaling server.",
   },
   {
@@ -170,6 +170,22 @@ const results = [
     body: "In a local two-browser timing study, reordering when browsers published to the stores saved about eight seconds when reads had an added 800 ms delay. Ordinary local reads showed no whole-window saving.",
     href: "/roadmap",
   },
+  {
+    title:
+      "What the new discrete-log and lattice papers mean for rooms and wallets",
+    body: "We checked the November results against the curves and lattice parameters used here. Rooms still use classical identity signatures. Testnet wallets can also receive under a hash-based signing suite.",
+    href: "/blog/ai-math-and-p2party-keys",
+  },
+  {
+    title: "Paying a route through several volunteers",
+    body: "In local browser tests, a payer chose two or three relays and capped the price. Each volunteer earned one test P2PARTY for a delivered record. Retrying the payments did not pay anyone twice.",
+    href: "/whitepaper",
+  },
+  {
+    title: "A wallet proof checked against three validator signatures",
+    body: "On one machine, four validator identities agreed on an order for native transfers. Three signed the resulting ledger roots. A wallet verified an unspent unit and rejected a proof from an older checkpoint.",
+    href: "/roadmap",
+  },
 ];
 
 const HomePage = () => {
@@ -214,17 +230,7 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className='relative isolate flex min-h-[calc(100svh-var(--safe-area-inset-top)-var(--safe-area-inset-bottom))] w-full flex-col items-center overflow-hidden bg-white px-6 dark:bg-black'>
-      {/* Retro dot grid */}
-      <div
-        className='pointer-events-none absolute inset-0 text-orange-500 opacity-[0.08] dark:opacity-[0.05]'
-        style={{
-          backgroundImage:
-            "radial-gradient(currentColor 1px, transparent 1.5px)",
-          backgroundSize: "24px 24px",
-        }}
-        aria-hidden
-      />
+    <main className='relative flex w-full flex-col items-center px-6'>
       {/* Hero */}
       <div className='relative grid w-full max-w-6xl grid-cols-1 items-center gap-6 pt-8 pb-10 sm:gap-8 sm:pt-14 sm:pb-14 md:grid-cols-2 md:items-center md:gap-x-10 md:gap-y-4 lg:gap-x-12'>
         {/* Headline — first on every screen */}
@@ -353,11 +359,11 @@ const HomePage = () => {
       {/* How it works — the offensive protocol */}
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
-          How&nbsp;
+          How{" "}
           <span className='text-orange-600 dark:text-orange-500'>
             Offensive
-          </span>
-          &nbsp;Cryptography Works
+          </span>{" "}
+          Cryptography Works
         </h2>
         <p className='mx-auto mb-10 max-w-xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
           Every cell on the wire is the same size. Its timing and the number of
@@ -387,7 +393,7 @@ const HomePage = () => {
       {/* Release features and measured outcomes */}
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
-          What It Does&nbsp;
+          What It Does{" "}
           <span className='text-orange-600 dark:text-orange-500'>Today</span>
         </h2>
         <p className='mx-auto mb-8 max-w-2xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
@@ -465,7 +471,7 @@ const HomePage = () => {
       {/* Infrastructure */}
       <div className='relative mb-20 w-full max-w-6xl'>
         <h2 className='mb-2 text-center text-3xl font-black tracking-[-0.055em] text-zinc-950 sm:text-4xl dark:text-white'>
-          Minimal&nbsp;
+          Minimal{" "}
           <span className='text-orange-600 dark:text-orange-500'>
             Infrastructure
           </span>
@@ -549,58 +555,13 @@ const HomePage = () => {
             <p className='text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
               A last-resort relay for the rare case when two peers are both
               behind symmetric NATs. Traffic is still end-to-end encrypted — the
-              relay cannot read it. All servers are hosted in the EU on Hetzner.
+              relay cannot read it. The signaling and TURN servers run on
+              Hetzner in the EU.
             </p>
           </div>
         </div>
       </div>
-      {/* Footer */}
-      <footer className='relative mb-4 w-full text-center'>
-        <div className='flex flex-wrap items-center justify-center gap-x-4 gap-y-1'>
-          <Link
-            href='/privacy-policy'
-            className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
-          >
-            Privacy
-          </Link>
-          <span className='text-zinc-300 dark:text-zinc-700'>·</span>
-          <Link
-            href='/terms-of-service'
-            className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
-          >
-            Terms
-          </Link>
-          <span className='text-zinc-300 dark:text-zinc-700'>·</span>
-          {[
-            ["Protocol", "/protocol"],
-            ["Roadmap", "/roadmap"],
-            ["Explorer", "/explorer"],
-            ["Whitepaper", "/whitepaper"],
-            ["Field notes", "/blog"],
-          ].map(([label, href]) => (
-            <Link
-              key={href}
-              href={href}
-              className='rounded text-[13px] text-zinc-500 hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
-            >
-              {label}
-            </Link>
-          ))}
-          <span className='text-zinc-300 dark:text-zinc-700'>·</span>
-          <Link
-            href='https://github.com/p2party/p2party.com'
-            target='_blank'
-            rel='noopener noreferrer'
-            className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'
-          >
-            Website source
-          </Link>
-        </div>
-        <p className='mt-1.5 text-[13px] text-zinc-500 dark:text-zinc-400'>
-          &copy; 2026 p2party. All rights reserved.
-        </p>
-      </footer>
-    </div>
+    </main>
   );
 };
 

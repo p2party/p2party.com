@@ -1,5 +1,12 @@
 # Web client changelog
 
+## November 27, 2026 — Site navigation and ledger research
+
+- Public pages now share the landing and room UI’s cat mark, typography, square borders and orange accents. The protocol, roadmap and whitepaper include section links. The explorer retains receipt lookup, permanent links and the prelaunch mainnet view.
+- Published field notes on [recent AI-assisted cryptography research](src/content/blog/11-ai-math-and-p2party-keys.md) and [recovering a wallet](src/content/blog/12-restoring-a-p2party-wallet.md).
+- The [wallet guide](src/content/wallet.md) documents the two private files needed to restore a testnet receive commitment. Its read-only balance lookup accepts a public handle and checks the network before querying.
+- The [whitepaper](src/content/whitepaper.md) describes choosing and paying multiple relays, how validators vote on transaction order, and how a wallet can verify an owner commitment and unspent state. The [roadmap](src/content/roadmap.md) distinguishes local experiments from the live single-operator testnet.
+
 ## November 27, 2026 — P2PARTY ledger explorer
 
 - Browse [Testnet 1](https://p2party.com/explorer/testnet), inspect signed transfer bytes and share a receipt by move ID or height. The [mainnet page](https://p2party.com/explorer/mainnet) shows its prelaunch status.

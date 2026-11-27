@@ -20,11 +20,9 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 
 const PrivacyPage = () => {
   return (
-    <div className='flex min-h-screen w-full justify-center bg-white px-6 py-16 dark:bg-black'>
-      <article className='w-full max-w-3xl'>
-        <h1 className='mb-2 text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl dark:text-white'>
-          Privacy Policy
-        </h1>
+    <main className='site-legal'>
+      <article className='site-paper'>
+        <h1 className='site-title mb-2'>Privacy Policy</h1>
         <p className='mb-8 text-sm text-zinc-400 dark:text-zinc-500'>
           Effective date: 17 October 2024 &middot; Last updated: 27 November
           2026
@@ -259,13 +257,11 @@ const PrivacyPage = () => {
         {/* 6 */}
         <SectionHeading>6. International Data Transfers</SectionHeading>
         <Para>
-          All servers — signaling, STUN, and TURN — are hosted on{" "}
-          <strong>Hetzner Online GmbH</strong> infrastructure located in the{" "}
-          <strong>European Union</strong>. We do not transfer personal data
-          outside the EU/EEA. Should this change in the future, we will ensure
-          appropriate safeguards (such as Standard Contractual Clauses) are in
-          place in accordance with Chapter V of the GDPR before any transfer
-          occurs.
+          Hetzner Online GmbH hosts the signaling, STUN and TURN services in the
+          European Union. The website uses Cloudflare for delivery and Amazon S3
+          for static files. Cloudflare processes website requests, including
+          connection addresses, at its edge. The location of the signaling
+          database does not establish where a website request was processed.
         </Para>
 
         {/* 7 */}
@@ -393,8 +389,8 @@ const PrivacyPage = () => {
             only what section 3.1 lists.
           </li>
           <li>
-            Infrastructure hosted on Hetzner (EU) with hardened server
-            configurations.
+            The signaling and relay hosts run on Hetzner in the EU. Static web
+            content is delivered through Cloudflare.
           </li>
         </Ul>
         <Para>
@@ -453,8 +449,8 @@ const PrivacyPage = () => {
             (last octet masked) and retained for no more than 30 days.
           </li>
           <li>
-            All infrastructure is located exclusively within the European Union
-            (Hetzner, Nuremberg, Germany).
+            Signaling and relay infrastructure is hosted in the European Union.
+            Website delivery is described in section 6.
           </li>
         </Ul>
         <Para>
@@ -506,7 +502,7 @@ const PrivacyPage = () => {
           </Link>
         </div>
       </article>
-    </div>
+    </main>
   );
 };
 

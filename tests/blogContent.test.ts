@@ -3,8 +3,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 type BlogManifest = {
-  series: { id: string; status: string };
+  series: { id: string; status: string; author: { name: string } };
   posts: Array<{
+    author?: string;
     order: number;
     slug: string;
     href: string;
@@ -49,7 +50,9 @@ describe("protocol-v3 blog series", () => {
       const markdown = readFileSync(join(contentRoot, post.file), "utf8");
       expect(markdown.startsWith("---\n")).toBe(true);
       expect(markdown).toContain(`slug: "${post.slug}"`);
-      expect(markdown).toContain('author: "Dimitris Karoukis"');
+      expect(markdown).toContain(
+        `author: "${post.author ?? manifest.series.author.name}"`,
+      );
       expect(markdown).not.toContain("—");
     }
   });

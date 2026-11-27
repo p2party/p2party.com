@@ -9,6 +9,10 @@
   },
   "whitepaper": {
     "title": "P2PARTY whitepaper",
-    "description": "A draft economic design for relay payments, sponsored rooms, volunteer relays and independent validation. Open for review before mainnet."
+    "description": "How a payer can buy a route through several relays, how validators agree on transfer order, and what a wallet can prove. A draft for review before mainnet."
+  },
+  "wallet": {
+    "title": "P2PARTY wallet",
+    "description": "To spend or restore a testnet unit, bring its signing key and matching receive nonce. To receive a unit, share a fresh public payment descriptor."
   }
 }

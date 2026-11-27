@@ -24,6 +24,7 @@ const routes = [
   "/explorer/",
   "/explorer/mainnet/",
   "/whitepaper/",
+  "/wallet/",
   "/blog/",
   ...manifest.posts.map((post) => post.href + "/"),
   "/rooms/",
@@ -85,6 +86,47 @@ try {
       scripts.every((text) => !text.trim()),
       `${pathname} contains executable inline scripts`,
     );
+    if (pathname !== "/rooms/" && pathname !== "/r/") {
+      const header = page.getByRole("navigation", {
+        name: "Site navigation",
+        exact: true,
+      });
+      assert.equal(
+        await header.getByRole("link", { name: "Rooms" }).count(),
+        1,
+        pathname,
+      );
+      for (const width of [320, 375, 1280]) {
+        await page.setViewportSize({ width, height: 840 });
+        assert(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+          pathname + " overflows at " + width,
+        );
+      }
+      if (
+        ["/protocol/", "/whitepaper/", "/roadmap/", "/wallet/"].includes(
+          pathname,
+        )
+      ) {
+        const current = header.locator('a[aria-current="page"]');
+        assert.equal(await current.getAttribute("href"), pathname.slice(0, -1));
+        const sections = page.getByRole("navigation", {
+          name: "On this page",
+          exact: true,
+        });
+        for (const href of await sections
+          .getByRole("link")
+          .evaluateAll((links) => links.map((link) => link.hash))) {
+          assert.equal(
+            await page.locator(href).count(),
+            1,
+            pathname + " " + href,
+          );
+        }
+      }
+    }
     if (pathname === "/r/") {
       await page
         .getByRole("button", { name: "Connect", exact: true })

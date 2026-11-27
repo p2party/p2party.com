@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Route, Routes } from "react-router";
 
+import { SiteFrame } from "./components/SiteFrame";
 import type { RoutePages } from "./pages/registry";
 
 /**
@@ -29,77 +30,89 @@ export const AppRoutes = ({ pages }: { pages: RoutePages }) => {
 
   return (
     <Routes>
-      <Route
-        index
-        element={
-          <Suspense>
-            <Home />
-          </Suspense>
-        }
-      />
-      <Route
-        path='/privacy-policy'
-        element={
-          <Suspense>
-            <Privacy />
-          </Suspense>
-        }
-      />
-      <Route
-        path='/terms-of-service'
-        element={
-          <Suspense>
-            <TOS />
-          </Suspense>
-        }
-      />
-      <Route
-        path='/session-lab'
-        element={
-          <Suspense>
-            <SessionLab />
-          </Suspense>
-        }
-      />
-      {(["protocol", "roadmap", "whitepaper"] as const).map((page) => (
+      <Route element={<SiteFrame />}>
         <Route
-          key={page}
-          path={`/${page}`}
+          index
           element={
             <Suspense>
-              <Guide page={page} />
+              <Home />
             </Suspense>
           }
         />
-      ))}
-      {(["overview", "testnet", "mainnet"] as const).map((page) => (
         <Route
-          key={page}
-          path={page === "overview" ? "/explorer" : `/explorer/${page}`}
+          path='/privacy-policy'
           element={
             <Suspense>
-              <Explorer page={page} />
+              <Privacy />
             </Suspense>
           }
         />
-      ))}
-      <Route
-        path='/blog'
-        element={
-          <Suspense>
-            <Blog />
-          </Suspense>
-        }
-      />
-      <Route
-        path='/blog/:slug'
-        element={
-          <Suspense>
-            <BlogPost />
-          </Suspense>
-        }
-      />
+        <Route
+          path='/terms-of-service'
+          element={
+            <Suspense>
+              <TOS />
+            </Suspense>
+          }
+        />
+        <Route
+          path='/session-lab'
+          element={
+            <Suspense>
+              <SessionLab />
+            </Suspense>
+          }
+        />
+        {(["protocol", "roadmap", "whitepaper", "wallet"] as const).map(
+          (page) => (
+            <Route
+              key={page}
+              path={`/${page}`}
+              element={
+                <Suspense>
+                  <Guide page={page} />
+                </Suspense>
+              }
+            />
+          ),
+        )}
+        {(["overview", "testnet", "mainnet"] as const).map((page) => (
+          <Route
+            key={page}
+            path={page === "overview" ? "/explorer" : `/explorer/${page}`}
+            element={
+              <Suspense>
+                <Explorer page={page} />
+              </Suspense>
+            }
+          />
+        ))}
+        <Route
+          path='/blog'
+          element={
+            <Suspense>
+              <Blog />
+            </Suspense>
+          }
+        />
+        <Route
+          path='/blog/:slug'
+          element={
+            <Suspense>
+              <BlogPost />
+            </Suspense>
+          }
+        />
 
+        <Route
+          path='*'
+          element={
+            <Suspense>
+              <Home />
+            </Suspense>
+          }
+        />
+      </Route>
       <Route
         path='rooms'
         element={
@@ -139,15 +152,6 @@ export const AppRoutes = ({ pages }: { pages: RoutePages }) => {
           }
         />
       </Route>
-
-      <Route
-        path='*'
-        element={
-          <Suspense>
-            <Home />
-          </Suspense>
-        }
-      />
     </Routes>
   );
 };

@@ -17,26 +17,36 @@ try {
   await context.route("https://signaling.p2party.com/rpc", async (route) => {
     if (unavailable) return route.fulfill({ status: 503, body: "Unavailable" });
     const calls = route.request().postDataJSON();
-    const result = calls.map(({ id, method }) => {
+    const result = calls.map(({ id, method, params }) => {
+      if (method === "eth_getBalance")
+        assert.deepEqual(params, [
+          "0x5ea5736cc5cd0e175c415c4dd31f67f71b34e872",
+          "0x0",
+        ]);
       methods.push(method);
       assert(
-        ["eth_chainId", "demos_getHead", "demos_getTransferByHeight"].includes(
-          method,
-        ),
+        [
+          "eth_chainId",
+          "demos_getHead",
+          "demos_getTransferByHeight",
+          "eth_getBalance",
+        ].includes(method),
       );
       return {
         jsonrpc: "2.0",
         id,
         result:
-          method === "eth_chainId"
-            ? "0x50325054"
-            : method === "demos_getHead"
-              ? {
-                  chainId:
-                    "0x09a0ffa8e6af6aeb11d26671c6c76648965d60509cc3b7a1a4b454b6ec73c760",
-                  height: "0x0",
-                }
-              : null,
+          method === "eth_getBalance"
+            ? "0x1"
+            : method === "eth_chainId"
+              ? "0x50325054"
+              : method === "demos_getHead"
+                ? {
+                    chainId:
+                      "0x09a0ffa8e6af6aeb11d26671c6c76648965d60509cc3b7a1a4b454b6ec73c760",
+                    height: "0x0",
+                  }
+                : null,
       };
     });
     await route.fulfill({ json: result });
@@ -80,9 +90,36 @@ try {
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   );
+  methods.length = 0;
+  await page
+    .getByRole("navigation", { name: "Site navigation" })
+    .getByRole("link", { name: "Wallet", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "P2PARTY wallet", exact: true })
+    .waitFor();
+  await page
+    .getByLabel("Check a Testnet 1 balance")
+    .fill("0x" + "a".repeat(128));
+  await page
+    .getByRole("button", { name: "Check balance", exact: true })
+    .click();
+  await page.getByText(/40 hexadecimal digits/).waitFor();
+  assert.deepEqual(methods, []);
+  await page
+    .getByRole("button", { name: "Use a public genesis example" })
+    .click();
+  assert.deepEqual(methods, []);
+  await page
+    .getByRole("button", { name: "Check balance", exact: true })
+    .click();
+  await page
+    .getByText("1 test P2PARTY at height 0.", { exact: true })
+    .waitFor();
+  assert.deepEqual(methods, ["demos_getHead", "eth_chainId", "eth_getBalance"]);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS explorer navigation, mainnet isolation, genesis, missing receipt, retry and mobile width",
+    "PASS explorer navigation, mainnet isolation, genesis, missing receipt, retry, mobile width and read-only wallet balance",
   );
 } finally {
   await browser.close();

@@ -1,14 +1,15 @@
 import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 
-import { BlogChrome } from "../components/blog/BlogChrome";
+import { WalletBalance } from "../components/WalletBalance";
+import wallet from "../content/wallet.md?raw";
 import guides from "../content/guides.json";
 import protocol from "../content/protocol.md?raw";
 import roadmap from "../content/roadmap.md?raw";
 
 import whitepaper from "../content/whitepaper.md?raw";
 
-const articles = { protocol, roadmap, whitepaper };
+const articles = { protocol, roadmap, whitepaper, wallet };
 
 const Guide = ({ page }: { page: keyof typeof guides }) => {
   const { title, description } = guides[page];
@@ -20,28 +21,62 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
     };
   }, [title]);
 
+  const headings = [...articles[page].matchAll(/^## (.+)$/gm)].map(
+    (match) => match[1],
+  );
+  const anchor = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-$/, "");
+  if (page === "wallet") headings.push("Check a public balance");
+  const contents = (
+    <ul>
+      {headings.map((heading) => (
+        <li key={heading}>
+          <a href={`#${anchor(heading)}`}>{heading}</a>
+        </li>
+      ))}
+    </ul>
+  );
   return (
-    <BlogChrome>
-      <main
-        id='blog-content'
-        className='relative mx-auto max-w-4xl px-5 sm:px-8'
-      >
-        <header className='border-b border-zinc-900/20 pt-14 pb-8 lg:pt-20 dark:border-white/20'>
-          <h1 className='text-5xl font-black tracking-[-0.055em] sm:text-6xl'>
-            {title}
-          </h1>
-          <p className='mt-5 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300'>
-            {description}
-          </p>
-          <p className='mt-5 font-mono text-xs text-zinc-500 dark:text-zinc-400'>
-            Updated <time dateTime='2026-11-27'>27 November 2026</time>
-          </p>
-        </header>
-        <article className='blog-prose py-8'>
-          <ReactMarkdown>{articles[page]}</ReactMarkdown>
-        </article>
-      </main>
-    </BlogChrome>
+    <main className='site-reading'>
+      <header className='site-reading-header'>
+        <h1 className='site-title'>{title}</h1>
+        <p className='mt-4 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300'>
+          {description}
+        </p>
+        <p className='mt-4 font-mono text-xs text-zinc-600 dark:text-zinc-400'>
+          Updated <time dateTime='2026-11-27'>27 November 2026</time>
+        </p>
+      </header>
+      <div className='site-reading-grid'>
+        <nav aria-label='On this page' className='site-contents'>
+          <details className='site-mobile-contents'>
+            <summary>On this page</summary>
+            {contents}
+          </details>
+          <div className='site-desktop-contents'>
+            <h2>On this page</h2>
+            {contents}
+          </div>
+        </nav>
+        <div className='site-article-column'>
+          <article className='site-paper blog-prose'>
+            <ReactMarkdown
+              components={{
+                h2: ({ children }) => (
+                  <h2 id={anchor(String(children))}>{children}</h2>
+                ),
+              }}
+            >
+              {articles[page]}
+            </ReactMarkdown>
+          </article>
+          {page === "wallet" && <WalletBalance />}
+        </div>
+      </div>
+    </main>
   );
 };
 

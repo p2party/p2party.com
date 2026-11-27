@@ -32,7 +32,7 @@ targets.
 p2party is research-stage software and has not completed an independent
 security audit. WebRTC peers can learn network metadata inherent to direct
 connectivity. The signaling service sees room membership and timing when peers
-join through legacy signaling; invitation fragments do not hide that admission
+join through signaling v5; invitation fragments do not hide that admission
 from the signaling operator.
 
 Immediate delivery and policy-bound scheduled cover are implemented. Scheduled
@@ -52,3 +52,5 @@ browser, extension, or application origin can access them. Recovery phrases
 are shown locally and must never appear in logs or reports. Peer messages are
 rendered as text, and executable attachments are downloaded instead of opened
 as documents on the application's origin.
+
+The SDK combines X25519 with ML-KEM for key agreement and authenticates peers with Ed25519. The public ledger supports both lattice-based ML-DSA-65 and hash-based SLH-DSA-SHA2-192s for spending. Its single operator determines the public history. The November 2026 review records the scope of recent research and the conditions that would trigger migration. [Cryptographic assumptions](https://p2party.com/blog/ai-math-and-p2party-keys) · [Wallet recovery](https://p2party.com/wallet)
