@@ -7,17 +7,15 @@ import { readFileSync } from "fs";
 import { randomBytes } from "crypto";
 
 const APP = process.env.APP_URL ?? "http://localhost:5190";
-// Optional local v4 signaling relay (e.g. the p2party-js docs/e2e/appstack
-// relay). Unset → the app's default production signaling server. A v4 client
-// fails closed against a v3 signaling server, so until the production server
-// announces protocolVersion 4 this override is the only way to run the E2E.
+// Set SIGNALING_URL to the WebSocket endpoint of the v5 server under test.
+// Otherwise the site uses its configured default.
 const SIGNALING = process.env.SIGNALING_URL ?? "";
 const WASM = readFileSync(
   new URL("../node_modules/p2party/lib/libcrypto.wasm", import.meta.url),
 );
 
-// The server/database key stays canonical hex, while the browser receives the
-// same 256-bit capability only in the fragment (which HTTP never transmits).
+// The browser gets the capability from the fragment and sends its SHA-512
+// room locator in signaling frames.
 const roomCapability = randomBytes(32);
 const roomUrl = roomCapability.toString("hex");
 const roomPath = `${APP}/r#v1.${roomCapability.toString("base64url")}`;

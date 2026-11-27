@@ -204,22 +204,18 @@ after `npx cap sync ios`:
 swift e2e/native-csp-webkit.swift ios/App/App/public
 ```
 
-### The iOS app needs p2party 0.15.0 or later
+### Loading the SDK's WASM in iOS
 
-With the vendored p2party 0.14.10, every route that loads the SDK fails on
-iOS. `src/protocol/sdk.ts` points the SDK at `/vendor/.../libcrypto.wasm`
-relative to the page, which on iOS is a `capacitor:` URL, and 0.14.10's
-`setWasmSourceUrl` accepts only `http:` and `https:`. The rooms page throws
-`TypeError: WASM source must use http: or https:` when `sdk.ts` loads, with or
-without the policy. The home page and the session lab's local crypto proof,
-which passes its WASM bytes directly, work with no violations. Android
-(`https://localhost`) and the web are not affected.
+The iOS app serves the WASM from `capacitor://localhost/vendor/.../libcrypto.wasm`.
+The vendored SDK candidate accepts the page's own scheme and host and checks
+the integrity of the fetched bytes. The earlier 0.14.10 SDK rejected this URL
+in `setWasmSourceUrl` when the rooms page loaded. The WebKit check covers the
+room dialog and local crypto proof under the app's custom scheme.
 
-The fix belongs in the SDK, not here: from 0.15.0 its loader accepts a WASM
-source on the page's own origin whatever the scheme, because it checks the
-hash of the fetched bytes itself. Until the site vendors 0.15.0,
-`e2e/native-csp-webkit.swift` is expected to fail at the room dialog. Run it
-again once the new SDK is vendored.
+On 2026-11-27, the WebKit check opened the room dialog and completed the
+local crypto proof with the 0.15.0-rc.0 candidate on `capacitor://localhost`.
+Chromium also rendered the invitation and fetched the self-hosted WASM. Both
+checks recorded zero CSP violations or page errors.
 
 ## Received attachments and the room QR code
 

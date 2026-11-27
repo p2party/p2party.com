@@ -97,10 +97,11 @@ const PrivacyPage = () => {
             created only after the client proves possession of the key.
           </li>
           <li>
-            <strong>One row per room:</strong> the SHA-512 hash of the room
-            capability &mdash; not the capability itself &mdash; and which
-            identities are members of it. The server receives the capability
-            when you join, although it stores only its hash. Membership is
+            <strong>One row per room:</strong> the room identifier and the
+            identities that belong to it. With signaling v5, your browser
+            computes the identifier by hashing the invitation capability with
+            SHA-512. It sends that identifier whenever you join or leave.
+            Membership is
             removed when you leave the room from inside the app; closing the tab
             or losing the network does not remove it. Empty rooms not updated
             for 24 hours become eligible for bounded cleanup; occupied rooms,
@@ -114,9 +115,9 @@ const PrivacyPage = () => {
         </Ul>
         <Para>
           The server sends a ping every 10 seconds and closes a socket that has
-          not answered within 5 seconds. It does not tell the other members of a
-          room when someone&rsquo;s socket closes; your app works that out from
-          its own connections.
+          not answered within 5 seconds. Other online members can receive a
+          notification when you leave or when your last signaling socket
+          closes. These notifications reveal the timing of your presence.
         </Para>
         <Para>
           What this means in practice: the operator of the signaling service can
@@ -155,9 +156,9 @@ const PrivacyPage = () => {
         <Para>
           A relay is a transport, not a privacy proxy. While an allocation is
           open, the relay necessarily handles your IP address, the times you
-          connect, and the volume of bytes passing through. The credential the
-          signaling server issues for it expires after one hour and its username
-          field contains your client&rsquo;s Ed25519 public key.
+          connect, and the volume of bytes passing through. In signaling v5 the
+          relay username contains an expiry time and an opaque tag. The relay
+          can link allocations that use the same tag until it rotates.
         </Para>
 
         <h3 className='mt-6 mb-2 text-lg font-semibold text-zinc-800 dark:text-zinc-100'>

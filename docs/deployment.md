@@ -75,7 +75,7 @@ curl -sS -L -D - -o /dev/null https://p2party.com/r
 
 ## Verify a deployment
 
-Check the server version and the self-hosted cryptography artifact:
+For the September 2026 deployment, check the server version and the self-hosted cryptography artifact:
 
 ```bash
 curl -fsS https://signaling.p2party.com/health

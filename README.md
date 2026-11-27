@@ -67,8 +67,9 @@ members to that service.
 ## Security and privacy boundaries
 
 Room capability and policy are carried in `/r#v1.<capability>...`, so they are
-absent from the HTTP request for the invitation page. Joining still sends the
-capability to the signaling service. Direct WebRTC connections also reveal
+absent from the HTTP request for the invitation page. With signaling v5 the
+browser hashes the capability with SHA-512 and sends the resulting room
+identifier to the signaling service. Direct WebRTC connections also reveal
 network metadata to peers.
 
 PIN bytes are retained only in memory and cleared when forgotten. Identity
@@ -88,9 +89,12 @@ recovery bounds for mobile or wide-area networks.
 
 ## SDK artifacts
 
-The current dependency is `file:vendor/p2party-0.14.10.tgz`. Its self-hosted WASM
-is `public/vendor/p2party-0.14.10/libcrypto.wasm`; `src/protocol/wasm.ts` selects
-that path. The normal SDK loader verifies the WASM against its built-in SRI pin.
+This checkout uses the unpublished SDK candidate `file:vendor/p2party-0.15.0-rc.0.tgz`.
+For local room tests, set **Settings → Signaling Server URL** to the WebSocket
+URL of your signaling v5 server. The September production release used v4.
+The app loads
+`public/vendor/p2party-0.15.0-rc.0/libcrypto.wasm` through `src/protocol/wasm.ts`.
+The normal SDK loader verifies the WASM against its built-in SRI pin.
 The experimental `/session-lab` entry receives fetched WASM bytes directly;
 its release provenance is checked at build time rather than by browser SRI.
 
@@ -203,11 +207,9 @@ after any change to that policy or to the SDK version. See
 The iOS app requires iOS or iPadOS 27.0 and the Android app Android 10; see
 [Supported browsers and devices](#supported-browsers-and-devices).
 
-The iOS app also needs p2party 0.15.0 or later. With the vendored 0.14.10 every
-route that loads the SDK fails on iOS, because 0.14.10 accepts a WASM source
-only over `http:` or `https:` and the iOS app is served from `capacitor://`.
-`e2e/native-csp-webkit.swift` is expected to fail at the room dialog until the
-site vendors the new SDK; run it again then.
+The candidate SDK accepts the iOS app's `capacitor://localhost` WASM source
+and verifies the fetched bytes against its integrity pin. The native WebKit
+check in `e2e/native-csp-webkit.swift` exercises this path on macOS.
 
 Keep native archives, signing keys, provisioning profiles, and copied web build
 outputs out of Git. The application ID is `com.p2party.app`; public association

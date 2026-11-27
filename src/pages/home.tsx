@@ -155,7 +155,7 @@ const shipped = [
 const boundaries = [
   {
     title: "The signaling operator sees who is in the room",
-    body: "It receives the room capability when you join and stores its hash, the identity keys in the room, and connection times. Separate one-store and two-store blind-rendezvous prototypes run locally, but this site's room flow still uses ordinary signaling. The experiments have not established relationship privacy.",
+    body: "With signaling v5, your browser sends a hash of the invitation capability. The server can link that room identifier to its members’ identity keys and connection times. Separate one-store and two-store blind-rendezvous prototypes run locally, but this site's room flow still uses ordinary signaling. The experiments have not established relationship privacy.",
   },
   {
     title: "Abuse limits do not count people",
@@ -402,8 +402,7 @@ const HomePage = () => {
           <span className='text-orange-600 dark:text-orange-500'>Today</span>
         </h2>
         <p className='mx-auto mb-8 max-w-2xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          SDK 0.14.10 and signaling server 0.1.4 include the latest recovery and
-          resource-limit fixes. Read the{" "}
+          Read about the September release in the{" "}
           <Link
             href='/blog/after-the-desync-fixes'
             className='text-orange-700 underline underline-offset-4 dark:text-orange-400'
