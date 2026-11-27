@@ -18,6 +18,8 @@ A visitor could opt in to forward encrypted P2Party cells between two peers. The
 
 Participation should be off until the visitor chooses a time and byte budget. Show bytes in both directions, active circuits and a stop button. Start with one intermediate hop. Browser suspension, tab closure and NAT can interrupt service. The sender needs a fresh route or a TURN fallback, and must retain the unacknowledged data needed for recovery. If a volunteer's own link uses paid TURN, show who pays that leg before enrolling them.
 
+**Local prototype.** Three foreground Chromium contexts connected over two loopback WebRTC data channels. The first browser encrypted a 1,024-byte payload using SDK 0.15.1, the middle browser opted in to forward the ciphertext, and the third recovered every byte. The middle browser’s own session could not decrypt it. With forwarding disabled, the budget exhausted, the time limit expired or the volunteer stopped, the relay dropped further traffic. This was a local experiment. Today’s public website does not enroll visitors as relays.
+
 A volunteer sees its neighbors and the timing and volume of a circuit. One forwarding hop does not establish sender anonymity. Keep wallet identifiers out of discovery messages and use short-lived circuit identifiers. Begin with donated capacity, then test capped payments from the party who requested service. Paying minted rewards for self-reported bytes would let one operator manufacture both ends of a transfer. Even two signed endpoint receipts cannot prove that two different people wanted the traffic.
 
 ## Visitors as verifiers
