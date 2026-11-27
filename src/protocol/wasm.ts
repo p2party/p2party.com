@@ -13,7 +13,7 @@
  * lockfile version and fails the build if they diverge.
  */
 export const SELF_HOSTED_WASM_PATH =
-  "/vendor/p2party-0.15.0-rc.0/libcrypto.wasm";
+  "/vendor/p2party-0.15.0-rc.1/libcrypto.wasm";
 
 let cachedWasmBinary: Promise<ArrayBuffer> | undefined;
 

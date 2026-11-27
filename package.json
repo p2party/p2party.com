@@ -43,7 +43,7 @@
     "@heroicons/react": "^2.2.0",
     "clsx": "^2.1.1",
     "framer-motion": "^14.14.0",
-    "p2party": "file:vendor/p2party-0.15.0-rc.0.tgz",
+    "p2party": "file:vendor/p2party-0.15.0-rc.1.tgz",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

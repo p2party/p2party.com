@@ -89,11 +89,11 @@ recovery bounds for mobile or wide-area networks.
 
 ## SDK artifacts
 
-This checkout uses the unpublished SDK candidate `file:vendor/p2party-0.15.0-rc.0.tgz`.
+This checkout uses the unpublished SDK candidate `file:vendor/p2party-0.15.0-rc.1.tgz`.
 For local room tests, set **Settings → Signaling Server URL** to the WebSocket
 URL of your signaling v5 server. The September production release used v4.
 The app loads
-`public/vendor/p2party-0.15.0-rc.0/libcrypto.wasm` through `src/protocol/wasm.ts`.
+`public/vendor/p2party-0.15.0-rc.1/libcrypto.wasm` through `src/protocol/wasm.ts`.
 The normal SDK loader verifies the WASM against its built-in SRI pin.
 The experimental `/session-lab` entry receives fetched WASM bytes directly;
 its release provenance is checked at build time rather than by browser SRI.
