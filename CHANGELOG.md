@@ -1,5 +1,9 @@
 # Web client changelog
 
+## November 27, 2026 — Rendezvous timing results
+
+- The roadmap links to the schedules, reproduction steps and both sets of loopback trials for the two-store rendezvous experiment. [Timing results](src/content/roadmap.md#tested-locally)
+
 ## November 27, 2026 — Receive while offline
 
 - The landing page, wallet menu, rooms sidebar and guide link directly to the separate wallet’s receive screen. The guide covers fresh, backup-confirmed requests, sending while the recipient is offline, and checking inclusion at a verified height after restore.
