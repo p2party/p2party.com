@@ -126,7 +126,7 @@ export const purgeCauses = (error: unknown, depth = 0): string[] => {
 const SUCCESS_DETAIL: Record<PurgeTarget, string[]> = {
   identity: [
     "The identity key, the X25519 key it signs and the record of how it was derived were deleted from this device, and signaling is disconnected.",
-    "Rooms, messages and your address book were not touched. Nothing reconnects on its own: open the room again to come back.",
+    "Local rooms, messages and your address book were not touched. Nothing reconnects on its own: open the room again to come back.",
   ],
   room: [
     "This room's messages, its cached PIN and its WebRTC transports are gone from this device.",
@@ -144,14 +144,58 @@ const SUCCESS_LABEL: Record<PurgeTarget, string> = {
   everything: "Everything purged",
 };
 
-export const purgeSucceeded = (target: PurgeTarget): PurgeOutcome => ({
-  target,
-  tone: "good",
-  label: SUCCESS_LABEL[target],
-  detail: SUCCESS_DETAIL[target],
-  causes: [],
-  retryable: false,
-});
+/** Older vendored SDKs resolve without a membership receipt. */
+export interface MembershipReceipt {
+  unacknowledgedRoomIds: readonly string[];
+  roomInventoryComplete: boolean;
+}
+
+const remoteDetails = (receipt?: MembershipReceipt): string[] => {
+  if (!receipt)
+    return [
+      "The SDK did not report server acknowledgements. Some room memberships may remain on the signaling server.",
+    ];
+  const details: string[] = [];
+  if (receipt.unacknowledgedRoomIds.length)
+    details.push(
+      "The server may still list this identity in rooms " +
+        receipt.unacknowledgedRoomIds.join(", ") +
+        ".",
+    );
+  if (!receipt.roomInventoryComplete)
+    details.push(
+      "The saved-room list could not be fully checked. Additional memberships may remain on the signaling server.",
+    );
+  if (!details.length)
+    details.push(
+      "The server acknowledged every requested leave for the rooms known to this device.",
+    );
+  return details;
+};
+
+export const purgeSucceeded = (
+  target: PurgeTarget,
+  receipt?: MembershipReceipt,
+): PurgeOutcome => {
+  const partial =
+    target !== "room" &&
+    receipt !== undefined &&
+    (receipt.unacknowledgedRoomIds.length > 0 ||
+      !receipt.roomInventoryComplete);
+  return {
+    target,
+    tone: partial ? "warn" : "good",
+    label: partial
+      ? "Purged on this device. Some room leaves are unconfirmed."
+      : SUCCESS_LABEL[target],
+    detail:
+      target === "room"
+        ? SUCCESS_DETAIL[target]
+        : [...SUCCESS_DETAIL[target], ...remoteDetails(receipt)],
+    causes: [],
+    retryable: false,
+  };
+};
 
 /**
  * A rejected purge.
@@ -164,6 +208,7 @@ export const purgeSucceeded = (target: PurgeTarget): PurgeOutcome => ({
 export const purgeFailed = (
   target: PurgeTarget,
   error: unknown,
+  receipt?: MembershipReceipt,
 ): PurgeOutcome => {
   // The same step can fail in two rooms with the same words; say it once.
   const causes = [...new Set(purgeCauses(error))];
@@ -214,6 +259,7 @@ export const purgeFailed = (
         ? "That is not the same as deleted: at least one step failed, so the identity key may still be in this device's storage."
         : "That is not the same as deleted: at least one step failed, so the identity key, rooms or messages may still be in this device's storage.",
       "Trying again re-runs every step from the start.",
+      ...remoteDetails(receipt),
     ],
     causes,
     retryable: true,

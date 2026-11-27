@@ -51,8 +51,9 @@ const PurgeAlert: FC<PurgeAlertProps> = ({
           <>
             <Text>{PURGE_WORKING[pending]}</Text>
             <Text className='mt-2'>
-              Signaling is closed, transports are torn down and storage is
-              deleted before anything is reported.
+              {pending === "room"
+                ? "Closing this room and asking the signaling server to remove its membership."
+                : "Waiting up to three seconds for room leaves, then disconnecting and removing local data."}
             </Text>
           </>
         )}

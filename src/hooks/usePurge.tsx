@@ -8,12 +8,16 @@ import { purgeFailed, purgeSucceeded } from "../protocol/purgeOutcome";
 import { forgetRoomUiState } from "../protocol/roomUiKeys";
 import { forgetAllRoomUiState } from "../protocol/roomUiStorage";
 
-import type { PurgeOutcome, PurgeTarget } from "../protocol/purgeOutcome";
+import type {
+  MembershipReceipt,
+  PurgeOutcome,
+  PurgeTarget,
+} from "../protocol/purgeOutcome";
 
 /** The library's three purges, as settlePurge calls them. */
 export interface PurgeSteps {
-  purgeIdentity: () => Promise<void>;
-  purge: () => Promise<void>;
+  purgeIdentity: () => Promise<void | MembershipReceipt>;
+  purge: () => Promise<void | MembershipReceipt>;
   purgeRoom: (roomUrl: string) => Promise<void>;
 }
 
@@ -48,10 +52,11 @@ export const settlePurge = async (
   removeFileCopies: () => Promise<void>,
 ): Promise<PurgeOutcome> => {
   const failures: unknown[] = [];
+  let receipt: MembershipReceipt | void = undefined;
 
   try {
-    if (target === "identity") await steps.purgeIdentity();
-    else if (target === "everything") await steps.purge();
+    if (target === "identity") receipt = await steps.purgeIdentity();
+    else if (target === "everything") receipt = await steps.purge();
     else if (roomUrl !== undefined) await steps.purgeRoom(roomUrl);
     // The row is only offered while a room is open, so this guards a future
     // caller rather than a reachable state. It reports instead of throwing
@@ -59,6 +64,12 @@ export const settlePurge = async (
     // rejects on the capability before touching anything.
     else throw new Error("There is no room open in this tab to purge.");
   } catch (cause) {
+    // A storage error can wrap the SDK settlement as its native Error.cause.
+    const settled = cause as {
+      membershipResult?: MembershipReceipt;
+      cause?: { membershipResult?: MembershipReceipt };
+    } | null;
+    receipt = settled?.membershipResult ?? settled?.cause?.membershipResult;
     failures.push(cause);
   }
 
@@ -76,7 +87,8 @@ export const settlePurge = async (
     failures.push(cause);
   }
 
-  if (failures.length === 0) return purgeSucceeded(target);
+  if (failures.length === 0)
+    return purgeSucceeded(target, receipt || undefined);
   return purgeFailed(
     target,
     failures.length === 1
@@ -84,6 +96,7 @@ export const settlePurge = async (
       : Object.assign(new Error("More than one purge step failed."), {
           errors: failures,
         }),
+    receipt || undefined,
   );
 };
 

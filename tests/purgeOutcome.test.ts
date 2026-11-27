@@ -150,3 +150,32 @@ describe("purge outcomes", () => {
     expect(purgeSucceeded("room").causes).toEqual([]);
   });
 });
+
+test("identity and full purges name the unacknowledged rooms and an incomplete inventory", () => {
+  for (const target of ["identity", "everything"] as const) {
+    const outcome = purgeSucceeded(target, {
+      unacknowledgedRoomIds: ["room-a", "room-b"],
+      roomInventoryComplete: false,
+    });
+    expect(outcome.tone).toBe("warn");
+    expect(outcome.detail.join(" ")).toContain("room-a, room-b");
+    expect(outcome.detail.join(" ")).toContain(
+      "Additional memberships may remain",
+    );
+    expect(
+      purgeSucceeded(target, {
+        unacknowledgedRoomIds: [],
+        roomInventoryComplete: true,
+      }).detail.join(" "),
+    ).toContain("acknowledged every requested leave");
+    expect(
+      purgeFailed(target, new Error("local storage unavailable"), {
+        unacknowledgedRoomIds: ["room-b"],
+        roomInventoryComplete: true,
+      }).detail.join(" "),
+    ).toContain("room-b");
+    expect(purgeSucceeded(target).detail.join(" ")).toContain(
+      "Some room memberships may remain",
+    );
+  }
+});
