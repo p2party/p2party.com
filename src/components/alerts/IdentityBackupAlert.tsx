@@ -29,7 +29,7 @@ export interface IdentityBackupAlertProps {
    * Closing through the dialog's own buttons drops the recovery phrase from
    * memory on the way out. A parent that flips this to `false` behind the
    * dialog's back — a "close everything" path, a route change — does not, so
-   * mount this component under `key={String(isOpen)}`: the remount is what
+   * include the open state in this dialog's React key. Remounting
    * guarantees the phrase and the typed password never outlive the panel that
    * showed them, whoever closed it. The cost is the 100ms leave transition,
    * which the remount skips.

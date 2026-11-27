@@ -81,8 +81,12 @@ describe("identity backup and restore entry points", () => {
     (layout) => {
       const chrome = readComponent(layout, "index.tsx");
 
-      for (const alert of IDENTITY_ALERTS)
-        expect(mountOf(chrome, alert)).toContain("key={String(");
+      expect(mountOf(chrome, "IdentityBackupAlert")).toContain(
+        "key={`backup-${String(showIdentityBackup)}`}",
+      );
+      expect(mountOf(chrome, "RestoreIdentityAlert")).toContain(
+        "key={`restore-${String(showIdentityRestore)}`}",
+      );
     },
   );
 

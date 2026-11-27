@@ -155,14 +155,14 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
                 // Remounting on every open and close is what drops the
                 // recovery phrase from memory even when something other than
                 // the dialog's own buttons closes it.
-                key={String(showIdentityBackup)}
+                key={`backup-${String(showIdentityBackup)}`}
                 isOpen={showIdentityBackup}
                 setIsOpen={setShowIdentityBackup}
               />
               <RestoreIdentityAlert
                 // Same reason as above: the phrase typed in here must not
                 // outlive the panel, whoever closed it.
-                key={String(showIdentityRestore)}
+                key={`restore-${String(showIdentityRestore)}`}
                 isOpen={showIdentityRestore}
                 setIsOpen={setShowIdentityRestore}
               />

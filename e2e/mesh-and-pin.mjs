@@ -15,15 +15,27 @@ import { createHash, randomBytes } from "crypto";
 
 const APP = process.env.APP_URL ?? "http://localhost:5190";
 const SIGNALING = process.env.SIGNALING_URL ?? "";
+const STUN = process.env.STUN_URL;
 const log = (...a) =>
   console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
 
 const newContext = async (browser, tag) => {
   const context = await browser.newContext();
   if (SIGNALING)
-    await context.addInitScript((url) => {
-      localStorage.setItem("signalingServerUrl", JSON.stringify(url));
-    }, SIGNALING);
+    await context.addInitScript(
+      ({ url, stun }) => {
+        localStorage.setItem("signalingServerUrl", JSON.stringify(url));
+        if (
+          stun ||
+          ["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname)
+        )
+          localStorage.setItem(
+            "stunServerUrls",
+            JSON.stringify(stun ? [stun] : []),
+          );
+      },
+      { url: SIGNALING, stun: STUN },
+    );
   const page = await context.newPage();
   page.on("pageerror", (e) =>
     log(`${tag} pageerror:`, e.message.slice(0, 160)),

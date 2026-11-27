@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 // Start the dev site and a disposable protocol-v5 signaling server first.
 const origin = process.env.APP_URL ?? "http://127.0.0.1:5853";
 const signaling = process.env.SIGNALING_URL ?? "ws://127.0.0.1:5852/ws";
+const stun = process.env.STUN_URL;
 for (const endpoint of [origin, signaling]) {
   const url = new URL(endpoint);
   assert(
@@ -29,8 +30,14 @@ const browser = await chromium.launch();
 const newContext = async () => {
   const ctx = await browser.newContext();
   await ctx.addInitScript(
-    (url) => localStorage.setItem("signalingServerUrl", JSON.stringify(url)),
-    signaling,
+    ({ signaling, stun }) => {
+      localStorage.setItem("signalingServerUrl", JSON.stringify(signaling));
+      localStorage.setItem(
+        "stunServerUrls",
+        JSON.stringify(stun ? [stun] : []),
+      );
+    },
+    { signaling, stun },
   );
   return ctx;
 };
@@ -51,6 +58,7 @@ try {
     () => window.p2party.store.getState().keyPair.publicKey,
   );
   assert.match(bobKey, /^[a-f0-9]{64}$/);
+  await bobPage.close();
   const alice = await newContext(),
     page = await alice.newPage();
   await page.route(origin + "/rc0-seed", (route) =>
@@ -138,6 +146,7 @@ try {
   // The stable key is blocked from another tab precisely when the main transport
   // has finished its identity proof, while the signaling admission already passed.
   // Run a new room so no previously authenticated connection is shared.
+  await Promise.all([page.close(), bobRoom.close()]);
   const raceCap = randomBytes(32);
   const racePage = await alice.newPage();
   await racePage.addInitScript((k) => {
