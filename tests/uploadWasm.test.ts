@@ -42,6 +42,7 @@ const runUpload = (prune: boolean): UploadResult => {
         "index.html": Buffer.from("<!doctype html><title>Offline upload fixture</title>"),
         "robots.txt": Buffer.from("User-agent: *"),
         "sitemap.xml": Buffer.from("<urlset/>"),
+        "manifest.webmanifest": Buffer.from(JSON.stringify({ name: "P2Party" })),
         "assets/client.js": Buffer.from("globalThis.fixture = true;"),
         "downloads/testnet-1/wallet.tgz": gzipSync("wallet fixture"),
         "downloads/testnet-1/wallet.tgz.sha256": Buffer.from("checksum fixture"),
@@ -151,6 +152,10 @@ describe("self-hosted WASM upload", () => {
       sriMatches: true,
     });
     expect(result.localWasmUnchanged).toBe(true);
+    expect(
+      result.puts.find((asset) => asset.key === "manifest.webmanifest")
+        ?.contentType,
+    ).toBe("application/manifest+json");
     expect(
       result.puts.find((asset) => asset.key.endsWith(".tgz"))?.contentType,
     ).toBe("application/gzip");

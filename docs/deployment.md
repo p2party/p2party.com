@@ -91,7 +91,7 @@ before releasing the frontend. After the frontend deploys, compare the served
 WASM with the copy approved in the release checkout:
 
 ```bash
-curl -fsS https://signaling.p2party.com/health | jq -e '.status == "ok" and .version == "0.2.3" and .protocolVersion == 5'
+curl -fsS https://signaling.p2party.com/health | jq -e '.status == "ok" and .version == "0.2.4" and .protocolVersion == 5'
 npm run provenance:check
 curl -fsS --compressed https://p2party.com/vendor/p2party-0.15.2/libcrypto.wasm | cmp - public/vendor/p2party-0.15.2/libcrypto.wasm
 ```

@@ -57,6 +57,7 @@ export function getMimeTypeFromExtension(extension = "txt") {
       rtf: "application/rtf",
       sh: "application/x-sh",
       sha256: "text/plain",
+      webmanifest: "application/manifest+json",
       svg: "image/svg+xml",
       swf: "application/x-shockwave-flash",
       tar: "application/x-tar",

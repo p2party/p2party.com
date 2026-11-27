@@ -10,7 +10,7 @@ security audit. The signaling service sees room membership and timing;
 server-blind rendezvous and Sybil resistance are not shipped guarantees.
 Read the [security policy](SECURITY.md) before relying on it for sensitive use.
 
-The web client uses SDK **0.15.2** and signaling server **0.2.3** (protocol **5**).
+The web client uses SDK **0.15.2** and signaling server **0.2.4** (protocol **5**).
 Peer encryption uses protocol **4**. The browser re-establishes missing peer connections after signaling returns and
 keeps live session keys in memory. Identity and full-device purges report rooms
 whose leave the server did not acknowledge. The public server expires offline
@@ -111,6 +111,12 @@ in another application.
 Private rendezvous and anonymous admission remain research. Scheduled cover and
 loopback recovery tests do not prove anonymity, prevent Sybil attacks, or establish
 recovery bounds for mobile or wide-area networks.
+
+## Cryptography dependencies
+
+The browser bundles p2party SDK 0.15.2. Its WebAssembly combines libsodium 1.0.22-stable and mlkem-native 2.1.0, compiled with Emscripten 7.0.1. The native ML-KEM implementation supports parameter sets 512, 768 and 1024. [SDK build provenance](https://github.com/p2party/p2party-js/blob/19e71f0565a92d126c3a4fa2c16e02d16ae74d2e/src/cryptography/libcrypto.provenance.json)
+
+The signaling server verifies Ed25519 login challenges through `@ondemos/core` 0.2.11. That JavaScript package embeds a WebAssembly build of libdemos with libsodium 1.0.22. SwiftPM 0.2.4 pins the same native source for Swift clients. Testnet 1 spending uses ML-DSA-65 or SLH-DSA-SHA2-192s with its native ledger verifier. [Signaling source](https://github.com/p2party/p2party-server/tree/40f1267531815a06207dace538566631c9fcbcff) · [Binding release](https://github.com/p2party/libdemos-ts/releases/tag/v0.2.11) · [Native C source](https://github.com/p2party/libdemos/tree/6f985d65e2f7bac33e919cc6c15e5248a181113d) · [Swift package](https://github.com/p2party/libdemos-swift/tree/v0.2.4)
 
 ## SDK artifacts
 

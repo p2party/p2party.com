@@ -1,5 +1,11 @@
 # Web client changelog
 
+## November 27, 2026 — Signaling server 0.2.4
+
+- The signaling server now verifies Ed25519 room login challenges with `@ondemos/core` 0.2.11. The Linux release archive passed 353 server tests, including authentication through two signaling workers. The binding and SwiftPM 0.2.4 both pin the libdemos C revision that uses libsodium 1.0.22. [Signaling source](https://github.com/p2party/p2party-server/tree/40f1267531815a06207dace538566631c9fcbcff) · [Binding release](https://github.com/p2party/libdemos-ts/releases/tag/v0.2.11) · [Native C source](https://github.com/p2party/libdemos/tree/6f985d65e2f7bac33e919cc6c15e5248a181113d) · [Swift package](https://github.com/p2party/libdemos-swift/tree/v0.2.4)
+- Serve the web app manifest as `application/manifest+json` so browsers receive the correct media type.
+- The protocol guide identifies the separate keys and algorithms used for room authentication and for spending Testnet 1 units. The genesis fingerprint RPC added in 0.2.3 remains available. [Protocol guide](src/content/protocol.md)
+
 ## November 27, 2026 — SDK 0.15.2 and signaling 0.2.3
 
 - Ship the SDK’s verified Linux archive and its versioned cryptography module. Emscripten 7.0.1 produced the same WebAssembly bytes used by SDK 0.15.1. Rooms still use signaling v5 and peer protocol v4. [SDK release](https://github.com/p2party/p2party-js/releases/tag/v0.15.2)
