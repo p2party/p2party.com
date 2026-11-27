@@ -2,7 +2,7 @@
 
 An invitation carries a secret in its URL fragment. The browser opens a WebSocket and signs a challenge for that signaling host. It sends a SHA-512 hash of the invitation secret to find the other members. The service can associate that hash with identity keys, connection times and connecting network addresses. It limits connections and room membership by identity. One person can create multiple identities. An optional room PIN adds a proof that peers know the same PIN.
 
-Signaling server **0.2.2** speaks **signaling v5**. The encrypted conversation between two browsers uses **peer protocol v4** in SDK **0.15.1**. These versions describe different parts of a connection. [Signaling server source](https://github.com/p2party/p2party-server-source) · [Signaling health](https://signaling.p2party.com/health) · [SDK release](https://github.com/p2party/p2party-js/releases/tag/v0.15.1)
+Signaling server **0.2.2** speaks **signaling v5**. The encrypted conversation between two browsers uses **peer protocol v4** in SDK **0.15.1**. These versions describe different parts of a connection. [Signaling server source](https://github.com/p2party/p2party-server) · [Signaling health](https://signaling.p2party.com/health) · [SDK release](https://github.com/p2party/p2party-js/releases/tag/v0.15.1)
 
 ## Sending and recovering a message
 
@@ -20,4 +20,4 @@ The signaling service introduces peers and records room memberships. Device purg
 
 The signaling host also serves an RPC and validator for **P2Party Testnet 1**. Anyone can read the ledger. A wallet can authorize a native transfer with ML-DSA-65 or SLH-DSA-SHA2-192s. A single public operator orders transfers against a genesis allocation of 128 valueless units. Chat works independently of the ledger.
 
-The first grant at height 1 and the transfers at heights 2 and 3 let you follow the same unit. An ethers client spent it with ML-DSA-65, and a viem client spent the resulting output with SLH-DSA-SHA2-192s. The adapters support native balances and transfers. Smart-contract execution is outside the current testnet. [Check the public receipts](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-the-first-public-transfers) · [Validator health](https://signaling.p2party.com/rpc/health) · [Native verifier source](https://github.com/p2party/libdemos)
+The first grant at height 1 and the transfers at heights 2 and 3 let you follow the same unit. An ethers client spent it with ML-DSA-65, and a viem client spent the resulting output with SLH-DSA-SHA2-192s. The adapters support native balances and transfers. Smart-contract execution is outside the current testnet. [Browse Testnet 1](/explorer/testnet) · [Check the public receipts](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-the-first-public-transfers) · [Validator health](https://signaling.p2party.com/rpc/health) · [Native verifier source](https://github.com/p2party/libdemos)

@@ -1,5 +1,9 @@
 # Web client changelog
 
+## November 27, 2026 — P2PARTY ledger explorer
+
+- Browse [Testnet 1](https://p2party.com/explorer/testnet), inspect signed transfer bytes and share a receipt by move ID or height. The [mainnet page](https://p2party.com/explorer/mainnet) shows its prelaunch status.
+
 ## November 27, 2026 — Public protocol and roadmap
 
 - Link the landing page and field notes to the [protocol guide](https://p2party.com/protocol) and [roadmap](https://p2party.com/roadmap). Both pages are prerendered and indexed.

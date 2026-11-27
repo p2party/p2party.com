@@ -1,0 +1,17 @@
+{
+  "overview": {
+    "path": "/explorer",
+    "title": "P2PARTY ledger explorer",
+    "description": "Browse the public native testnet, inspect signed transfer receipts and check mainnet availability."
+  },
+  "testnet": {
+    "path": "/explorer/testnet",
+    "title": "Testnet 1 explorer",
+    "description": "Read the current height and look up P2PARTY native transfer receipts by height or move ID."
+  },
+  "mainnet": {
+    "path": "/explorer/mainnet",
+    "title": "P2PARTY mainnet status",
+    "description": "Check the launch status of the P2PARTY mainnet and explore the public test network."
+  }
+}

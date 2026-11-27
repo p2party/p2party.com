@@ -294,7 +294,7 @@ const HomePage = () => {
               </Button>
             </div>
             <div className='-mx-2 flex flex-wrap items-center justify-center gap-x-2 font-mono text-sm md:justify-start'>
-              {["Protocol", "Roadmap"].map((label) => (
+              {["Protocol", "Roadmap", "Explorer"].map((label) => (
                 <Link
                   key={label}
                   href={`/${label.toLowerCase()}`}
@@ -574,6 +574,8 @@ const HomePage = () => {
           {[
             ["Protocol", "/protocol"],
             ["Roadmap", "/roadmap"],
+            ["Explorer", "/explorer"],
+            ["Whitepaper", "/whitepaper"],
             ["Field notes", "/blog"],
           ].map(([label, href]) => (
             <Link
@@ -586,7 +588,7 @@ const HomePage = () => {
           ))}
           <span className='text-zinc-300 dark:text-zinc-700'>·</span>
           <Link
-            href='https://github.com/p2party/p2party.com-source'
+            href='https://github.com/p2party/p2party.com'
             target='_blank'
             rel='noopener noreferrer'
             className='rounded text-[13px] text-zinc-500 transition-colors hover:text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:text-zinc-400 dark:hover:text-zinc-200'

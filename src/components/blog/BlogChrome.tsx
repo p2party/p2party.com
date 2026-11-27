@@ -33,7 +33,7 @@ export const BlogChrome = ({ children }: { children: ReactNode }) => (
           p2party<span className='text-orange-600'>://</span>
         </Link>
         <div className='flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs'>
-          {["Protocol", "Roadmap"].map((label) => (
+          {["Protocol", "Roadmap", "Explorer", "Whitepaper"].map((label) => (
             <Link
               key={label}
               href={`/${label.toLowerCase()}`}

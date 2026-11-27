@@ -33,7 +33,14 @@ const manifest = JSON.parse(
 // the same document -- the classic way to get your own pages treated as
 // duplicates of each other.
 const guides = JSON.parse(await readFile("src/content/guides.json", "utf8"));
+const explorer = JSON.parse(
+  await readFile("src/content/explorer.json", "utf8"),
+);
 const STATIC_ROUTES = [
+  ...Object.values(explorer).map((route) => ({
+    ...route,
+    title: `${route.title} · p2party`,
+  })),
   ...Object.entries(guides).map(([slug, { title, description }]) => ({
     path: `/${slug}`,
     title: `${title} · p2party`,

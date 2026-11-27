@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./pages/explorer.css";
 
 @theme {
   --color-darkOrange: #eb5e28;

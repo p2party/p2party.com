@@ -17,4 +17,4 @@ The web client uses SDK **0.15.1**, signaling **v5** and encrypted peer protocol
 3. **Prove ledger state to wallets.** Extend receipt-history proofs with a sparse tree covering spent units, applied transfers and previously used owner commitments. A wallet also needs the original transfer or genesis allocation to connect a receipt to the output it wants to spend.
 4. **Validate the native apps and review the protocol.** Exercise Android local-network permissions, a physical-device LAN transfer and TURN fallback, and complete platform signing. Independent cryptographic review is still pending.
 
-Any future monetary network needs its own issuance and governance rules. The current testnet uses valueless units. [SDK roadmap](https://github.com/p2party/p2party-js/blob/master/ROADMAP.md)
+Any future monetary network needs its own issuance and governance rules. The current testnet uses valueless units. [Testnet explorer](/explorer/testnet) · [Mainnet status](/explorer/mainnet) · [P2PARTY whitepaper](/whitepaper). [SDK roadmap](https://github.com/p2party/p2party-js/blob/master/ROADMAP.md)

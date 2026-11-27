@@ -21,6 +21,9 @@ const routes = [
   "/session-lab/",
   "/protocol/",
   "/roadmap/",
+  "/explorer/",
+  "/explorer/mainnet/",
+  "/whitepaper/",
   "/blog/",
   ...manifest.posts.map((post) => post.href + "/"),
   "/rooms/",
@@ -89,9 +92,10 @@ try {
       // No click: creating production signaling state is outside this fixture.
     }
     if (pathname === "/") {
-      for (const [label, path] of [
-        ["Protocol", "/protocol"],
-        ["Roadmap", "/roadmap"],
+      for (const [label, path, heading] of [
+        ["Protocol", "/protocol", "Protocol"],
+        ["Roadmap", "/roadmap", "Roadmap"],
+        ["Explorer", "/explorer", "Ledger explorer"],
       ]) {
         await page
           .getByRole("link", { name: label, exact: true })
@@ -99,7 +103,7 @@ try {
           .click();
         await page.waitForURL(new URL(path, app).href);
         await page
-          .getByRole("heading", { level: 1, name: label, exact: true })
+          .getByRole("heading", { level: 1, name: heading, exact: true })
           .waitFor();
         await page.goBack();
         await page.waitForURL(new URL("/", app).href);
