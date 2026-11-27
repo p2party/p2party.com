@@ -6,5 +6,9 @@
   "roadmap": {
     "title": "Roadmap",
     "description": "What you can use today, what the local timing and ledger tests measured, and what it will take to run an independently verified testnet."
+  },
+  "whitepaper": {
+    "title": "P2PARTY whitepaper",
+    "description": "A draft economic design for relay payments, sponsored rooms, volunteer relays and independent validation. Open for review before mainnet."
   }
 }

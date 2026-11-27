@@ -6,6 +6,10 @@ import guides from "../content/guides.json";
 import protocol from "../content/protocol.md?raw";
 import roadmap from "../content/roadmap.md?raw";
 
+import whitepaper from "../content/whitepaper.md?raw";
+
+const articles = { protocol, roadmap, whitepaper };
+
 const Guide = ({ page }: { page: keyof typeof guides }) => {
   const { title, description } = guides[page];
   useEffect(() => {
@@ -34,9 +38,7 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
           </p>
         </header>
         <article className='blog-prose py-8'>
-          <ReactMarkdown>
-            {page === "protocol" ? protocol : roadmap}
-          </ReactMarkdown>
+          <ReactMarkdown>{articles[page]}</ReactMarkdown>
         </article>
       </main>
     </BlogChrome>

@@ -1,0 +1,41 @@
+## The service people would pay for
+
+P2Party rooms already exchange messages and files directly over WebRTC. The public signaling host introduces peers. A TURN server carries encrypted traffic when a direct connection fails. This draft proposes keeping ordinary room creation and direct transfers free, and using **P2PARTY** to buy optional network services. A room host, community or sponsor could pay so guests can join without a wallet. Today's rooms have no coin paywall. [Room protocol](/protocol) · [TURN specification](https://www.rfc-editor.org/rfc/rfc8656)
+
+Start with relay capacity. A relay operator incurs bandwidth costs when it forwards data and can quote a price for an allowance. A direct transfer consumes none of that allowance. Signaling has a different cost structure: connection setup, membership storage and reconnect work. Test a free, rate-limited allowance first. If operators regularly exhaust capacity, try a prepaid reservation for additional concurrent connections or signaling capacity. Charging on every invitation, message or reconnect would put ordinary use and recovery behind a payment.
+
+## Paying for an encrypted relay
+
+A proposed relay quote identifies the provider, network, price, expiry, byte allowance and billing interval. Count bytes the selected relay sends toward the destination, separately in each direction. Publishing a quote must specify whether it counts encrypted application cells or TURN transport bytes. Those counters include different overhead. Padding, cover traffic and retransmission can consume capacity, so the wallet must show the measurement rule and a hard spending cap before the user accepts. A relay must never need plaintext or room membership records to calculate the charge.
+
+One possible settlement uses a prepaid deposit and signed, cumulative vouchers. After forwarding an agreed interval, the provider can ask the payer to authorize the next total. Either party can stop. The provider can settle the highest authorized total once, and the payer can reclaim the unused balance after expiry. This needs enforceable deposits, replay protection, expiry rules and change handling. The present ledger moves one whole unit of conserved weight. It cannot split that unit between a provider and a refund. Use prepaid fixed bundles of valueless units to test demand before building voucher settlement.
+
+**Worked example.** Suppose a provider quotes one test P2PARTY for each completed 64 MiB interval and a sponsor caps a session at four. After 192 MiB of billable egress, three intervals are payable and one unit of the budget remains. A direct connection using zero relay bytes incurs zero relay charges. This example illustrates accounting. Operators still need real bandwidth costs, idle capacity, measured demand and a published rounding policy to set prices.
+
+## Visitors as volunteer relays
+
+A visitor could opt in to forward encrypted P2Party cells between two peers. The analogy to a Tor relay is that an intermediate participant contributes bandwidth. A browser would open WebRTC data channels to its immediate neighbors and forward only traffic assigned to that P2Party circuit. It would have no interface for fetching an arbitrary URL or connecting to a destination on the public internet. The recipient would still authenticate and decrypt the original end-to-end message. [WebRTC data channels](https://www.w3.org/TR/webrtc/) · [Tor relay types](https://community.torproject.org/relay/types-of-relays/)
+
+Participation should be off until the visitor chooses a time and byte budget. Show bytes in both directions, active circuits and a stop button. Start with one intermediate hop. Browser suspension, tab closure and NAT can interrupt service. The sender needs a fresh route or a TURN fallback, and must retain the unacknowledged data needed for recovery. If a volunteer's own link uses paid TURN, show who pays that leg before enrolling them.
+
+A volunteer sees its neighbors and the timing and volume of a circuit. One forwarding hop does not establish sender anonymity. Keep wallet identifiers out of discovery messages and use short-lived circuit identifiers. Begin with donated capacity, then test capped payments from the party who requested service. Paying minted rewards for self-reported bytes would let one operator manufacture both ends of a transfer. Even two signed endpoint receipts cannot prove that two different people wanted the traffic.
+
+## Visitors as verifiers
+
+Visitors can participate at several levels. The explorer already recomputes native receipt identifiers from the signed bytes returned by the RPC. A visitor who downloads those same bytes from one operator still depends on that operator for the history it supplies. A stronger browser verifier would pin the genesis and an independently obtained operator policy, verify signed checkpoints, and check receipt inclusion and consistency against a previously saved checkpoint. Checking spendability also needs the output's originating transfer and authenticated state proofs. [Testnet explorer](/explorer/testnet) · [Receipt-log proof construction](https://www.rfc-editor.org/rfc/rfc9162#section-2.1)
+
+A visitor can help detect disagreement without having a vote on transaction order. An operator who wants to sign checkpoints needs persistent key custody, durable signing history and availability through disconnections. The current local prototype can compare and certify a common history. The public testnet still has one operator. A permissionless validator set requires an admission rule, quorum, finality, equivocation evidence, recovery and a policy for a stalled network. A tab count, wallet count or receipt-view count cannot establish how many independent participants exist.
+
+## Supply and operator funding
+
+Testnet 1 began with 128 valueless units. That allocation is a test fixture and gives no entitlement to future mainnet units. This proposal leaves mainnet supply, distribution, issuance, fee levels and validator selection open. The ticker is **P2PARTY**. The coin uses the same cat icon as the site.
+
+As a first test, pay service providers from customer or sponsor budgets and fund initial validators from a separately disclosed operator budget. Record the cost of bandwidth, storage, signing and uptime separately. A later settlement fee could help fund validators, provided its proceeds are measured against those costs. Relay payments and validator payments buy different services. A relay operator cannot use forwarded bytes as evidence that it independently validated a ledger.
+
+## Decisions before mainnet
+
+1. Measure signaling load, relay egress and reconnects with aggregate counters. Publish the accounting definition and a worked bill without publishing room membership, peer addresses or wallet-to-room mappings.
+2. Exercise volunteer relaying on consenting devices. Test loss of the intermediate browser, caps and cancellation, direct-to-relay fallback, and sender/recipient verification after a retry.
+3. Pilot fixed-price relay bundles on the valueless testnet. Compare them with sponsored sessions. Record disputed bytes, unused balances, settlement costs and the share of users who can still participate without a wallet.
+4. Run a separately administered verifier, publish checkpoint and state-proof formats, and choose how independent validators agree on a final history.
+5. Publish a new genesis proposal only after supply, initial allocations, validator funding, key rotation, governance and an independent security review are ready for scrutiny. [Project roadmap](/roadmap) · [Mainnet explorer](/explorer/mainnet)
