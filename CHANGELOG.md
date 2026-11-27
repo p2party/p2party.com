@@ -3,6 +3,7 @@
 ## November 27, 2026 — Rendezvous timing results
 
 - The roadmap links to the schedules, reproduction steps and both sets of loopback trials for the two-store rendezvous experiment. [Timing results](src/content/roadmap.md#tested-locally)
+- Updated ESLint to 10.16.0 and refreshed compatible locked dependencies used by the web build and Markdown pages.
 
 ## November 27, 2026 — Receive while offline
 
