@@ -2,7 +2,7 @@
 
 import { useEffect, useState, lazy, Suspense } from "react";
 
-import { WALLET_RECEIVE_URL, WALLET_RESTORE_URL } from "../lib/walletRestore";
+import { WALLET_RESTORE_URL } from "../lib/walletRestore";
 import { Button } from "../components/button";
 import { Link } from "../components/link";
 import HeroDemo from "../components/custom/HeroDemo";
@@ -261,21 +261,13 @@ const HomePage = () => {
             </span>
           </h1>
           <p className='mt-4 text-sm text-zinc-700 dark:text-zinc-300'>
-            Testnet wallet ·{" "}
+            Bringing a wallet to this browser?{" "}
             <a
               href={WALLET_RESTORE_URL}
               referrerPolicy='no-referrer'
               className='ex-text-button'
             >
               Restore a wallet
-            </a>
-            {" · "}
-            <a
-              href={WALLET_RECEIVE_URL}
-              referrerPolicy='no-referrer'
-              className='ex-text-button'
-            >
-              Receive P2PARTY
             </a>
           </p>
         </div>

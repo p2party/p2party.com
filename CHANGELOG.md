@@ -1,5 +1,10 @@
 # Web client changelog
 
+## November 27, 2026 — Account and wallet navigation
+
+- **Account** opens wallet actions and chat identity recovery. Shared testnet balances show their observation height inside this menu. **Rooms** remains a direct navigation link.
+- The wallet now lets you restore using the latest backup and its recovery code, or create a wallet. Receive, check an offline payment and display a balance each open the corresponding wallet task. [Wallet](https://p2party.com/wallet/)
+
 ## November 27, 2026 — Signaling server 0.2.4
 
 - The signaling server now verifies Ed25519 room login challenges with `@ondemos/core` 0.2.11. The Linux release archive passed 353 server tests, including authentication through two signaling workers. The binding and SwiftPM 0.2.4 both pin the libdemos C revision that uses libsodium 1.0.22. [Signaling source](https://github.com/p2party/p2party-server/tree/40f1267531815a06207dace538566631c9fcbcff) · [Binding release](https://github.com/p2party/libdemos-ts/releases/tag/v0.2.11) · [Native C source](https://github.com/p2party/libdemos/tree/6f985d65e2f7bac33e919cc6c15e5248a181113d) · [Swift package](https://github.com/p2party/libdemos-swift/tree/v0.2.4)

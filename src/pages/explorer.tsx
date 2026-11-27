@@ -433,8 +433,11 @@ function Testnet() {
         <p>
           One validator orders testnet transfers. Its receipt records acceptance
           by that validator.{" "}
-          <Link className='ex-text-button' href='/wallet'>
-            Check a public wallet balance
+          <Link
+            className='ex-text-button'
+            href='/wallet/#check-a-public-balance'
+          >
+            Check one public receive request
           </Link>
         </p>
       </details>

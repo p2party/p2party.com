@@ -13,6 +13,6 @@
   },
   "wallet": {
     "title": "P2PARTY wallet",
-    "description": "Create a request to receive test P2PARTY while your wallet is offline, restore spending access on another device, or watch a public balance."
+    "description": "Restore your P2PARTY wallet with its backup file and recovery code, or create your first wallet for Testnet 1. The test units have no monetary value."
   }
 }

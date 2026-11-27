@@ -1,12 +1,13 @@
 import { Outlet, useLocation } from "react-router";
 import { Link } from "./link";
-import { WalletNav } from "./SharedWalletBalance";
+import { AccountMenu } from "./SharedWalletBalance";
 
 const sections = [
   ["Protocol", "/protocol"],
   ["Roadmap", "/roadmap"],
   ["Whitepaper", "/whitepaper"],
   ["Explorer", "/explorer"],
+  ["Rooms", "/rooms"],
 ] as const;
 
 export function SiteFrame() {
@@ -43,11 +44,8 @@ export function SiteFrame() {
                 {label}
               </Link>
             ))}
-            <WalletNav current={path === "/wallet"} />
           </div>
-          <Link className='site-rooms' href='/rooms'>
-            Rooms <span aria-hidden='true'>→</span>
-          </Link>
+          <AccountMenu current={path === "/wallet"} />
         </nav>
       </header>
       <div id='site-content' tabIndex={-1}>

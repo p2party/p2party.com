@@ -42,7 +42,7 @@ async function catchUp() {
   } catch {
     if (!controller.signal.aborted) {
       status.textContent =
-        "Public history could not be confirmed. Start another sync in your wallet.";
+        "The public history could not be checked. Return to your wallet and try again.";
       try {
         peer.postMessage(
           { type: "p2party.wallet.catchup.error.v1", nonce },
@@ -59,7 +59,7 @@ async function catchUp() {
 async function refresh() {
   retry.hidden = true;
   download.hidden = true;
-  status.textContent = "Reading Testnet 1…";
+  status.textContent = "Checking Testnet 1…";
   try {
     const message = await readPublicSnapshot();
     if (window.opener) {
@@ -73,12 +73,12 @@ async function refresh() {
     );
     download.hidden = false;
     status.textContent =
-      "Public ledger read at height " +
+      "Checked public history through height " +
       BigInt(message.headHeight).toString() +
-      ". Your wallet can now check its local balance.";
+      ". Return to your wallet to see the result, or download this history for an offline check.";
   } catch {
     status.textContent =
-      "Could not verify a current Testnet 1 snapshot. Your wallet can keep its previously checked balance.";
+      "Could not check the latest history. Try again when you have a connection. Your last checked wallet balance is still available.";
     retry.hidden = false;
     if (window.opener)
       window.opener.postMessage(

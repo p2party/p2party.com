@@ -105,11 +105,25 @@ try {
           pathname + " overflows at " + width,
         );
       }
-      if (
-        ["/protocol/", "/whitepaper/", "/roadmap/", "/wallet/"].includes(
-          pathname,
-        )
-      ) {
+      if (pathname === "/wallet/") {
+        const account = header.getByRole("button", {
+          name: "Account",
+          exact: true,
+        });
+        await account.click();
+        const openWallet = page
+          .getByLabel("Account options")
+          .getByRole("link", { name: "Open wallet", exact: true });
+        assert.equal(await openWallet.getAttribute("aria-current"), "page");
+        await page.keyboard.press("Escape");
+        for (const action of ["Create a wallet", "Restore a wallet"])
+          assert(
+            await page
+              .getByRole("link", { name: action, exact: true })
+              .isVisible(),
+          );
+      }
+      if (["/protocol/", "/whitepaper/", "/roadmap/"].includes(pathname)) {
         const current = header.locator('a[aria-current="page"]');
         assert.equal(await current.getAttribute("href"), pathname.slice(0, -1));
         const sections = page.getByRole("navigation", {

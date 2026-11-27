@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { EyeSlashIcon, WalletIcon } from "@heroicons/react/20/solid";
+import { useEffect, useRef, useState } from "react";
+import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
 import { useNavigate } from "react-router";
 import { Link } from "./link";
 import { WALLET_RECEIVE_URL, WALLET_RESTORE_URL } from "../lib/walletRestore";
@@ -11,129 +11,84 @@ import {
   useSharedWalletBalance,
 } from "../lib/sharedWalletBalance";
 
-export function WalletNav({ current }: { current: boolean }) {
+export function AccountMenu({
+  inRoom = false,
+  current = false,
+}: {
+  inRoom?: boolean;
+  current?: boolean;
+}) {
   const balance = useSharedWalletBalance();
-  const descriptionId = useId();
   const [error, setError] = useState("");
+  const newTab = inRoom ? { target: "_blank", rel: "noopener noreferrer" } : {};
   return (
-    <div className='site-nav-wallet'>
-      <Link
-        className='site-wallet-link'
-        href='/wallet'
-        aria-label='Wallet'
-        aria-describedby={descriptionId}
-        aria-current={current ? "page" : undefined}
-      >
-        <span>Wallet</span>
-        <small id={descriptionId}>
-          {balance ? balance.amount + " P2PARTY" : "Balance hidden"}
-        </small>
-        {balance && (
-          <small
-            className='site-wallet-height'
-            title={"As of height " + balance.height}
+    <Popover className='account-nav'>
+      {({ close }) => (
+        <>
+          <PopoverButton className='account-button'>
+            Account <span aria-hidden='true'>▾</span>
+          </PopoverButton>
+          <PopoverPanel
+            anchor='bottom end'
+            className='account-panel'
+            aria-label='Account options'
           >
-            At height {balance.height}
-          </small>
-        )}
-      </Link>
-      <details className='site-balance-details'>
-        <summary aria-label={balance ? "Balance details" : "Wallet actions"}>
-          <span aria-hidden='true'>▾</span>
-        </summary>
-        <div className='site-balance-menu'>
-          <a
-            className='ex-text-button block'
-            href={WALLET_RECEIVE_URL}
-            referrerPolicy='no-referrer'
-          >
-            Receive P2PARTY
-          </a>
-          {balance && (
-            <>
-              <strong className='mt-1 block'>
-                {balance.amount} test P2PARTY
-              </strong>
-              <p>Testnet 1 · As of height {balance.height}</p>
+            <h2>Testnet wallet</h2>
+            {balance ? (
+              <div className='account-balance'>
+                <p>Last shared balance</p>
+                <strong>{balance.amount} P2PARTY</strong>
+                <p>At ledger height {balance.height} · This tab only</p>
+              </div>
+            ) : null}
+            <Link
+              className='account-action'
+              href='/wallet/'
+              aria-current={current ? "page" : undefined}
+              {...newTab}
+              onClick={() => close()}
+            >
+              Open wallet
+              {inRoom && <span className='sr-only'> in a new tab</span>}
+            </Link>
+            <a
+              href={WALLET_RECEIVE_URL}
+              {...newTab}
+              referrerPolicy='no-referrer'
+              onClick={() => close()}
+            >
+              Receive P2PARTY
+              {inRoom && <span className='sr-only'> in a new tab</span>}
+            </a>
+            {balance && (
               <button
-                className='ex-text-button'
                 type='button'
                 onClick={() => {
-                  if (!saveSharedWalletBalance(null))
+                  if (saveSharedWalletBalance(null)) close();
+                  else
                     setError(
-                      "This browser could not clear the saved balance. Close this tab.",
+                      "This browser could not forget the saved balance.",
                     );
                 }}
               >
                 Hide and forget balance
               </button>
-              {error && <p role='status'>{error}</p>}
-            </>
-          )}
-        </div>
-      </details>
-    </div>
-  );
-}
-
-// Keep the room connection and invite in their current tab when opening the guide.
-export function RoomWalletNav({ compact = false }: { compact?: boolean }) {
-  const balance = useSharedWalletBalance();
-  const descriptionId = useId();
-  const [storageError, setStorageError] = useState(false);
-  return (
-    <div className='flex shrink-0 items-center gap-1'>
-      <a
-        href='/wallet/'
-        target='_blank'
-        rel='noopener noreferrer'
-        aria-label='Open wallet in a new tab'
-        aria-describedby={descriptionId}
-        className='flex min-h-10 items-center gap-2 px-1 text-sm font-semibold hover:underline'
-      >
-        <WalletIcon aria-hidden='true' className='size-5 shrink-0' />
-        <span>
-          <span className='block'>Wallet</span>
-          <small
-            id={descriptionId}
-            className={
-              compact && !balance
-                ? "sr-only"
-                : "block max-w-36 truncate text-xs font-normal"
-            }
-          >
-            {balance
-              ? balance.amount + " P2PARTY · height " + balance.height
-              : "Balance hidden"}
-          </small>
-        </span>
-      </a>
-      {!compact && (
-        <a
-          href={WALLET_RECEIVE_URL}
-          target='_blank'
-          rel='noopener noreferrer'
-          className='ml-auto px-1 text-sm font-semibold underline underline-offset-2'
-          aria-label='Receive P2PARTY in a new tab'
-        >
-          Receive
-        </a>
+            )}
+            <div className='account-room'>
+              <h2>Room identity</h2>
+              <Link
+                href='/rooms/#restore-room-identity'
+                {...newTab}
+                onClick={() => close()}
+              >
+                Restore chat identity
+              </Link>
+            </div>
+            {error && <p role='status'>{error}</p>}
+          </PopoverPanel>
+        </>
       )}
-      {balance && (
-        <button
-          className='p-2'
-          type='button'
-          aria-label='Hide and forget balance'
-          title='Hide and forget balance'
-          onClick={() => setStorageError(!saveSharedWalletBalance(null))}
-        >
-          <EyeSlashIcon aria-hidden='true' className='size-4' />
-        </button>
-      )}
-      {storageError && (
-        <small role='status'>Close this tab to clear its saved balance.</small>
-      )}
-    </div>
+    </Popover>
   );
 }
 
@@ -246,7 +201,7 @@ export function BalanceShareRequest() {
   }, [navigate]);
   return (
     <section className='site-paper mb-5' aria-label='Show wallet balance'>
-      <h2 className='text-xl font-bold'>Show a balance in this tab</h2>
+      <h2 className='text-xl font-bold'>Share with this tab</h2>
       <div aria-live='polite'>
         {state.step === "waiting" && (
           <p>Waiting for the wallet that opened this tab…</p>
@@ -258,9 +213,8 @@ export function BalanceShareRequest() {
               at height {state.balance.height}.
             </p>
             <p>
-              The wallet shared this total and height with p2party.com. Keep
-              them in this tab’s navigation until you hide them or close the
-              tab?
+              Show this amount and ledger height under Account in this tab? You
+              can remove them anytime.
             </p>
             <div className='mt-3 flex flex-wrap gap-3'>
               <button
@@ -268,7 +222,7 @@ export function BalanceShareRequest() {
                 className='ex-button'
                 onClick={() => choose.current?.(true)}
               >
-                Show in navbar
+                Show in Account
               </button>
               <button
                 type='button'

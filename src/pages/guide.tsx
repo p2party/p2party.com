@@ -1,29 +1,18 @@
-import { useEffect, useSyncExternalStore } from "react";
-import { useLocation } from "react-router";
-import { BalanceShareRequest } from "../components/SharedWalletBalance";
+import { useEffect } from "react";
+import { WalletGuide } from "./wallet";
 import ReactMarkdown from "react-markdown";
 
-import { WALLET_RECEIVE_URL, WALLET_RESTORE_URL } from "../lib/walletRestore";
 import { ProtocolWalkthrough } from "../components/protocol-walkthrough/Walkthrough";
-import { WalletBalance } from "../components/WalletBalance";
-import wallet from "../content/wallet.md?raw";
 import guides from "../content/guides.json";
 import protocol from "../content/protocol.md?raw";
 import roadmap from "../content/roadmap.md?raw";
 
 import whitepaper from "../content/whitepaper.md?raw";
 
-const articles = { protocol, roadmap, whitepaper, wallet };
-const noHydrationEvents = () => () => {};
+const articles = { protocol, roadmap, whitepaper };
 
 const Guide = ({ page }: { page: keyof typeof guides }) => {
   const { title, description } = guides[page];
-  const { hash, state } = useLocation();
-  const hydrated = useSyncExternalStore(
-    noHydrationEvents,
-    () => true,
-    () => false,
-  );
   useEffect(() => {
     const previous = document.title;
     document.title = `${title} · p2party`;
@@ -31,6 +20,8 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
       document.title = previous;
     };
   }, [title]);
+
+  if (page === "wallet") return <WalletGuide />;
 
   const headings = [...articles[page].matchAll(/^## (.+)$/gm)].map(
     (match) => match[1],
@@ -40,7 +31,6 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/-$/, "");
-  if (page === "wallet") headings.push("Check a public balance");
   const contents = (
     <ul>
       {page === "protocol" && (
@@ -62,51 +52,10 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
         <p className='mt-4 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300'>
           {description}
         </p>
-        {page === "wallet" && (
-          <div className='mt-4 flex flex-wrap items-center gap-4'>
-            <a
-              className='ex-button'
-              href={WALLET_RESTORE_URL}
-              referrerPolicy='no-referrer'
-            >
-              Restore a wallet
-            </a>
-            <a
-              className='ex-text-button'
-              href={WALLET_RECEIVE_URL}
-              referrerPolicy='no-referrer'
-            >
-              Receive P2PARTY
-            </a>
-            <a className='ex-text-button' href='#check-a-public-balance'>
-              Watch a balance
-            </a>
-          </div>
-        )}
         <p className='mt-4 font-mono text-xs text-zinc-600 dark:text-zinc-400'>
           Updated <time dateTime='2026-11-27'>27 November 2026</time>
         </p>
       </header>
-      {page === "wallet" && hydrated && hash === "#show-balance" && (
-        <BalanceShareRequest />
-      )}
-      {page === "wallet" &&
-        hydrated &&
-        !hash &&
-        state?.sharedBalance === "saved" && (
-          <p className='mb-4 font-semibold' role='status'>
-            Your balance is visible in this tab. Open Balance details in the
-            navigation to hide and forget it.
-          </p>
-        )}
-      {page === "wallet" &&
-        hydrated &&
-        !hash &&
-        state?.sharedBalance === "declined" && (
-          <p className='mb-4' role='status'>
-            This balance was not saved.
-          </p>
-        )}
       {page === "protocol" && <ProtocolWalkthrough />}
       <div className='site-reading-grid'>
         <nav aria-label='On this page' className='site-contents'>
@@ -131,7 +80,6 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
               {articles[page]}
             </ReactMarkdown>
           </article>
-          {page === "wallet" && <WalletBalance />}
         </div>
       </div>
     </main>

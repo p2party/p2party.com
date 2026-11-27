@@ -2,6 +2,7 @@
 
 import { useState, lazy, Suspense, useEffect } from "react";
 
+import { useLocation, useNavigate } from "react-router";
 import { Button } from "../components/button";
 import { useRoom } from "../hooks/useRoom";
 
@@ -11,8 +12,14 @@ const CatAvatar = lazy(() => import("../components/avatars/cat"));
 const RoomListItem = lazy(() => import("../components/RoomItem"));
 const RoomSetupAlert = lazy(() => import("../components/RoomSetupAlert"));
 
+const RestoreIdentityAlert = lazy(
+  () => import("../components/alerts/RestoreIdentityAlert"),
+);
+
 const RoomsPage = () => {
-  const { getAllPastRooms } = useRoom({
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { getAllPastRooms, identityBackupIsAvailable } = useRoom({
     subscribeToMessages: false,
   });
 
@@ -169,6 +176,21 @@ const RoomsPage = () => {
       <Suspense fallback={null}>
         <RoomSetupAlert isOpen={roomSetupOpen} setIsOpen={setRoomSetupOpen} />
       </Suspense>
+      {location.hash === "#restore-room-identity" &&
+        identityBackupIsAvailable() && (
+          <Suspense>
+            <RestoreIdentityAlert
+              isOpen
+              setIsOpen={(open) => {
+                if (!open)
+                  void navigate(
+                    { pathname: location.pathname, search: location.search },
+                    { replace: true },
+                  );
+              }}
+            />
+          </Suspense>
+        )}
     </div>
   );
 };

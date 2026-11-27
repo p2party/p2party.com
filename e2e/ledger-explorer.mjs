@@ -94,8 +94,9 @@ try {
   methods.length = 0;
   await page
     .getByRole("navigation", { name: "Site navigation" })
-    .getByRole("link", { name: "Wallet", exact: true })
+    .getByRole("button", { name: "Account", exact: true })
     .click();
+  await page.getByRole("link", { name: "Open wallet", exact: true }).click();
   await page
     .getByRole("heading", { name: "P2PARTY wallet", exact: true })
     .waitFor();
@@ -103,15 +104,21 @@ try {
     await page
       .getByRole("link", { name: "Restore a wallet", exact: true })
       .getAttribute("href"),
-    "https://p2party.github.io/p2party-server/restore/",
+    "https://p2party.github.io/p2party-server/restore/#restore",
   );
+  await page
+    .getByText("Look up one public receive request", { exact: true })
+    .click();
   await page
     .getByLabel("Check a Testnet 1 balance")
     .fill("0x" + "a".repeat(128));
   await page
     .getByRole("button", { name: "Check balance", exact: true })
     .click();
-  await page.getByText(/40 hexadecimal digits/).waitFor();
+  await page
+    .locator("output")
+    .filter({ hasText: /40 hexadecimal digits/ })
+    .waitFor();
   assert.deepEqual(methods, []);
   await page
     .getByRole("button", { name: "Use a public genesis example" })

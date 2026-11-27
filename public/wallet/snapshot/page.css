@@ -1,52 +1,81 @@
 :root {
   color-scheme: light dark;
   font-family: system-ui, sans-serif;
-  background: #fafafa;
-  color: #18181b;
+  --paper: white;
+  --ink: #09090b;
+  --muted: #52525b;
+  --accent: #c2410c;
+  background: var(--paper);
+  color: var(--ink);
 }
 body {
   margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(rgb(249 115 22 / 9%) 1px, transparent 1.5px) 0 0 /
+    24px 24px;
+}
+header {
+  padding: 0.8rem max(1rem, calc((100% - 68rem) / 2));
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+}
+header a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  text-decoration: none;
 }
 main {
   max-width: 34rem;
-  margin: 3rem auto;
-  padding: 0 1rem;
-}
-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-weight: 800;
+  margin: clamp(2rem, 8vw, 5rem) auto;
+  padding: 0 1.2rem;
 }
 h1 {
-  font-size: clamp(1.8rem, 7vw, 3rem);
-  letter-spacing: -0.04em;
+  font-size: clamp(2rem, 7vw, 3.3rem);
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+  margin: 0;
 }
 p {
   line-height: 1.6;
+  color: var(--muted);
 }
 button,
-a {
-  border: 2px solid currentColor;
-  padding: 0.5rem 0.7rem;
+#download {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px #ea580c;
+  padding: 0.55rem 0.85rem;
   font: inherit;
-  font-weight: 650;
-  background: transparent;
-  color: inherit;
-}
-a {
+  font-weight: 700;
+  background: var(--paper);
+  color: var(--ink);
   display: inline-block;
+  cursor: pointer;
+}
+.back-link {
+  color: var(--accent);
+  text-underline-offset: 0.18em;
 }
 [hidden] {
-  display: none;
+  display: none !important;
 }
 #status {
   border-inline-start: 4px solid #ea580c;
   padding-inline-start: 1rem;
 }
+:focus-visible {
+  outline: 2px solid #ea580c;
+  outline-offset: 3px;
+}
 @media (prefers-color-scheme: dark) {
   :root {
-    background: #18181b;
-    color: #fafafa;
+    --paper: #09090b;
+    --ink: #fafafa;
+    --muted: #d4d4d8;
+    --accent: #fb923c;
   }
 }

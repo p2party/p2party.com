@@ -9,25 +9,33 @@
     />
     <meta name="referrer" content="no-referrer" />
     <meta name="robots" content="noindex" />
-    <title>Testnet 1 balance refresh · P2Party</title>
+    <title>Check for payments · P2Party</title>
     <link rel="icon" href="/logo-cat-tight.svg" />
     <link rel="stylesheet" href="./page.css" />
   </head>
   <body>
+    <header>
+      <a href="/" aria-label="p2party home">
+        <img
+          src="/logo-cat-tight.svg"
+          alt=""
+          width="36"
+          height="36"
+        />p2party</a
+      >
+    </header>
     <main>
-      <header>
-        <img src="/logo-cat-tight.svg" alt="" width="36" height="36" />P2Party
-      </header>
-      <h1>Refresh testnet balances</h1>
+      <h1>Check for payments</h1>
       <p>
-        This page reads the same public ledger for every wallet. Your wallet
-        matches its receive requests on your device.
+        This window reads the public Testnet 1 history. Your wallet checks it on
+        your device to find payments.
       </p>
-      <p role="status" id="status">Reading Testnet 1…</p>
+      <p role="status" id="status">Checking Testnet 1…</p>
       <button id="retry" hidden>Try again</button>
       <a id="download" download="p2party-testnet1-snapshot.json" hidden
-        >Download public snapshot</a
+        >Download public history</a
       >
+      <p><a class="back-link" href="/wallet/">Wallet help</a></p>
     </main>
     <script type="module" src="./page.mjs"></script>
   </body>

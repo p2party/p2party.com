@@ -75,9 +75,9 @@ function BalanceForm({ initial }: { initial: string }) {
         </p>
       )}
       <p id='handle-help'>
-        Enter the public 20-byte read handle for one receive commitment. Looking
-        it up shares that handle with the public validator. The result covers
-        only this receive request.
+        Paste the public balance handle (0x followed by 40 hexadecimal digits)
+        for one receive request. Looking it up shares that handle with the
+        public validator. The result covers only this receive request.
       </p>
       <div>
         <input
@@ -140,7 +140,7 @@ function WatchLink({ address }: { address: string }) {
       </summary>
       <p className='my-2'>
         Scan this QR code or open the link on your other device. Anyone with the
-        link can look up this commitment’s balance.
+        link can look up this request’s balance.
       </p>
       {qr && (
         <img

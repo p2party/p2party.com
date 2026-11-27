@@ -8,7 +8,7 @@ import {
 import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from "../navbar";
 
 import Spinner from "../custom/spinner";
-import { RoomWalletNav } from "../SharedWalletBalance";
+import { AccountMenu } from "../SharedWalletBalance";
 import CoverStatusPill from "../custom/CoverStatusPill";
 
 import { useRoom } from "../../hooks/useRoom";
@@ -61,7 +61,6 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
         <CatAvatar src='/logo-cat-tight.svg' />
         <NavbarLabel>p2party</NavbarLabel>
       </NavbarItem> */}
-      {roomUrl.length === 0 && <RoomWalletNav compact />}
       <NavbarSpacer />
 
       {/* <ConnectButtonNavigation roomUrl={roomUrl ?? ""} /> */}
@@ -178,6 +177,7 @@ const NavBar = ({ roomUrl }: NavBarProps) => {
         <Suspense>
           <RoomSetupAlert isOpen={showRoomSetup} setIsOpen={setShowRoomSetup} />
         </Suspense>
+        {roomUrl.length === 0 && <AccountMenu inRoom />}
       </NavbarSection>
     </Navbar>
   );

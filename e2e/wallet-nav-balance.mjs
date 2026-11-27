@@ -65,22 +65,71 @@ try {
   const visitor = await context.newPage();
   for (const route of ["/", "/wallet/"]) {
     await visitor.goto(web + route, { waitUntil: "networkidle" });
-    const primary = visitor.getByRole("link", {
+    const account = visitor.getByRole("button", {
+      name: "Account",
+      exact: true,
+    });
+    assert.equal(
+      await visitor.getByRole("link", { name: "Rooms", exact: true }).count(),
+      1,
+    );
+    const box = await account.boundingBox();
+    assert(box && box.y >= 0 && box.y + box.height < 150);
+    assert.equal(
+      await visitor.getByText(/Balance hidden|0 P2PARTY/).count(),
+      0,
+    );
+    await account.focus();
+    await visitor.keyboard.press("Enter");
+    const panel = visitor.getByLabel("Account options");
+    const action = panel.getByRole("link", {
       name: "Receive P2PARTY",
       exact: true,
     });
-    assert.equal(await primary.getAttribute("href"), receiveUrl);
-    assert.equal(await primary.getAttribute("referrerpolicy"), "no-referrer");
-    const box = await primary.boundingBox();
-    assert(box && box.y >= 0 && box.y + box.height <= 667);
-    await visitor.getByLabel("Wallet actions").click();
-    const action = visitor
-      .getByRole("navigation", { name: "Site navigation" })
-      .getByRole("link", { name: "Receive P2PARTY", exact: true });
     assert.equal(await action.getAttribute("href"), receiveUrl);
+    assert.equal(await action.getAttribute("referrerpolicy"), "no-referrer");
+    await action.focus();
+    await visitor.keyboard.press("Escape");
+    assert(await account.evaluate((el) => el === document.activeElement));
+    await account.click();
     await action.click();
     await visitor.waitForURL(receiveUrl);
   }
+  for (const [width, height] of [
+    [320, 640],
+    [390, 844],
+    [1360, 900],
+  ]) {
+    await visitor.setViewportSize({ width, height });
+    await visitor.goto(web + "/wallet/", { waitUntil: "networkidle" });
+    for (const [label, intent] of [
+      ["Create a wallet", "create"],
+      ["Restore a wallet", "restore"],
+    ]) {
+      const link = visitor.getByRole("link", { name: label, exact: true });
+      assert.equal(
+        await link.getAttribute("href"),
+        signer + "/p2party-server/restore/#" + intent,
+      );
+      const box = await link.boundingBox();
+      assert(
+        box && box.y + box.height <= height,
+        "Wallet choice is outside the first screen at " + width + "px",
+      );
+    }
+    assert(
+      await visitor.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    );
+  }
+  await visitor.getByRole("button", { name: "Account", exact: true }).click();
+  await visitor.getByRole("link", { name: "Restore chat identity" }).click();
+  await visitor
+    .getByRole("heading", { name: "Restore identity", exact: true })
+    .waitFor();
+  await visitor.keyboard.press("Escape");
+  await visitor.waitForURL(web + "/rooms/");
   await visitor.close();
   const signerPage = await context.newPage();
   await signerPage.goto(signer + "/p2party-server/restore/");
@@ -107,7 +156,7 @@ try {
   const challenge = await signerPage.evaluate(() => getChallenge());
   assert.equal(
     await page.getByText("Balance hidden", { exact: true }).count(),
-    1,
+    0,
   );
   const invalid = [
     { nonce: "f".repeat(63) },
@@ -142,17 +191,17 @@ try {
     { challenge, signer },
   );
   assert.equal(
-    await page.getByRole("button", { name: "Show in navbar" }).count(),
+    await page.getByRole("button", { name: "Show in Account" }).count(),
     0,
   );
   await signerPage.evaluate(() => window.sendOffer({}));
-  await page.getByRole("button", { name: "Show in navbar" }).waitFor();
+  await page.getByRole("button", { name: "Show in Account" }).waitFor();
   assert.equal(
     await page.evaluate((k) => sessionStorage.getItem(k), storage),
     null,
   );
   await signerPage.evaluate(() => window.sendOffer({ amount: "128" }));
-  await page.getByRole("button", { name: "Show in navbar" }).click();
+  await page.getByRole("button", { name: "Show in Account" }).click();
   await signerPage.waitForFunction(() =>
     getReplies().includes("p2party.balance.accepted.v1"),
   );
@@ -165,13 +214,22 @@ try {
   );
   assert(!page.url().includes("amount") && !page.url().includes("height"));
   const nav = page.getByRole("navigation", { name: "Site navigation" });
-  await nav.getByText("2 P2PARTY", { exact: true }).waitFor();
+  await nav.getByRole("button", { name: "Account", exact: true }).click();
+  await page
+    .getByLabel("Account options")
+    .getByText("2 P2PARTY", { exact: true })
+    .waitFor();
+  await page.keyboard.press("Escape");
   await nav.getByRole("link", { name: "Roadmap", exact: true }).click();
   await page.reload();
-  await nav.getByText("At height 3", { exact: true }).waitFor();
-  await nav.getByLabel("Balance details").click();
-  await nav.getByRole("button", { name: "Hide and forget balance" }).click();
-  await nav.getByText("Balance hidden", { exact: true }).waitFor();
+  await nav.getByRole("button", { name: "Account", exact: true }).click();
+  await page
+    .getByText("At ledger height 3 · This tab only", { exact: true })
+    .waitFor();
+  await page.getByRole("button", { name: "Hide and forget balance" }).click();
+  await nav.getByRole("button", { name: "Account", exact: true }).click();
+  assert.equal(await page.getByText("2 P2PARTY", { exact: true }).count(), 0);
+  await page.keyboard.press("Escape");
   assert.equal(
     await page.evaluate((k) => sessionStorage.getItem(k), storage),
     null,
@@ -194,7 +252,8 @@ try {
   await signerPage.evaluate(() =>
     window.sendOffer({ amount: "0", height: "18446744073709551615" }),
   );
-  await edge.getByRole("button", { name: "Show in navbar" }).click();
+  await edge.getByRole("button", { name: "Show in Account" }).click();
+  await edge.getByRole("button", { name: "Account", exact: true }).click();
   await edge.getByText("0 P2PARTY", { exact: true }).waitFor();
   assert(
     await edge.evaluate(
@@ -202,21 +261,27 @@ try {
     ),
   );
   await edge.setViewportSize({ width: 320, height: 640 });
-  await edge.getByLabel("Balance details").click();
-  assert(
-    await edge.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
+  await edge
+    .getByText("At ledger height 18446744073709551615 · This tab only", {
+      exact: true,
+    })
+    .waitFor();
+  // Floating UI repositions an already-open panel on the first animation frame after the viewport changes.
+  await edge.waitForFunction(
+    () =>
+      document.documentElement.scrollWidth <= innerWidth &&
+      document.querySelector(".account-panel")?.getBoundingClientRect().right <=
+        innerWidth,
   );
-  const menu = await edge.locator(".site-balance-menu").boundingBox();
+  const menu = await edge.getByLabel("Account options").boundingBox();
   assert(menu && menu.x >= 0 && menu.x + menu.width <= 320);
   const late = await start();
   await late.clock.install();
   await signerPage.evaluate(() => window.sendOffer({}));
-  await late.getByRole("button", { name: "Show in navbar" }).waitFor();
+  await late.getByRole("button", { name: "Show in Account" }).waitFor();
   // Simulate waking a suspended browser after the original wall-clock deadline.
   await late.clock.setSystemTime(new Date(Date.now() + 120_000));
-  await late.getByRole("button", { name: "Show in navbar" }).click();
+  await late.getByRole("button", { name: "Show in Account" }).click();
   await late.getByText(/This request expired/).waitFor();
   assert.equal(
     await late.evaluate((k) => sessionStorage.getItem(k), storage),
@@ -225,43 +290,36 @@ try {
   // Room surfaces use separate responsive chrome. Opening the guide must
   // preserve the room tab and its connection; all requests stay intercepted.
   await edge.goto(web + "/rooms/");
-  const roomWallet = edge.getByRole("link", {
-    name: "Open wallet in a new tab",
-  });
-  await roomWallet.first().waitFor();
-  const linkToGuide = edge.waitForEvent("popup");
-  await roomWallet.first().click();
-  const guide = await linkToGuide;
+  const accountInRoom = edge
+    .getByRole("button", { name: "Account", exact: true })
+    .first();
+  await accountInRoom.click();
+  const roomLink = edge.getByRole("link", { name: "Open wallet in a new tab" });
+  const guidePopup = edge.waitForEvent("popup");
+  await roomLink.click();
+  const guide = await guidePopup;
   await guide
     .getByRole("heading", { name: "P2PARTY wallet", exact: true })
     .waitFor();
   assert.equal(new URL(edge.url()).pathname, "/rooms/");
   assert.equal(await guide.evaluate(() => window.opener), null);
   await edge.setViewportSize({ width: 1280, height: 800 });
+  await accountInRoom.click();
+  await edge.getByText("0 P2PARTY", { exact: true }).waitFor();
   await edge
-    .getByRole("link", { name: "Open wallet in a new tab" })
-    .first()
+    .getByText("At ledger height 18446744073709551615 · This tab only", {
+      exact: true,
+    })
     .waitFor();
-  assert.equal(
-    await edge
-      .locator("a[aria-label='Open wallet in a new tab']:visible small")
-      .first()
-      .textContent(),
-    "0 P2PARTY · height 18446744073709551615",
-  );
-  const ids = await edge
-    .locator("a[aria-label='Open wallet in a new tab']")
-    .evaluateAll((links) =>
-      links.map((link) => link.getAttribute("aria-describedby")),
-    );
-  assert.equal(new Set(ids).size, ids.length);
+  await edge.keyboard.press("Escape");
   const roomPath = "/r/#v1." + randomBytes(32).toString("base64url");
   await edge.setViewportSize({ width: 375, height: 667 });
   await edge.goto(web + roomPath);
   await edge.getByRole("button", { name: "Cancel", exact: true }).click();
   await edge.getByRole("button", { name: "Open navigation" }).click();
   const drawer = edge.getByRole("dialog");
-  const receiveFromRoom = drawer.getByRole("link", {
+  await drawer.getByRole("button", { name: "Account", exact: true }).click();
+  const receiveFromRoom = edge.getByLabel("Account options").getByRole("link", {
     name: "Receive P2PARTY in a new tab",
   });
   assert.equal(await receiveFromRoom.getAttribute("href"), receiveUrl);
@@ -270,14 +328,18 @@ try {
     "noopener noreferrer",
   );
   const roomGuide = edge.waitForEvent("popup");
-  await drawer.getByRole("link", { name: "Open wallet in a new tab" }).click();
+  await edge
+    .getByLabel("Account options")
+    .getByRole("link", { name: "Open wallet in a new tab" })
+    .click();
   await (
     await roomGuide
   )
     .getByRole("heading", { name: "P2PARTY wallet", exact: true })
     .waitFor();
   assert.equal(edge.url(), web + roomPath);
-  await drawer.getByRole("button", { name: "Hide and forget balance" }).click();
+  await drawer.getByRole("button", { name: "Account", exact: true }).click();
+  await edge.getByRole("button", { name: "Hide and forget balance" }).click();
   assert.equal(
     await edge.evaluate((k) => sessionStorage.getItem(k), storage),
     null,
@@ -285,7 +347,8 @@ try {
   const other = await context.newPage();
   await other.goto(href);
   await other.getByText(/did not receive a connection/).waitFor();
-  await other.getByText("Balance hidden", { exact: true }).waitFor();
+  await other.getByRole("button", { name: "Account", exact: true }).click();
+  assert.equal(await other.getByText("0 P2PARTY", { exact: true }).count(), 0);
   assert.deepEqual(errors, []);
   assert.deepEqual(unexpected, []);
   console.log(
