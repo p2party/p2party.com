@@ -101,11 +101,10 @@ const PrivacyPage = () => {
             identities that belong to it. With signaling v5, your browser
             computes the identifier by hashing the invitation capability with
             SHA-512. It sends that identifier whenever you join or leave.
-            Membership is
-            removed when you leave the room from inside the app; closing the tab
-            or losing the network does not remove it. Empty rooms not updated
-            for 24 hours become eligible for bounded cleanup; occupied rooms,
-            including offline membership, remain.
+            Membership is removed when you leave the room from inside the app;
+            closing the tab or losing the network does not remove it. Empty
+            rooms not updated for 24 hours become eligible for bounded cleanup;
+            occupied rooms, including offline membership, remain.
           </li>
           <li>
             <strong>Short-lived routing rows:</strong> a signal addressed to a
@@ -116,8 +115,8 @@ const PrivacyPage = () => {
         <Para>
           The server sends a ping every 10 seconds and closes a socket that has
           not answered within 5 seconds. Other online members can receive a
-          notification when you leave or when your last signaling socket
-          closes. These notifications reveal the timing of your presence.
+          notification when you leave or when your last signaling socket closes.
+          These notifications reveal the timing of your presence.
         </Para>
         <Para>
           What this means in practice: the operator of the signaling service can
