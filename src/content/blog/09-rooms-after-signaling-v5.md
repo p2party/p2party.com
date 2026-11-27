@@ -37,3 +37,12 @@ Independent review of the peer protocol and wide-area measurements of recovery a
 P2Party Testnet 1 is live. A fresh installation of its wallet client checked both chain IDs and read the genesis head at height zero. The wallet, source and genesis are public downloads. Developers can request a test unit and submit a native post-quantum transfer. Chat rooms, contacts and files operate independently of this experiment. Genesis created 128 units of weight one, with no monetary value. The operator can grant an existing unit to a fresh receive commitment. A wallet signs a spend with ML-DSA-65 or SLH-DSA-SHA2-192s, and anyone can check the resulting receipt. [Developer guide and genesis](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md) · [Native transfer verifier](https://github.com/ondemos/libdemos/tree/ceef24a8bf1f5dee045e72c838ffdbf080d9cd83/ledger)
 
 One validator orders transfers. The Ethereum-facing chain ID is `1345474644` (`0x50325054`), which client libraries can use to identify the endpoint. The client signs native transfers. EVM execution, proof of stake, independent validators and mainnet monetary rules remain outside this design. [Validator health endpoint](https://signaling.p2party.com/rpc/health) · [Wallet and RPC examples](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-and-spend-a-unit)
+
+The first grant moved one existing unit at height 1. At height 2 an ethers client spent it with ML-DSA-65. At height 3 a viem client spent the same unit with SLH-DSA-SHA2-192s. Both checked historical balances and recovered their original receipts when they resubmitted the exact signed bytes. The final output retained weight one. Compare the height-2 output ID with the height-3 input ID to follow the unit. [Check the final weight](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-the-first-public-transfers)
+
+```sh
+curl -fsS -H 'Content-Type: application/json' \
+  --data '[{"jsonrpc":"2.0","id":2,"method":"demos_getTransferByHeight","params":["0x2"]},{"jsonrpc":"2.0","id":3,"method":"demos_getTransferByHeight","params":["0x3"]}]' \
+  https://signaling.p2party.com/rpc |
+  jq 'sort_by(.id) | map(.result | {height, inputId, outputId})'
+```

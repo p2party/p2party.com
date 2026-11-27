@@ -47,6 +47,9 @@ in the separate library repository.
 P2Party Testnet 1 is live at the JSON-RPC endpoint on the signaling host.
 Its genesis defines 128 units without monetary value and one validator orders
 native post-quantum transfers. Using rooms requires neither a wallet nor a test unit.
+The first grant funded one unit. Ethers spent it with ML-DSA-65 at height 2
+and viem spent the same unit with SLH-DSA-SHA2-192s at height 3. Both clients
+verified historical balances and recovered their original receipts on retry.
 [Testnet guide and client examples](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md) · [Native library](https://github.com/ondemos/libdemos)
 
 ## Run locally

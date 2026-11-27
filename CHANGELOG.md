@@ -8,6 +8,7 @@
 - Two fresh Chromium pairs verified persisted text and a byte-exact 32 KiB disk-backed file through the public service. Browser statistics confirmed one direct ICE path and one forced TURN path.
 - Android now targets API 37. Debug and unsigned release builds passed, alongside an Android 16 emulator check for keyboard and status bar behavior. Android 17 permission and physical-device validation are outstanding.
 - The release article links to P2Party Testnet 1, a live single-validator experiment. All six public downloads matched the release assets. A fresh wallet installation checked both chain IDs and read the genesis head.
+- One grant funded a valueless unit at height 1. Ethers spent it with ML-DSA-65 at height 2 and viem spent it with SLH-DSA-SHA2-192s at height 3. Both verified receipts, historical balances and exact signed retries. [Query the receipts](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-the-first-public-transfers)
 
 [Release article](src/content/blog/09-rooms-after-signaling-v5.md) · [SDK release](https://github.com/p2party/p2party-js/tree/v0.15.0) · [Native build record](docs/native-builds.md)
 
