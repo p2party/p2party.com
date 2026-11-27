@@ -233,6 +233,23 @@ section button,
     min-height: 2.75rem;
   }
 }
+@media (max-width: 24rem) {
+  header nav {
+    gap: 0 0.35rem;
+  }
+}
+@media (max-width: 22rem) {
+  header .bar {
+    padding-inline: 0.7rem;
+  }
+  header nav {
+    gap: 0 0.15rem;
+    flex-wrap: nowrap;
+  }
+  header nav a {
+    font-size: 0.76rem;
+  }
+}
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #000;
