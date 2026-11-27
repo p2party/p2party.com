@@ -10,13 +10,13 @@ security audit. The signaling service sees room membership and timing;
 server-blind rendezvous and Sybil resistance are not shipped guarantees.
 Read the [security policy](SECURITY.md) before relying on it for sensitive use.
 
-The web client uses SDK **0.15.1** and signaling server **0.2.2** (protocol **5**).
+The web client uses SDK **0.15.2** and signaling server **0.2.3** (protocol **5**).
 Peer encryption uses protocol **4**. The browser re-establishes missing peer connections after signaling returns and
 keeps live session keys in memory. Identity and full-device purges report rooms
 whose leave the server did not acknowledge. The public server expires offline
 memberships after 90 days without authentication. P2Party Testnet 1 remains operated
 by one public validator. A second validator has been exercised on separate local
-PostgreSQL databases. [Release notes](src/content/blog/10-room-history-and-purge.md) ·
+PostgreSQL databases. Replicas can compare a trusted genesis fingerprint with the public JSON-RPC method `demos_getGenesisHash` before replaying transfers. [Protocol guide](src/content/protocol.md#the-public-testnet) · [Room recovery notes](src/content/blog/10-room-history-and-purge.md) ·
 [Changelog](CHANGELOG.md) · [Signaling health](https://signaling.p2party.com/health)
 
 The [wallet guide](https://p2party.com/wallet) explains receiving, spending and restoring a testnet wallet. A watch-only QR or link carries one public read handle between browsers. Balance lookup contacts the validator when requested. The homepage and wallet guide link directly to the standalone browser restore. It opens an encrypted backup with its separate recovery code and can run offline. The desktop companion also supports legacy imports and local portfolio totals. The [P2PARTY ledger explorer](https://p2party.com/explorer) reads native testnet receipts by height or move ID. The [mainnet status page](https://p2party.com/explorer/mainnet) records its prelaunch status.
@@ -114,13 +114,13 @@ recovery bounds for mobile or wide-area networks.
 
 ## SDK artifacts
 
-This checkout uses the SDK release archive `file:vendor/p2party-0.15.1.tgz`
-from the [SDK Linux CI build for `bf3b368`](https://github.com/p2party/p2party-js/actions/runs/46002256982).
-The Linux `.tgz` SHA-256 is `b77c696e852da526772af7327d09cfea2d6444df2b5da967a2046aead98a88c5`. Its decompressed tar stream matches the local release byte for byte (SHA-256 `db8e4fa181053dd114041cc8a4996903ade88e0614c78beb734ebfcfec5688b0`).
+This checkout uses the SDK release archive `file:vendor/p2party-0.15.2.tgz`
+from the [SDK Linux CI build for `19e71f0`](https://github.com/p2party/p2party-js/actions/runs/46046367358).
+The Linux `.tgz` SHA-256 is `abf31f8235d59f44920f999f3d33a3c8012686cd51c78f7811f89005d7add898`. Its decompressed tar stream matches the local release byte for byte (SHA-256 `d3cb202e2c2958dc74308f050adbe7fb3d02d8d41532c56a6c0f21dc3e3e9fce`).
 For local room tests, set **Settings → Signaling Server URL** to the WebSocket
 URL of your signaling v5 server.
 The app loads
-`public/vendor/p2party-0.15.1/libcrypto.wasm` through `src/protocol/wasm.ts`.
+`public/vendor/p2party-0.15.2/libcrypto.wasm` through `src/protocol/wasm.ts`.
 The normal SDK loader verifies the WASM against its built-in SRI pin.
 The experimental `/session-lab` entry receives fetched WASM bytes directly;
 its release provenance is checked at build time rather than by browser SRI.

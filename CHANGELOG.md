@@ -1,5 +1,11 @@
 # Web client changelog
 
+## November 27, 2026 — SDK 0.15.2 and signaling 0.2.3
+
+- Ship the SDK’s verified Linux archive and its versioned cryptography module. Emscripten 7.0.1 produced the same WebAssembly bytes used by SDK 0.15.1. Rooms still use signaling v5 and peer protocol v4. [SDK release](https://github.com/p2party/p2party-js/releases/tag/v0.15.2)
+- Document the public Testnet 1 genesis fingerprint. A replica can compare the read-only RPC response with its trusted pin before applying transfer history. The live single-validator testnet retained its first three receipts. [Protocol guide](src/content/protocol.md#the-public-testnet)
+- Pin Android builds to Gradle 9.9.3. Debug and unsigned release builds each packaged the verified SDK 0.15.2 WebAssembly module. [Native build record](docs/native-builds.md#last-verified-on-2026-11-27)
+
 ## November 27, 2026 — Rendezvous timing results
 
 - The roadmap links to the schedules, reproduction steps and both sets of loopback trials for the two-store rendezvous experiment. [Timing results](src/content/roadmap.md#tested-locally)

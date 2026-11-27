@@ -416,7 +416,7 @@ const HomePage = () => {
           <span className='text-orange-600 dark:text-orange-500'>Today</span>
         </h2>
         <p className='mx-auto mb-8 max-w-2xl text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400'>
-          This site runs SDK 0.15.1 and signaling server 0.2.2. Rooms use
+          This site runs SDK 0.15.2 and signaling server 0.2.3. Rooms use
           signaling v5 to find peers and peer protocol v4 to encrypt messages.{" "}
           <Link
             href='/blog/room-history-and-purge'

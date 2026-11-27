@@ -11,7 +11,7 @@ set up in the repository.
 - **Capacitor:** 8.6.3 for the CLI, core, Android and iOS packages.
 - **Android.** The project targets and compiles with API 37.0. Install SDK
   Platform 37.0 and Build Tools 36.0.0. The Gradle wrapper pins the SHA-256
-  of the Gradle 9.9.2 binary distribution. The build uses Android Gradle
+  of the Gradle 9.9.3 binary distribution. The build uses Android Gradle
   Plugin 9.5.3, AndroidX Core 1.19.1, and the Cordova Android 15.1.0 framework.
   The minimum OS is Android 10 (API 29). The web client requires Android
   System WebView 158 or newer, which updates independently of Android.
@@ -274,6 +274,7 @@ and the generated file has no `<access>` element.
 
 ## Last verified on 2026-11-27
 
+- Gradle 9.9.3 with AGP 9.5.3 and JDK 21 completed 534 tasks building SDK 0.15.2 into a debug APK and an unsigned release APK. Both contained the verified cryptography WebAssembly module and declared minimum API 29, target API 37 and the local-network permission. These artifacts were checked on the build host.
 - A clean Gradle 9.9.2 and AGP 9.5.3 build produced a debug APK and unsigned
   release APK on SDK Platform 37.0 with JDK 21. The packaged manifest has
   minimum API 29, target API 37, and `ACCESS_LOCAL_NETWORK`. Both builds

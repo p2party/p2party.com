@@ -2,7 +2,7 @@
 
 An invitation carries a secret in its URL fragment. The browser opens a WebSocket and signs a challenge for that signaling host. It sends a SHA-512 hash of the invitation secret to find the other members. The service can associate that hash with identity keys, connection times and connecting network addresses. It limits connections and room membership by identity. One person can create multiple identities. An optional room PIN adds a proof that peers know the same PIN.
 
-Signaling server **0.2.2** speaks **signaling v5**. The encrypted conversation between two browsers uses **peer protocol v4** in SDK **0.15.1**. These versions describe different parts of a connection. [Signaling server source](https://github.com/p2party/p2party-server) · [Signaling health](https://signaling.p2party.com/health) · [SDK release](https://github.com/p2party/p2party-js/releases/tag/v0.15.1)
+Signaling server **0.2.3** speaks **signaling v5**. The encrypted conversation between two browsers uses **peer protocol v4** in SDK **0.15.2**. These versions describe different parts of a connection. [Signaling server source](https://github.com/p2party/p2party-server) · [Signaling health](https://signaling.p2party.com/health) · [SDK release](https://github.com/p2party/p2party-js/releases/tag/v0.15.2)
 
 ## Sending and recovering a message
 
@@ -21,6 +21,8 @@ The signaling service introduces peers and records room memberships. Device purg
 ## The public testnet
 
 The signaling host also serves an RPC and validator for **P2Party Testnet 1**. Anyone can read the ledger. A wallet can authorize a native transfer with ML-DSA-65 or SLH-DSA-SHA2-192s. A single public operator orders transfers against a genesis allocation of 128 valueless units. Chat works independently of the ledger.
+
+Before replaying transfers, a replica can call `demos_getGenesisHash` with an empty parameter array and compare the result with a fingerprint it already trusts. Testnet 1 returns `0x6bd2366c1034c93827cb1a79118f3cd18d403a35865e4baed5f2d3b3f6adab21`. The SHA-256 fingerprint covers the native and RPC chain IDs, the allowed spending and receiving suites, and the initial allocations sorted by unit ID. Formatting the genesis JSON differently leaves the fingerprint unchanged. [Published Testnet 1 genesis](https://github.com/p2party/p2party-server/blob/89e7ccaa6ca22a7351a09d263b79792a661f2e0a/deploy/testnet/genesis.json)
 
 The first grant at height 1 and the transfers at heights 2 and 3 let you follow the same unit. An ethers client spent it with ML-DSA-65, and a viem client spent the resulting output with SLH-DSA-SHA2-192s. The adapters support native balances and transfers. Smart-contract execution is outside the current testnet. [Browse Testnet 1](/explorer/testnet) · [Check the public receipts](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-the-first-public-transfers) · [Validator health](https://signaling.p2party.com/rpc/health) · [Native verifier source](https://github.com/p2party/libdemos)
 

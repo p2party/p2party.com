@@ -36,7 +36,7 @@ const BlogPage = () => (
           href='/blog/room-history-and-purge'
           className='block underline underline-offset-4 hover:text-white'
         >
-          Latest web release · SDK 0.15.1
+          Room recovery and purge · SDK 0.15.1
         </Link>
       </aside>
     </section>

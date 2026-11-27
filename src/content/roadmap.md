@@ -1,8 +1,8 @@
 ## Available on the public service
 
-The web client uses SDK **0.15.1**, signaling **v5** and encrypted peer protocol **v4**. The latest release repairs missing peer connections after a signaling outage and reports which room leaves the server acknowledged during a purge. Direct and forced-relay browser transfers both passed on the public service. [Release notes](/blog/room-history-and-purge) · [Protocol guide](/protocol)
+The web client uses SDK **0.15.2**, signaling **v5** and encrypted peer protocol **v4**. Emscripten 7.0.1 reproduced the previous release’s cryptography WebAssembly module byte for byte. The browser repairs missing peer connections after a signaling outage and reports which room leaves the server acknowledged during a purge. Direct and forced-relay browser transfers both passed on the public service. [SDK release](https://github.com/p2party/p2party-js/releases/tag/v0.15.2) · [Room recovery](/blog/room-history-and-purge) · [Protocol guide](/protocol)
 
-**P2Party Testnet 1** has a single public validator and RPC. Its first three receipts record a grant and two spends of the same valueless unit through ethers and viem. Anyone can read them from the public endpoint. [Verify the receipts and balances](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-the-first-public-transfers)
+**P2Party Testnet 1** has a single public validator and RPC. Its first three receipts record a grant and two spends of the same valueless unit through ethers and viem. Anyone can read them from the public endpoint. Replicas can check the genesis fingerprint against a trusted value before replay. [Verify the receipts and balances](https://github.com/p2party/p2party-js/blob/master/docs/testnet-1.md#verify-the-first-public-transfers)
 
 ## Tested locally
 

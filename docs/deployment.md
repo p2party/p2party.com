@@ -86,14 +86,14 @@ curl -fsS -D - https://p2party.com/robots.txt
 curl -fsS -D - https://p2party.com/sitemap.xml
 ```
 
-For the SDK 0.15.1 rollout, upgrade signaling first. Verify its health response
+For the SDK 0.15.2 rollout, upgrade signaling first. Verify its health response
 before releasing the frontend. After the frontend deploys, compare the served
 WASM with the copy approved in the release checkout:
 
 ```bash
-curl -fsS https://signaling.p2party.com/health | jq -e '.status == "ok" and .version == "0.2.2" and .protocolVersion == 5'
+curl -fsS https://signaling.p2party.com/health | jq -e '.status == "ok" and .version == "0.2.3" and .protocolVersion == 5'
 npm run provenance:check
-curl -fsS --compressed https://p2party.com/vendor/p2party-0.15.1/libcrypto.wasm | cmp - public/vendor/p2party-0.15.1/libcrypto.wasm
+curl -fsS --compressed https://p2party.com/vendor/p2party-0.15.2/libcrypto.wasm | cmp - public/vendor/p2party-0.15.2/libcrypto.wasm
 ```
 
 The WASM response should use `application/wasm`, gzip encoding, and immutable caching.
