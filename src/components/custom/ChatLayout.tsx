@@ -119,7 +119,7 @@ const ChatLayout: FC<PropsWithChildren> = () => {
       {localNetworkDenied && (
         <aside role='status' className='p-3 text-sm'>
           Nearby devices permission is off. Peers on this Wi-Fi may be
-          unreachable. Internet connections remain available.{" "}
+          unreachable. P2Party will still try internet routes.{" "}
           <button
             className='underline'
             onClick={() =>

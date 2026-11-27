@@ -9,42 +9,30 @@ set up in the repository.
 ## Toolchain
 
 - **Capacitor:** 8.6.3 for the CLI, core, Android and iOS packages.
-- **Android:** Gradle wrapper 9.5.1 (the distribution is checked against
-  Gradle's published SHA-256), Android Gradle Plugin 8.13.2, compile and
-  target SDK 36, minimum SDK 29 (Android 10). The minimum follows the browser
-  target: Chromium 158 builds Android System WebView with `min_sdk_version` 29
-  (`build/config/android/config.gni` at tag 158.0.8127.102), and Google's
-  Chrome system requirements list "Android 10 or later". The app also needs
-  Android System WebView at Chrome 158 or newer, which the system updates
-  independently of the Android version; the one emulator run so far was on
-  WebView 133. Cordova Android
-  15.1.0 (only its `framework` library is used; no Cordova plugin is
-  installed). Four pins are held below
-  their latest release, all for one reason:
-  - Android Gradle Plugin 9 (each of 9.0.1 to 9.5.3 was tried) cannot
-    configure `@capacitor-community/safe-area` 8.0.1, its latest release. With
-    AGP 9's defaults its `apply plugin: 'kotlin-android'` collides with AGP's
-    built-in Kotlin; with `android.builtInKotlin=false` and
-    `android.newDsl=false` it stops at
-    `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 no longer
-    supports. With AGP 9.5.3 on Gradle 9.9.2, `./gradlew help`, which only
-    configures the projects, failed in that plugin's project and in no other;
-    no build task ran, so whether later phases succeed under AGP 9 is not
-    known. The app's own build files no longer contain the two things AGP 9
-    and Gradle 9 rejected or deprecated in them: they use
-    `proguard-android-optimize.txt` and `layout.buildDirectory`.
-  - AGP 8.13 does not run on Gradle 9.6 or later, so the wrapper stays at
-    9.5.1 (9.9.2 is the latest).
-  - `androidx.core` stays at 1.18.0: 1.19 requires AGP 9.1.0 and compile SDK 37.
-  - Compile and target SDK stay at 36, the highest compile SDK AGP 8.13.2
-    recommends (37 is the latest). Moving to 37, once the safe-area plugin
-    builds with AGP 9, needs three things: SDK Platform 37 installed
-    (`platforms;android-37.0`); `android.permission.ACCESS_LOCAL_NETWORK`
-    declared in `AndroidManifest.xml` and requested at runtime before a room
-    is joined, because Android 17 blocks an app targeting 37, and its WebView,
-    from local-network TCP, UDP and `.local` resolution without it, which
-    stops WebRTC host and mDNS candidates between two phones on one Wi-Fi; and
-    a test of a room between two phones on one Wi-Fi.
+- **Android.** The project targets and compiles with API 37.0. Install SDK
+  Platform 37.0 and Build Tools 36.0.0. The Gradle wrapper pins the SHA-256
+  of the Gradle 9.9.2 binary distribution. The build uses Android Gradle
+  Plugin 9.5.3, AndroidX Core 1.19.1, and the Cordova Android 15.1.0 framework.
+  The minimum OS is Android 10 (API 29). The web client requires Android
+  System WebView 158 or newer, which updates independently of Android.
+  [Android Gradle Plugin compatibility](https://developer.android.com/build/releases/agp-9-5-0-release-notes)
+
+  Capacitor 8.6.3's built-in SystemBars plugin owns the Android keyboard and
+  safe-area insets. The app's light and dark window-background resources match
+  the page behind the bars. On iOS, SystemBars sets the status-bar glyphs and
+  StatusBar supplies the background above the web view.
+  [Capacitor System Bars](https://capacitorjs.com/docs/apis/system-bars)
+
+  On Android 17 and later, entering the first room requests local-network
+  access through the Nearby devices dialog. Denial leaves internet routes
+  available. A message in the room opens Android settings to change the
+  permission. Returning from settings refreshes the message. Older Android
+  versions enter rooms without this prompt. Before distributing an Android
+  build, verify grant, denial, revocation and regrant on Android 17. Check
+  direct delivery between two peers on one Wi-Fi network after grant and
+  public TURN delivery after denial. Check the keyboard with the composer
+  focused and the status-bar colors in both themes.
+  [Android local-network permission](https://developer.android.com/privacy-and-security/local-network-permission)
 
   The plugins compile with a Java 21 toolchain. Gradle does not find Homebrew's
   keg-only `openjdk@21` by itself, and with only a newer JDK on the path the
@@ -79,9 +67,9 @@ set up in the repository.
   by `App.tsx` at start-up and whenever the page's theme changes, is the one
   place that styles the bars. The theme follows the system appearance
   (`prefers-color-scheme`); the app has no theme switch of its own. On both
-  platforms SafeArea's `setSystemBarsStyle` alone sets the glyphs: dark glyphs
-  on the light theme, light glyphs on the dark one. On Android it also paints
-  the window behind the bars white or black. On iOS the web view sits below
+  platforms `SystemBars.setStyle` selects dark glyphs on the light theme and
+  light glyphs on the dark theme. On Android it paints the window behind the
+  bars with the current day/night window-background resource. On iOS the web view sits below
   the status bar (`StatusBar.overlaysWebView: false`), so page content never
   scrolls under the clock or the Dynamic Island, and the StatusBar plugin
   fills the bar with a view of its own, black by default;
@@ -272,9 +260,8 @@ and the generated file has no `<access>` element.
 
 ## Last verified: 2026-11-26
 
-- **Android:** as committed (Gradle 9.5.1, AGP 8.13.2, compile and target SDK
-  36, the AndroidX and Cordova versions in `variables.gradle`),
-  `./gradlew clean assembleDebug` with JDK 21.0.13 succeeded on a
+- **Earlier Android build.** Gradle 9.5.1, AGP 8.13.2, compile and target
+  SDK 36, and JDK 21.0.13 passed `./gradlew clean assembleDebug` with a
   `build:native` copy, and `checkBundledWebClient` failed for a `build:client`
   copy and passed after `build:native` and `cap sync`. Installed and launched
   on an Android 16 (API 36) emulator with WebView 133.0.6943.137: the process

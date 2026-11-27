@@ -1,6 +1,7 @@
 package com.p2party.app;
 
 import android.Manifest;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -21,7 +22,8 @@ import com.getcapacitor.annotation.PermissionCallback;
 )
 public class LocalNetworkPlugin extends Plugin {
     private boolean needsPermission() {
-        return Build.VERSION.SDK_INT >= 37 && getContext().getApplicationInfo().targetSdkVersion >= 37;
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
+            && getContext().getApplicationInfo().targetSdkVersion >= Build.VERSION_CODES.CINNAMON_BUN;
     }
 
     @PluginMethod
@@ -53,7 +55,11 @@ public class LocalNetworkPlugin extends Plugin {
     public void openSettings(PluginCall call) {
         var intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
             Uri.fromParts("package", getContext().getPackageName(), null));
-        getActivity().startActivity(intent);
-        call.resolve();
+        try {
+            getActivity().startActivity(intent);
+            call.resolve();
+        } catch (ActivityNotFoundException exception) {
+            call.reject("Android app permission settings are unavailable.", exception);
+        }
     }
 }
