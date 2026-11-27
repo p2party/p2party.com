@@ -85,6 +85,54 @@
   text-decoration-color: var(--color-darkOrange);
   text-decoration-thickness: 3px;
 }
+.site-nav-wallet {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+.site-sections .site-wallet-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.1;
+  gap: 0.15rem;
+}
+.site-wallet-link small {
+  color: var(--site-muted);
+  font-size: 0.67rem;
+  font-weight: 650;
+}
+.site-wallet-height {
+  max-width: 7.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-balance-details summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.6rem 0.25rem;
+}
+.site-balance-details summary::-webkit-details-marker {
+  display: none;
+}
+.site-balance-menu {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  top: 100%;
+  width: min(16rem, 88vw);
+  padding: 0.8rem;
+  border: 2px solid var(--site-ink);
+  box-shadow: var(--shadow-brutal-sm);
+  background: var(--site-paper);
+  overflow-wrap: anywhere;
+}
+.site-balance-menu p {
+  margin: 0.4rem 0;
+  font-size: 0.8rem;
+}
 .site-rooms {
   border: 2px solid var(--site-ink);
   box-shadow: var(--shadow-brutal-sm);
@@ -210,7 +258,11 @@
     padding-top: 0.5rem;
     padding-bottom: 0;
   }
+  .site-nav-wallet {
+    position: static;
+  }
   .site-sections {
+    position: relative;
     grid-row: 2;
     grid-column: 1 / -1;
     flex-wrap: wrap;

@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { useLocation } from "react-router";
+import { BalanceShareRequest } from "../components/SharedWalletBalance";
 import ReactMarkdown from "react-markdown";
 
 import { WALLET_RESTORE_URL } from "../lib/walletRestore";
@@ -11,9 +13,16 @@ import roadmap from "../content/roadmap.md?raw";
 import whitepaper from "../content/whitepaper.md?raw";
 
 const articles = { protocol, roadmap, whitepaper, wallet };
+const noHydrationEvents = () => () => {};
 
 const Guide = ({ page }: { page: keyof typeof guides }) => {
   const { title, description } = guides[page];
+  const { hash, state } = useLocation();
+  const hydrated = useSyncExternalStore(
+    noHydrationEvents,
+    () => true,
+    () => false,
+  );
   useEffect(() => {
     const previous = document.title;
     document.title = `${title} · p2party`;
@@ -65,6 +74,26 @@ const Guide = ({ page }: { page: keyof typeof guides }) => {
           Updated <time dateTime='2026-11-27'>27 November 2026</time>
         </p>
       </header>
+      {page === "wallet" && hydrated && hash === "#show-balance" && (
+        <BalanceShareRequest />
+      )}
+      {page === "wallet" &&
+        hydrated &&
+        !hash &&
+        state?.sharedBalance === "saved" && (
+          <p className='mb-4 font-semibold' role='status'>
+            Your balance is visible in this tab. Open Balance details in the
+            navigation to hide and forget it.
+          </p>
+        )}
+      {page === "wallet" &&
+        hydrated &&
+        !hash &&
+        state?.sharedBalance === "declined" && (
+          <p className='mb-4' role='status'>
+            This balance was not saved.
+          </p>
+        )}
       <div className='site-reading-grid'>
         <nav aria-label='On this page' className='site-contents'>
           <details className='site-mobile-contents'>

@@ -3,7 +3,7 @@
 ## November 27, 2026 — Wallet balances in navigation
 
 - The restored wallet totals its unspent Testnet 1 units locally. Each displayed total has a ledger height. Visitors can refresh using the same public history as everyone else.
-- A wallet holder can explicitly show just the amount and height in the p2party.com navigation for one tab, or hide and forget them.
+- A wallet holder can explicitly show just the amount and height in the p2party.com navigation and rooms for one tab, or hide and forget them.
 
 ## November 27, 2026 — Relay pricing, holder privacy and bonded voting
 

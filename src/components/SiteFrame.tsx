@@ -1,12 +1,12 @@
 import { Outlet, useLocation } from "react-router";
 import { Link } from "./link";
+import { WalletNav } from "./SharedWalletBalance";
 
 const sections = [
   ["Protocol", "/protocol"],
   ["Roadmap", "/roadmap"],
   ["Whitepaper", "/whitepaper"],
   ["Explorer", "/explorer"],
-  ["Wallet", "/wallet"],
 ] as const;
 
 export function SiteFrame() {
@@ -43,6 +43,7 @@ export function SiteFrame() {
                 {label}
               </Link>
             ))}
+            <WalletNav current={path === "/wallet"} />
           </div>
           <Link className='site-rooms' href='/rooms'>
             Rooms <span aria-hidden='true'>→</span>

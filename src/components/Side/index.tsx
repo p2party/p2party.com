@@ -18,6 +18,7 @@ import {
   SidebarSpacer,
 } from "../sidebar";
 import { Link } from "../link";
+import { RoomWalletNav } from "../SharedWalletBalance";
 
 import SettingsAlert from "../alerts/SettingsAlert";
 import IdentityBackupAlert from "../alerts/IdentityBackupAlert";
@@ -75,6 +76,7 @@ const SideBar = () => {
             </SidebarLabel>
           </SidebarItem>
         </Link>
+        <RoomWalletNav />
       </SidebarHeader>
 
       <SidebarBody>
