@@ -98,6 +98,7 @@ async function startServer() {
     ...process.env,
     DATABASE_URL: database.toString(),
     PORT: String(port),
+    SIGNALING_HOST: new URL(signaling).host,
   };
   delete env.COTURN_SECRET;
   delete env.COTURN_URLS;

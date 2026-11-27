@@ -1,17 +1,17 @@
 // Two verifications the suite did not previously cover, both against the real
-// protocol-v4 signaling server and real WebRTC:
+// protocol-v5 signaling server and real WebRTC:
 //
 //   1. n=3 full app-stack mesh — three browser contexts in one room, every
 //      pair authenticated, and a message from one peer delivered byte-exact
 //      to BOTH others (the prior suite only ever proved n=2).
-//   2. Wrong-PIN backoff — a joiner with the wrong PIN must fail the
+//   2. Wrong-PIN recovery — a joiner with the wrong PIN must fail the
 //      authenticated handshake, the UI must SAY so (not sit on "Waiting for
-//      peers"), and repeated attempts must be throttled with a retry
-//      deadline.
+//      peers"). Explicit PIN re-entry on both clients must restore the edge.
+//      A persisted backoff must disable retry and show its deadline.
 //
 // Usage: SIGNALING_URL=ws://localhost:3999/ws node e2e/mesh-and-pin.mjs
 import { chromium } from "playwright";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 
 const APP = process.env.APP_URL ?? "http://localhost:5190";
 const SIGNALING = process.env.SIGNALING_URL ?? "";
@@ -145,7 +145,7 @@ const run = async () => {
       for (const { context } of ctxs) await context.close();
     }
 
-    // ---------- 2. wrong-PIN backoff ----------
+    // ---------- 2. wrong-PIN recovery ----------
     {
       const capability = randomBytes(32);
       const roomUrl = capability.toString("hex");
@@ -154,7 +154,6 @@ const run = async () => {
       const joiner = await newContext(browser, "joiner");
 
       const enterPin = async (page, pin) => {
-        await page.goto(roomPath, { waitUntil: "domcontentloaded" });
         const field = page.getByLabel("Room PIN", { exact: false });
         await field.waitFor({ timeout: 30000 });
         await field.fill(pin);
@@ -163,8 +162,10 @@ const run = async () => {
           .click();
       };
 
+      await host.page.goto(roomPath, { waitUntil: "domcontentloaded" });
       await enterPin(host.page, "correct-horse-battery-staple");
       log("host joined the PIN room with the correct PIN");
+      await joiner.page.goto(roomPath, { waitUntil: "domcontentloaded" });
       await enterPin(joiner.page, "definitely-the-wrong-pin");
       log("joiner attempted with a WRONG PIN");
 
@@ -223,65 +224,107 @@ const run = async () => {
         failures.push("the joiner was not told its PIN was wrong");
       else log("✅ WRONG PIN: the joiner is told, not left in an empty room");
 
-      const retryButton = joiner.page.getByRole("button", {
-        name: /Enter the PIN again|Try again in/,
-      });
-      await retryButton.waitFor({ timeout: 10000 }).catch(() => {});
-      if ((await retryButton.count()) === 0) {
-        failures.push("the joiner had no way to retry the PIN");
-      } else if (await retryButton.first().isDisabled()) {
-        // Only legitimate while a throttle countdown is on screen.
+      // Each client retains its own terminal failure until the user retries.
+      // Open both dialogs before re-entering the PIN so neither misses the
+      // retry while its peer is still showing the previous attempt.
+      for (const { page } of [joiner, host]) {
+        const button = page.getByRole("button", {
+          name: /Enter the PIN again|Try again in/,
+        });
+        await button.click({ timeout: 30000 });
+        const field = page.getByLabel("Room PIN");
+        await field.waitFor();
         if (
-          !/Try again in/.test((await retryButton.first().textContent()) ?? "")
-        )
-          failures.push("the retry was offered but disabled with no countdown");
-        else log("✅ RETRY: held until the throttle countdown expires");
-      } else {
-        await retryButton.first().click();
-        const field = joiner.page.getByLabel("Room PIN", { exact: false });
-        await field.waitFor({ timeout: 15000 });
-        if ((await field.inputValue()) !== "")
-          failures.push("the retry kept the rejected PIN in the field");
-        else if (
+          (await field.inputValue()) !== "" ||
           /already loaded/i.test(
             (await field.getAttribute("placeholder")) ?? "",
           )
         )
-          failures.push("the retry kept the rejected PIN in memory");
-        else log("✅ RETRY: the dialog returns with the rejected PIN cleared");
+          throw new Error("PIN retry retained the rejected secret");
       }
-
-      // Repeat until the library reports a throttle with a retry deadline.
-      let throttled = null;
-      for (let attempt = 0; attempt < 6 && !throttled; attempt++) {
-        await enterPin(joiner.page, `wrong-${String(attempt)}`);
-        throttled = await host.page
-          .evaluate((url) => {
+      await Promise.all(
+        [joiner, host].map(({ page }) =>
+          enterPin(page, "correct-horse-battery-staple"),
+        ),
+      );
+      for (const { page } of [host, joiner]) {
+        await waitFor(
+          page,
+          (url) => {
             const P = window.p2party;
-            const room = (P.roomSelector(P.store.getState()) || []).find(
+            const room = P.roomSelector(P.store.getState()).find(
               (r) => r.url === url,
             );
-            const hs = room?.handshakeStatusByPeer ?? {};
-            return (
-              Object.values(hs).find((v) => v.reason === "pin-throttled") ??
-              null
+            return room?.peers.some(
+              (peer) =>
+                room.handshakeStatusByPeer?.[peer.peerId]?.status ===
+                "authenticated",
             );
-          }, roomUrl)
-          .catch(() => null);
-        if (!throttled) await host.page.waitForTimeout(1500);
-      }
-      if (throttled) {
-        log(
-          `✅ PIN BACKOFF: throttled, retryAfter=${String(throttled.retryAfter)}`,
+          },
+          roomUrl,
+          {
+            label: "explicit PIN re-entry restores a verified edge",
+            timeout: 30000,
+          },
         );
-        if (!throttled.retryAfter)
-          failures.push("throttle carried no retry deadline for the countdown");
-      } else {
-        log(
-          "⚠️  PIN BACKOFF: repeated failures never reported pin-throttled to the host",
-        );
-        failures.push("no pin-throttled state observed after 6 wrong attempts");
       }
+      log("✅ PIN RETRY: both peers authenticated after explicit PIN re-entry");
+      // Resume a persisted per-identity backoff in a fresh room. Driving the
+      // retry button on the host clears its limits by design, and repeating a
+      // rejected peer's handshake without user consent is also disallowed.
+      const nextCapability = randomBytes(32);
+      const nextPath = `${APP}/r#v1.${nextCapability.toString("base64url")}&auth=pin`;
+      const locator = createHash("sha512")
+        .update(nextCapability.toString("hex"))
+        .digest("hex");
+      await Promise.all([host, joiner].map(({ page }) => page.goto(APP)));
+      await host.page.goto(nextPath);
+      await enterPin(host.page, "correct-horse-battery-staple");
+      await host.page.getByLabel("Room PIN").waitFor({ state: "hidden" });
+      const retryAfter = Date.now() + 60_000;
+      await host.page.evaluate(
+        ({ locator, peer, retryAfter }) =>
+          new Promise((resolve, reject) => {
+            const open = indexedDB.open("p2party");
+            open.onerror = () => reject(open.error);
+            open.onsuccess = () => {
+              const db = open.result;
+              const tx = db.transaction("meta", "readwrite");
+              tx.objectStore("meta").put(
+                { failures: 10, retryAfter },
+                `pinAttempts:v2:${locator.length}:${locator}:${peer}`,
+              );
+              tx.oncomplete = () => {
+                db.close();
+                resolve();
+              };
+              tx.onabort = () => {
+                db.close();
+                reject(tx.error);
+              };
+            };
+          }),
+        { locator, peer: failure.peerPublicKey, retryAfter },
+      );
+      await joiner.page.goto(nextPath);
+      await enterPin(joiner.page, "correct-horse-battery-staple");
+      const countdown = host.page.getByRole("button", { name: /Try again in/ });
+      await countdown.waitFor({ timeout: 20000 });
+      if (!(await countdown.isDisabled()))
+        throw new Error("PIN retry enabled before its deadline");
+      const state = await host.page.evaluate(
+        roomState,
+        nextCapability.toString("hex"),
+      );
+      if (
+        !Object.values(state.handshakes).some(
+          (hs) => hs.reason === "pin-throttled" && hs.retryAfter === retryAfter,
+        )
+      )
+        throw new Error("PIN backoff lost its persisted deadline");
+      log(
+        "✅ PIN BACKOFF: the host enforced the saved deadline and disabled retry",
+      );
       await host.context.close();
       await joiner.context.close();
     }
