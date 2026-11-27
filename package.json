@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "vite --host",
     "start": "npm run dev",
-    "typecheck": "tsc -b --pretty false",
+    "typecheck": "node node_modules/typescript-native7/bin/tsc -b --pretty false",
     "build": "npm run typecheck && npm run build:client && npm run build:server && npm run prerender",
     "test": "bun test",
     "format": "prettier . --write --ignore-path .gitignore --ignore-path .prettierignore",
@@ -82,8 +82,9 @@
     "prettier": "^3.10.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4.3.5",
-    "typescript": "^6.0.3",
+    "typescript": "6.0.3",
     "typescript-eslint": "^8.74.0",
+    "typescript-native7": "npm:typescript@7.0.2",
     "vite": "^8.4.0"
   }
 }

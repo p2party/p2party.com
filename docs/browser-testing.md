@@ -17,6 +17,7 @@ Do not run against production or a developer's regular database.
 | Runner                       | Coverage                                                                                                                                                  |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `run.mjs`                    | Two-peer text/files, OPFS reload, retransmission, cancellation, reconnection, and data-channel transport                                                  |
+| `release-upgrade.mjs`        | 64 MiB transfer across a sender reload, authenticated sender history, signaling v5 departure and room file cleanup                                        |
 | `mesh-and-pin.mjs`           | Three-peer delivery, recovery after explicit PIN re-entry, and the retry countdown for persisted backoff                                                  |
 | `desync-local-stack.mjs`     | Built UI, signaling restart, responder replacement, remembered consent, and wrong-PIN recovery                                                            |
 | `pending-transfers.mjs`      | React pending-transfer panel with controlled SDK promises, including cancellation during retry and room remount                                           |
